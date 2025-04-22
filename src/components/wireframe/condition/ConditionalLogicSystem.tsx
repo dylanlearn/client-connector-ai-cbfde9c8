@@ -1,611 +1,573 @@
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Plus, Trash2, Condition, LogicAnd, LogicOr, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check, CircleCheck, CircleX, GitBranch, LayoutList, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Condition types
-export type ConditionOperator = 'equals' | 'notEquals' | 'contains' | 'greaterThan' | 'lessThan' | 'isTrue' | 'isFalse' | 'isEmpty' | 'isNotEmpty';
-export type ConditionLogic = 'and' | 'or';
+export interface Condition {
+  id: string;
+  field: string;
+  operator: 'equals' | 'notEquals' | 'contains' | 'greaterThan' | 'lessThan' | 'isEmpty' | 'isNotEmpty';
+  value: any;
+}
+
+export interface LogicGroup {
+  id: string;
+  type: 'and' | 'or';
+  conditions: Condition[];
+}
 
 export interface ConditionalRule {
   id: string;
   name: string;
+  logicGroups: LogicGroup[];
+  action: {
+    type: 'show' | 'hide' | 'style' | 'property';
+    target: string;
+    property?: string;
+    value: any;
+  };
   enabled: boolean;
-  conditions: Condition[];
-  logic: ConditionLogic;
-  effect: {
-    type: 'visibility' | 'style' | 'behavior';
-    action: string;
-    value?: any;
-  };
 }
 
-export interface Condition {
-  id: string;
-  property: string;
-  operator: ConditionOperator;
-  value: any;
-}
-
-export interface ConditionalLogicSystemProps {
-  componentId: string;
+interface ConditionalLogicSystemProps {
   rules: ConditionalRule[];
-  availableProperties: Array<{id: string; name: string; type: string}>;
-  onRuleCreate?: (rule: ConditionalRule) => void;
-  onRuleUpdate?: (id: string, rule: Partial<ConditionalRule>) => void;
-  onRuleDelete?: (id: string) => void;
-  onRuleToggle?: (id: string, enabled: boolean) => void;
+  onRuleChange: (rules: ConditionalRule[]) => void;
+  availableFields?: string[];
+  availableTargets?: string[];
 }
 
-export const ConditionalLogicSystem: React.FC<ConditionalLogicSystemProps> = ({
-  componentId,
+const ConditionalLogicSystem: React.FC<ConditionalLogicSystemProps> = ({
   rules = [],
-  availableProperties = [],
-  onRuleCreate,
-  onRuleUpdate,
-  onRuleDelete,
-  onRuleToggle
+  onRuleChange,
+  availableFields = ['title', 'subtitle', 'content', 'image', 'button'],
+  availableTargets = ['section', 'heading', 'button', 'image', 'container']
 }) => {
-  const [newRule, setNewRule] = useState<Partial<ConditionalRule>>({
-    name: '',
-    enabled: true,
-    conditions: [],
-    logic: 'and',
-    effect: { type: 'visibility', action: 'show' }
-  });
+  const [selectedRule, setSelectedRule] = useState<string | null>(rules.length > 0 ? rules[0].id : null);
   
-  const [showNewRuleForm, setShowNewRuleForm] = useState(false);
-  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
-
-  const handleAddCondition = (ruleId: string | null) => {
-    const newCondition = {
-      id: `condition-${Date.now()}`,
-      property: availableProperties[0]?.id || '',
-      operator: 'equals' as ConditionOperator,
-      value: ''
-    };
-    
-    if (ruleId === null) {
-      // Adding to the new rule form
-      setNewRule({
-        ...newRule,
-        conditions: [...(newRule.conditions || []), newCondition]
-      });
-    } else {
-      // Adding to an existing rule
-      const rule = rules.find(r => r.id === ruleId);
-      if (rule && onRuleUpdate) {
-        onRuleUpdate(ruleId, {
-          conditions: [...rule.conditions, newCondition]
-        });
-      }
-    }
-  };
-  
-  const handleRemoveCondition = (ruleId: string | null, conditionId: string) => {
-    if (ruleId === null) {
-      // Removing from new rule form
-      setNewRule({
-        ...newRule,
-        conditions: (newRule.conditions || []).filter(c => c.id !== conditionId)
-      });
-    } else {
-      // Removing from existing rule
-      const rule = rules.find(r => r.id === ruleId);
-      if (rule && onRuleUpdate) {
-        onRuleUpdate(ruleId, {
-          conditions: rule.conditions.filter(c => c.id !== conditionId)
-        });
-      }
-    }
-  };
-  
-  const handleUpdateCondition = (
-    ruleId: string | null, 
-    conditionId: string, 
-    updates: Partial<Condition>
-  ) => {
-    if (ruleId === null) {
-      // Updating in new rule form
-      setNewRule({
-        ...newRule,
-        conditions: (newRule.conditions || []).map(c => 
-          c.id === conditionId ? { ...c, ...updates } : c
-        )
-      });
-    } else {
-      // Updating in existing rule
-      const rule = rules.find(r => r.id === ruleId);
-      if (rule && onRuleUpdate) {
-        onRuleUpdate(ruleId, {
-          conditions: rule.conditions.map(c => 
-            c.id === conditionId ? { ...c, ...updates } : c
-          )
-        });
-      }
-    }
-  };
-  
-  const handleCreateRule = () => {
-    if (!newRule.name || !newRule.effect?.type) return;
-    
-    const ruleToCreate: ConditionalRule = {
+  const addNewRule = () => {
+    const newRule: ConditionalRule = {
       id: `rule-${Date.now()}`,
-      name: newRule.name,
-      enabled: newRule.enabled || true,
-      conditions: newRule.conditions || [],
-      logic: newRule.logic || 'and',
-      effect: newRule.effect as ConditionalRule['effect']
+      name: `Rule ${rules.length + 1}`,
+      logicGroups: [
+        {
+          id: `group-${Date.now()}`,
+          type: 'and',
+          conditions: [
+            {
+              id: `condition-${Date.now()}`,
+              field: availableFields[0] || 'field',
+              operator: 'equals',
+              value: ''
+            }
+          ]
+        }
+      ],
+      action: {
+        type: 'show',
+        target: availableTargets[0] || 'target',
+        value: true
+      },
+      enabled: true
     };
     
-    onRuleCreate?.(ruleToCreate);
-    setNewRule({
-      name: '',
-      enabled: true,
-      conditions: [],
-      logic: 'and',
-      effect: { type: 'visibility', action: 'show' }
-    });
-    setShowNewRuleForm(false);
+    onRuleChange([...rules, newRule]);
+    setSelectedRule(newRule.id);
   };
-
-  const getOperatorOptions = (propertyType: string) => {
-    const commonOptions = [
-      { value: 'equals', label: 'Equals' },
-      { value: 'notEquals', label: 'Not Equals' }
-    ];
+  
+  const deleteRule = (ruleId: string) => {
+    const updatedRules = rules.filter(rule => rule.id !== ruleId);
+    onRuleChange(updatedRules);
     
-    switch (propertyType) {
-      case 'string':
-        return [
-          ...commonOptions,
-          { value: 'contains', label: 'Contains' },
-          { value: 'isEmpty', label: 'Is Empty' },
-          { value: 'isNotEmpty', label: 'Is Not Empty' }
-        ];
-      case 'number':
-        return [
-          ...commonOptions,
-          { value: 'greaterThan', label: 'Greater Than' },
-          { value: 'lessThan', label: 'Less Than' }
-        ];
-      case 'boolean':
-        return [
-          { value: 'isTrue', label: 'Is True' },
-          { value: 'isFalse', label: 'Is False' }
-        ];
-      default:
-        return commonOptions;
+    if (selectedRule === ruleId) {
+      setSelectedRule(updatedRules.length > 0 ? updatedRules[0].id : null);
     }
   };
-
-  const getActionOptions = (effectType: string) => {
-    switch (effectType) {
-      case 'visibility':
-        return [
-          { value: 'show', label: 'Show' },
-          { value: 'hide', label: 'Hide' }
-        ];
-      case 'style':
-        return [
-          { value: 'addClass', label: 'Add Class' },
-          { value: 'removeClass', label: 'Remove Class' },
-          { value: 'setStyle', label: 'Set Style' }
-        ];
-      case 'behavior':
-        return [
-          { value: 'enable', label: 'Enable' },
-          { value: 'disable', label: 'Disable' },
-          { value: 'trigger', label: 'Trigger Action' }
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const renderConditionForm = (
-    condition: Condition,
-    index: number,
-    ruleId: string | null
-  ) => {
-    const propertyType = availableProperties.find(p => p.id === condition.property)?.type || 'string';
-    const operators = getOperatorOptions(propertyType);
-
-    return (
-      <div key={condition.id} className="p-3 bg-muted/40 rounded-md mb-2 border">
-        <div className="flex items-center justify-between mb-2">
-          <Badge variant="outline">{`Condition ${index + 1}`}</Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleRemoveCondition(ruleId, condition.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="grid gap-2">
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <Label className="text-xs">Property</Label>
-              <Select
-                value={condition.property}
-                onValueChange={(value) => 
-                  handleUpdateCondition(ruleId, condition.id, { property: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select property" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableProperties.map(prop => (
-                    <SelectItem key={prop.id} value={prop.id}>
-                      {prop.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label className="text-xs">Operator</Label>
-              <Select
-                value={condition.operator}
-                onValueChange={(value) => 
-                  handleUpdateCondition(ruleId, condition.id, { 
-                    operator: value as ConditionOperator 
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select operator" />
-                </SelectTrigger>
-                <SelectContent>
-                  {operators.map(op => (
-                    <SelectItem key={op.value} value={op.value}>
-                      {op.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label className="text-xs">Value</Label>
-              {propertyType === 'boolean' ? (
-                <Select
-                  value={String(condition.value)}
-                  onValueChange={(value) => 
-                    handleUpdateCondition(ruleId, condition.id, { 
-                      value: value === 'true' 
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select value" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">True</SelectItem>
-                    <SelectItem value="false">False</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  value={condition.value}
-                  onChange={(e) => 
-                    handleUpdateCondition(ruleId, condition.id, { 
-                      value: propertyType === 'number' 
-                        ? Number(e.target.value) 
-                        : e.target.value 
-                    })
-                  }
-                  type={propertyType === 'number' ? 'number' : 'text'}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+  
+  const updateRule = (updatedRule: ConditionalRule) => {
+    const updatedRules = rules.map(rule => 
+      rule.id === updatedRule.id ? updatedRule : rule
     );
+    onRuleChange(updatedRules);
   };
-
+  
+  const addCondition = (ruleId: string, groupId: string) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    const updatedGroups = rule.logicGroups.map(group => {
+      if (group.id === groupId) {
+        return {
+          ...group,
+          conditions: [
+            ...group.conditions,
+            {
+              id: `condition-${Date.now()}`,
+              field: availableFields[0] || 'field',
+              operator: 'equals',
+              value: ''
+            }
+          ]
+        };
+      }
+      return group;
+    });
+    
+    updateRule({
+      ...rule,
+      logicGroups: updatedGroups
+    });
+  };
+  
+  const addLogicGroup = (ruleId: string) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    const newGroup: LogicGroup = {
+      id: `group-${Date.now()}`,
+      type: 'and',
+      conditions: [
+        {
+          id: `condition-${Date.now()}`,
+          field: availableFields[0] || 'field',
+          operator: 'equals',
+          value: ''
+        }
+      ]
+    };
+    
+    updateRule({
+      ...rule,
+      logicGroups: [...rule.logicGroups, newGroup]
+    });
+  };
+  
+  const updateCondition = (ruleId: string, groupId: string, conditionId: string, updates: Partial<Condition>) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    const updatedGroups = rule.logicGroups.map(group => {
+      if (group.id === groupId) {
+        return {
+          ...group,
+          conditions: group.conditions.map(condition => {
+            if (condition.id === conditionId) {
+              return { ...condition, ...updates };
+            }
+            return condition;
+          })
+        };
+      }
+      return group;
+    });
+    
+    updateRule({
+      ...rule,
+      logicGroups: updatedGroups
+    });
+  };
+  
+  const deleteCondition = (ruleId: string, groupId: string, conditionId: string) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    const updatedGroups = rule.logicGroups.map(group => {
+      if (group.id === groupId) {
+        return {
+          ...group,
+          conditions: group.conditions.filter(c => c.id !== conditionId)
+        };
+      }
+      return group;
+    });
+    
+    // Don't allow empty condition groups
+    const finalGroups = updatedGroups.filter(group => group.conditions.length > 0);
+    
+    updateRule({
+      ...rule,
+      logicGroups: finalGroups.length > 0 ? finalGroups : [{
+        id: `group-${Date.now()}`,
+        type: 'and',
+        conditions: [{
+          id: `condition-${Date.now()}`,
+          field: availableFields[0] || 'field',
+          operator: 'equals',
+          value: ''
+        }]
+      }]
+    });
+  };
+  
+  const updateGroupType = (ruleId: string, groupId: string, type: 'and' | 'or') => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    const updatedGroups = rule.logicGroups.map(group => {
+      if (group.id === groupId) {
+        return { ...group, type };
+      }
+      return group;
+    });
+    
+    updateRule({
+      ...rule,
+      logicGroups: updatedGroups
+    });
+  };
+  
+  const updateAction = (ruleId: string, updates: Partial<ConditionalRule['action']>) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    updateRule({
+      ...rule,
+      action: { ...rule.action, ...updates }
+    });
+  };
+  
+  const toggleRuleEnabled = (ruleId: string) => {
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) return;
+    
+    updateRule({
+      ...rule,
+      enabled: !rule.enabled
+    });
+  };
+  
+  const selectedRuleData = selectedRule ? rules.find(r => r.id === selectedRule) : null;
+  
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold flex items-center">
-          <Condition className="h-5 w-5 mr-2" />
-          Conditional Logic
-        </h3>
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => setShowNewRuleForm(!showNewRuleForm)}
-        >
-          {showNewRuleForm ? 'Cancel' : (
-            <>
-              <Plus className="h-4 w-4 mr-1" /> Add Rule
-            </>
-          )}
-        </Button>
+    <div className="space-y-6 w-full">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-medium">Conditional Logic Rules</h3>
+          <p className="text-sm text-muted-foreground">Define rules for component behavior based on conditions</p>
+        </div>
+        <Button onClick={addNewRule} size="sm">Add Rule</Button>
       </div>
-
-      {showNewRuleForm && (
+      
+      {rules.length === 0 ? (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md">Create New Rule</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Rule Name</Label>
-                  <Input 
-                    value={newRule.name} 
-                    onChange={(e) => setNewRule({...newRule, name: e.target.value})}
-                    placeholder="Enter rule name..."
-                  />
-                </div>
-                <div>
-                  <Label>Logic Type</Label>
-                  <Select
-                    value={newRule.logic}
-                    onValueChange={(value) => 
-                      setNewRule({...newRule, logic: value as ConditionLogic})
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="and">AND (All conditions must match)</SelectItem>
-                      <SelectItem value="or">OR (Any condition can match)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Conditions</Label>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleAddCondition(null)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Add Condition
-                  </Button>
-                </div>
-                
-                {(newRule.conditions || []).length === 0 ? (
-                  <div className="text-center p-4 border rounded-md bg-muted/40 text-muted-foreground">
-                    No conditions added yet. Add at least one condition.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {(newRule.conditions || []).map((condition, index) => 
-                      renderConditionForm(condition, index, null)
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Effect Type</Label>
-                  <Select
-                    value={newRule.effect?.type}
-                    onValueChange={(value) => 
-                      setNewRule({
-                        ...newRule, 
-                        effect: { 
-                          ...newRule.effect!, 
-                          type: value as ConditionalRule['effect']['type'],
-                          action: getActionOptions(value)[0]?.value || ''
-                        }
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="visibility">Visibility</SelectItem>
-                      <SelectItem value="style">Style</SelectItem>
-                      <SelectItem value="behavior">Behavior</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>Action</Label>
-                  <Select
-                    value={newRule.effect?.action}
-                    onValueChange={(value) => 
-                      setNewRule({
-                        ...newRule, 
-                        effect: { ...newRule.effect!, action: value }
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getActionOptions(newRule.effect?.type || 'visibility').map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {newRule.effect?.type === 'style' && (
-                  <div>
-                    <Label>Value</Label>
-                    <Input
-                      value={newRule.effect?.value || ''}
-                      onChange={(e) => 
-                        setNewRule({
-                          ...newRule, 
-                          effect: { ...newRule.effect!, value: e.target.value }
-                        })
-                      }
-                      placeholder={
-                        newRule.effect?.action === 'addClass' || newRule.effect?.action === 'removeClass'
-                          ? "Class name"
-                          : "CSS property: value"
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setShowNewRuleForm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateRule}>
-                  Create Rule
-                </Button>
-              </div>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center justify-center text-center p-4">
+              <GitBranch className="h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4">No Rules Defined</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Create your first conditional rule to control how components behave based on specific criteria.
+              </p>
+              <Button onClick={addNewRule} className="mt-4">Create Rule</Button>
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {rules.length === 0 ? (
-        <div className="text-center p-8 border rounded-lg text-muted-foreground">
-          No conditional rules defined yet. Add a rule to get started.
-        </div>
       ) : (
-        <Accordion type="multiple" className="space-y-2">
-          {rules.map(rule => (
-            <AccordionItem 
-              key={rule.id} 
-              value={rule.id}
-              className="border rounded-md overflow-hidden"
-            >
-              <AccordionTrigger className="px-4 hover:bg-accent/20">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    {rule.effect.type === 'visibility' ? (
-                      rule.effect.action === 'show' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />
-                    ) : rule.effect.type === 'style' ? (
-                      <Filter className="h-4 w-4" />
-                    ) : (
-                      <Condition className="h-4 w-4" />
-                    )}
-                    <span>{rule.name}</span>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="col-span-1">
+            <Card className="h-full">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm font-medium">Rules</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ul className="space-y-1">
+                  {rules.map(rule => (
+                    <li key={rule.id}>
+                      <div 
+                        className={`flex items-center p-2 rounded-md text-sm cursor-pointer ${
+                          selectedRule === rule.id ? 'bg-primary/10' : 'hover:bg-muted'
+                        }`}
+                        onClick={() => setSelectedRule(rule.id)}
+                      >
+                        <span className="flex-1">{rule.name}</span>
+                        <span className="mr-2">
+                          {rule.enabled ? 
+                            <CircleCheck className="h-4 w-4 text-green-500" /> : 
+                            <CircleX className="h-4 w-4 text-red-500" />
+                          }
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="col-span-1 md:col-span-3">
+            {selectedRuleData ? (
+              <Card>
+                <CardHeader className="py-4 flex flex-row items-center">
+                  <div className="flex flex-col flex-1">
+                    <div className="flex items-center">
+                      <Input 
+                        value={selectedRuleData.name} 
+                        onChange={(e) => updateRule({
+                          ...selectedRuleData,
+                          name: e.target.value
+                        })}
+                        className="h-7 text-base font-medium border-none shadow-none focus-visible:ring-0 p-0 mr-2"
+                      />
+                      <div className="flex items-center space-x-2 ml-auto">
+                        <Switch 
+                          id="rule-enabled"
+                          checked={selectedRuleData.enabled}
+                          onCheckedChange={() => toggleRuleEnabled(selectedRuleData.id)}
+                        />
+                        <Label htmlFor="rule-enabled" className="text-xs">Enabled</Label>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Logic Groups */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium flex items-center">
+                        <LayoutList className="h-4 w-4 mr-2" />
+                        Conditions
+                      </h4>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => addLogicGroup(selectedRuleData.id)}
+                      >
+                        Add Group
+                      </Button>
+                    </div>
                     
-                    <Badge 
-                      variant={rule.logic === 'and' ? 'outline' : 'secondary'} 
-                      className="ml-2"
-                    >
-                      {rule.logic === 'and' ? (
-                        <LogicAnd className="h-3 w-3 mr-1" />
-                      ) : (
-                        <LogicOr className="h-3 w-3 mr-1" />
-                      )}
-                      {rule.logic.toUpperCase()}
-                    </Badge>
+                    {selectedRuleData.logicGroups.map((group, groupIndex) => (
+                      <div key={group.id} className="border rounded-md p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Select
+                            value={group.type}
+                            onValueChange={(value) => updateGroupType(
+                              selectedRuleData.id, 
+                              group.id, 
+                              value as 'and' | 'or'
+                            )}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="and">AND</SelectItem>
+                              <SelectItem value="or">OR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          
+                          {groupIndex > 0 && (
+                            <span className="text-sm text-muted-foreground">OR</span>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {group.conditions.map((condition, index) => (
+                            <div key={condition.id} className="grid grid-cols-12 gap-2 items-center">
+                              <div className="col-span-3">
+                                <Select
+                                  value={condition.field}
+                                  onValueChange={(value) => updateCondition(
+                                    selectedRuleData.id, 
+                                    group.id, 
+                                    condition.id, 
+                                    { field: value }
+                                  )}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableFields.map(field => (
+                                      <SelectItem key={field} value={field}>
+                                        {field}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div className="col-span-3">
+                                <Select
+                                  value={condition.operator}
+                                  onValueChange={(value) => updateCondition(
+                                    selectedRuleData.id, 
+                                    group.id, 
+                                    condition.id, 
+                                    { operator: value as Condition['operator'] }
+                                  )}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="equals">equals</SelectItem>
+                                    <SelectItem value="notEquals">not equals</SelectItem>
+                                    <SelectItem value="contains">contains</SelectItem>
+                                    <SelectItem value="greaterThan">greater than</SelectItem>
+                                    <SelectItem value="lessThan">less than</SelectItem>
+                                    <SelectItem value="isEmpty">is empty</SelectItem>
+                                    <SelectItem value="isNotEmpty">is not empty</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div className="col-span-4">
+                                {!['isEmpty', 'isNotEmpty'].includes(condition.operator) && (
+                                  <Input
+                                    value={condition.value}
+                                    onChange={(e) => updateCondition(
+                                      selectedRuleData.id, 
+                                      group.id, 
+                                      condition.id, 
+                                      { value: e.target.value }
+                                    )}
+                                    placeholder="Value"
+                                  />
+                                )}
+                              </div>
+                              
+                              <div className="col-span-2 flex justify-end space-x-1">
+                                {index === group.conditions.length - 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => addCondition(selectedRuleData.id, group.id)}
+                                    className="h-8 w-8"
+                                  >
+                                    <span className="sr-only">Add condition</span>
+                                    +
+                                  </Button>
+                                )}
+                                
+                                {group.conditions.length > 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => deleteCondition(selectedRuleData.id, group.id, condition.id)}
+                                    className="h-8 w-8 text-red-500 hover:text-red-600"
+                                  >
+                                    <span className="sr-only">Delete condition</span>
+                                    ×
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   
-                  <div className="flex items-center mr-8">
-                    <Switch
-                      checked={rule.enabled}
-                      onCheckedChange={(checked) => onRuleToggle?.(rule.id, checked)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                </div>
-              </AccordionTrigger>
-              
-              <AccordionContent>
-                <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs font-medium mb-1">Effect Type</p>
-                      <p className="capitalize">{rule.effect.type}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium mb-1">Action</p>
-                      <p className="capitalize">{rule.effect.action}</p>
-                    </div>
-                    {rule.effect.value && (
-                      <div>
-                        <p className="text-xs font-medium mb-1">Value</p>
-                        <p>{rule.effect.value}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium">Conditions</h4>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAddCondition(rule.id)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add
-                      </Button>
+                  {/* Actions */}
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <Settings className="h-4 w-4 mr-2" />
+                      <h4 className="text-sm font-medium">Action</h4>
                     </div>
                     
-                    {rule.conditions.map((condition, index) => 
-                      renderConditionForm(condition, index, rule.id)
-                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                      <div className="md:col-span-3">
+                        <Select
+                          value={selectedRuleData.action.type}
+                          onValueChange={(value) => updateAction(
+                            selectedRuleData.id, 
+                            { type: value as ConditionalRule['action']['type'] }
+                          )}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="show">Show</SelectItem>
+                            <SelectItem value="hide">Hide</SelectItem>
+                            <SelectItem value="style">Set Style</SelectItem>
+                            <SelectItem value="property">Set Property</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="md:col-span-3">
+                        <Select
+                          value={selectedRuleData.action.target}
+                          onValueChange={(value) => updateAction(selectedRuleData.id, { target: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Target" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableTargets.map(target => (
+                              <SelectItem key={target} value={target}>
+                                {target}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {['style', 'property'].includes(selectedRuleData.action.type) && (
+                        <div className="md:col-span-3">
+                          <Input
+                            value={selectedRuleData.action.property || ''}
+                            onChange={(e) => updateAction(selectedRuleData.id, { property: e.target.value })}
+                            placeholder={selectedRuleData.action.type === 'style' ? 'color' : 'visible'}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="md:col-span-3">
+                        {['show', 'hide'].includes(selectedRuleData.action.type) ? (
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="action-value"
+                              checked={!!selectedRuleData.action.value}
+                              onCheckedChange={(checked) => updateAction(selectedRuleData.id, { value: checked })}
+                            />
+                            <Label htmlFor="action-value">
+                              {selectedRuleData.action.type === 'show' ? 'Visible' : 'Hidden'}
+                            </Label>
+                          </div>
+                        ) : (
+                          <Input
+                            value={selectedRuleData.action.value || ''}
+                            onChange={(e) => updateAction(selectedRuleData.id, { value: e.target.value })}
+                            placeholder="Value"
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="flex justify-end gap-2 pt-2">
+                  
+                  <div className="flex justify-between pt-4 border-t">
                     <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => onRuleDelete?.(rule.id)}
+                      variant="outline"
+                      onClick={() => deleteRule(selectedRuleData.id)}
+                      className="text-red-500 hover:text-red-600"
                     >
-                      <Trash2 className="h-4 w-4 mr-1" /> Delete Rule
+                      Delete Rule
                     </Button>
-                    {editingRuleId === rule.id && (
-                      <Button onClick={() => setEditingRuleId(null)}>
-                        Update Rule
-                      </Button>
-                    )}
                   </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center justify-center text-center p-4">
+                    <GitBranch className="h-10 w-10 text-muted-foreground" />
+                    <h3 className="mt-4">Select a Rule</h3>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Select a rule from the list or create a new one to get started.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

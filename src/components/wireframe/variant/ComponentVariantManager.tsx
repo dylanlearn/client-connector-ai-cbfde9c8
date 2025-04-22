@@ -1,300 +1,395 @@
 
 import React, { useState } from 'react';
-import { Check, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { ComponentVariant } from '@/components/wireframe/registry/component-types';
-import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { WireframeComponent } from '@/types/wireframe-component';
+
+export type PropertyType = "string" | "number" | "boolean" | "color" | "select";
 
 export interface VariantProperty {
   id: string;
   name: string;
-  value: string | number | boolean;
-  type: 'string' | 'number' | 'boolean' | 'color' | 'select';
-  isOverride: boolean; // Indicates if this property overrides a base property
+  value: any;
+  type: PropertyType;
+  isOverride: boolean;
 }
 
-export interface VariantManagementProps {
-  componentType: string;
+export interface ComponentVariant {
+  id: string;
+  name: string;
+  description?: string;
+  properties: VariantProperty[];
+  baseComponentId?: string; // Reference to parent component if this is a variant
+  isBase?: boolean;
+}
+
+export interface ComponentVariantManagerProps {
+  components: WireframeComponent[];
   variants: ComponentVariant[];
-  baseProperties: Record<string, any>;
-  onVariantCreate?: (variant: Partial<ComponentVariant>) => void;
-  onVariantUpdate?: (id: string, updates: Partial<ComponentVariant>) => void;
-  onVariantDelete?: (id: string) => void;
-  onVariantSelect?: (id: string) => void;
-  selectedVariantId?: string;
+  activeVariantId?: string;
+  onVariantCreate?: (variant: ComponentVariant) => void;
+  onVariantUpdate?: (variant: ComponentVariant) => void;
+  onVariantDelete?: (variantId: string) => void;
+  onVariantSelect?: (variantId: string) => void;
+  baseStyles?: Record<string, any>;
 }
 
-export const ComponentVariantManager: React.FC<VariantManagementProps> = ({
-  componentType,
+const ComponentVariantManager: React.FC<ComponentVariantManagerProps> = ({
+  components = [],
   variants = [],
-  baseProperties = {},
+  activeVariantId,
   onVariantCreate,
   onVariantUpdate,
   onVariantDelete,
   onVariantSelect,
-  selectedVariantId
+  baseStyles = {}
 }) => {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newVariant, setNewVariant] = useState<Partial<ComponentVariant>>({
-    id: '',
-    name: '',
-    description: ''
-  });
-  const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [newVariantName, setNewVariantName] = useState('');
+  const [newVariantDescription, setNewVariantDescription] = useState('');
+  const [activeTabId, setActiveTabId] = useState<string>(variants.length > 0 ? variants[0].id : '');
+
+  // Find the base component - the one that's not a variant
+  const baseVariant = variants.find(v => v.isBase) || variants[0];
 
   const handleCreateVariant = () => {
-    if (!newVariant.name) return;
-    
-    const variantToCreate = {
-      ...newVariant,
-      id: newVariant.id || `${componentType}-variant-${Date.now()}`,
-      // Clone base properties as starting point
-      defaultData: { ...baseProperties }
+    if (!newVariantName) return;
+
+    const newVariant: ComponentVariant = {
+      id: `variant-${Date.now()}`,
+      name: newVariantName,
+      description: newVariantDescription,
+      properties: [],
+      baseComponentId: baseVariant?.id
     };
-    
-    onVariantCreate?.(variantToCreate);
-    setNewVariant({ id: '', name: '', description: '' });
-    setShowAddDialog(false);
+
+    onVariantCreate?.(newVariant);
+    setNewVariantName('');
+    setNewVariantDescription('');
+    setActiveTabId(newVariant.id);
   };
 
-  const renderPropertyValue = (value: any, type: string) => {
-    if (type === 'boolean') {
-      return value ? 'True' : 'False';
-    } else if (type === 'color') {
-      return (
-        <div className="flex items-center gap-2">
-          <div 
-            className="w-4 h-4 rounded-full border border-gray-300" 
-            style={{ backgroundColor: value }}
+  const handleUpdateVariant = (variantId: string, updates: Partial<ComponentVariant>) => {
+    const variant = variants.find(v => v.id === variantId);
+    if (!variant) return;
+
+    onVariantUpdate?.({
+      ...variant,
+      ...updates
+    });
+  };
+
+  const handleDeleteVariant = (variantId: string) => {
+    onVariantDelete?.(variantId);
+    if (activeTabId === variantId) {
+      setActiveTabId(variants.filter(v => v.id !== variantId)[0]?.id || '');
+    }
+  };
+
+  const handlePropertyChange = (
+    variantId: string, 
+    propertyId: string, 
+    updates: Partial<VariantProperty>
+  ) => {
+    const variant = variants.find(v => v.id === variantId);
+    if (!variant) return;
+
+    const updatedProperties = variant.properties.map(prop => 
+      prop.id === propertyId ? { ...prop, ...updates } : prop
+    );
+
+    onVariantUpdate?.({
+      ...variant,
+      properties: updatedProperties
+    });
+  };
+
+  const handleAddProperty = (variantId: string) => {
+    const variant = variants.find(v => v.id === variantId);
+    if (!variant) return;
+
+    const newProperty: VariantProperty = {
+      id: `prop-${Date.now()}`,
+      name: "newProperty",
+      value: "",
+      type: "string",
+      isOverride: true
+    };
+
+    onVariantUpdate?.({
+      ...variant,
+      properties: [...variant.properties, newProperty]
+    });
+  };
+
+  const handleDeleteProperty = (variantId: string, propertyId: string) => {
+    const variant = variants.find(v => v.id === variantId);
+    if (!variant) return;
+
+    onVariantUpdate?.({
+      ...variant,
+      properties: variant.properties.filter(prop => prop.id !== propertyId)
+    });
+  };
+
+  const getPropertyValueInput = (property: VariantProperty, variantId: string) => {
+    switch (property.type) {
+      case "boolean":
+        return (
+          <Switch
+            checked={Boolean(property.value)}
+            onCheckedChange={(checked) => 
+              handlePropertyChange(variantId, property.id, { value: checked })
+            }
           />
-          <span>{value}</span>
-        </div>
-      );
-    } else {
-      return String(value);
+        );
+      case "number":
+        return (
+          <Input
+            type="number"
+            value={property.value || ""}
+            onChange={(e) => 
+              handlePropertyChange(variantId, property.id, { value: parseFloat(e.target.value) || 0 })
+            }
+          />
+        );
+      case "color":
+        return (
+          <div className="flex items-center space-x-2">
+            <div
+              className="w-6 h-6 rounded-full border"
+              style={{ backgroundColor: property.value }}
+            />
+            <Input
+              type="text"
+              value={property.value || ""}
+              onChange={(e) => 
+                handlePropertyChange(variantId, property.id, { value: e.target.value })
+              }
+            />
+          </div>
+        );
+      default:
+        return (
+          <Input
+            type="text"
+            value={property.value || ""}
+            onChange={(e) => 
+              handlePropertyChange(variantId, property.id, { value: e.target.value })
+            }
+          />
+        );
     }
   };
-
-  // Gets all properties from a variant, including inherited ones
-  const getVariantProperties = (variant: ComponentVariant): VariantProperty[] => {
-    if (!variant) return [];
-    
-    // Start with base properties
-    const properties: VariantProperty[] = Object.entries(baseProperties).map(([key, value]) => ({
-      id: key,
-      name: key,
-      value: value,
-      type: typeof value === 'boolean' 
-        ? 'boolean' 
-        : typeof value === 'number' 
-          ? 'number' 
-          : key.toLowerCase().includes('color') 
-            ? 'color' 
-            : 'string',
-      isOverride: false
-    }));
-    
-    // Add/override with variant-specific properties
-    if (variant.defaultData) {
-      Object.entries(variant.defaultData).forEach(([key, value]) => {
-        const existingIndex = properties.findIndex(p => p.id === key);
-        const propertyData = {
-          id: key,
-          name: key,
-          value: value,
-          type: typeof value === 'boolean' 
-            ? 'boolean' 
-            : typeof value === 'number' 
-              ? 'number' 
-              : key.toLowerCase().includes('color') 
-                ? 'color' 
-                : 'string',
-          isOverride: existingIndex >= 0 // It's an override if it already exists in base properties
-        };
-        
-        if (existingIndex >= 0) {
-          properties[existingIndex] = propertyData;
-        } else {
-          properties.push(propertyData);
-        }
-      });
-    }
-    
-    return properties;
-  };
-  
-  const selectedVariant = variants.find(v => v.id === selectedVariantId);
-  const variantProperties = selectedVariant ? getVariantProperties(selectedVariant) : [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Component Variants</h3>
-        
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-1" /> Add Variant
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Variant</DialogTitle>
-              <DialogDescription>
-                Add a new variant for this component type with custom properties.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="variant-name" className="text-right">Name</Label>
-                <Input 
-                  id="variant-name" 
-                  className="col-span-3" 
-                  value={newVariant.name}
-                  onChange={e => setNewVariant({...newVariant, name: e.target.value})}
+    <div className="space-y-4 w-full">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Component Variants</CardTitle>
+          <CardDescription>
+            Define and manage different variants of components with property inheritance
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {variants.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-6">
+              <p className="text-muted-foreground mb-4">No variants defined yet</p>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="new-variant">Create your first variant</Label>
+                <Input
+                  id="new-variant"
+                  placeholder="Variant name"
+                  value={newVariantName}
+                  onChange={(e) => setNewVariantName(e.target.value)}
                 />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="variant-desc" className="text-right">Description</Label>
-                <Input 
-                  id="variant-desc" 
-                  className="col-span-3" 
-                  value={newVariant.description || ''}
-                  onChange={e => setNewVariant({...newVariant, description: e.target.value})}
+                <Input
+                  placeholder="Optional description"
+                  value={newVariantDescription}
+                  onChange={(e) => setNewVariantDescription(e.target.value)}
+                  className="mt-2"
                 />
+                <Button
+                  onClick={handleCreateVariant}
+                  disabled={!newVariantName}
+                  className="mt-3"
+                >
+                  Create Variant
+                </Button>
               </div>
             </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button onClick={handleCreateVariant}>Create Variant</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        {variants.map((variant) => (
-          <Badge 
-            key={variant.id}
-            variant={selectedVariantId === variant.id ? "default" : "outline"} 
-            className={cn(
-              "cursor-pointer hover:bg-primary/10 group flex items-center gap-1",
-              selectedVariantId === variant.id && "hover:bg-primary/90"
-            )}
-            onClick={() => onVariantSelect?.(variant.id)}
-          >
-            {variant.name}
-            {selectedVariantId === variant.id && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 p-0 ml-1 opacity-70 hover:opacity-100 hover:bg-red-500/20 hover:text-red-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onVariantDelete?.(variant.id);
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete variant</TooltipContent>
-              </Tooltip>
-            )}
-          </Badge>
-        ))}
-      </div>
-
-      {selectedVariant ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md">{selectedVariant.name} Properties</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Override</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {variantProperties.map((prop) => (
-                  <TableRow key={prop.id} className={prop.isOverride ? "bg-primary/5" : ""}>
-                    <TableCell>{prop.name}</TableCell>
-                    <TableCell>{renderPropertyValue(prop.value, prop.type)}</TableCell>
-                    <TableCell>{prop.type}</TableCell>
-                    <TableCell className="text-right">
-                      <Switch 
-                        checked={prop.isOverride} 
-                        onCheckedChange={(checked) => {
-                          if (selectedVariant && onVariantUpdate) {
-                            const updatedData = { ...selectedVariant.defaultData };
-                            if (checked) {
-                              // Add override
-                              updatedData[prop.name] = baseProperties[prop.name];
-                            } else {
-                              // Remove override
-                              delete updatedData[prop.name];
+          ) : (
+            <div className="space-y-4">
+              <Tabs
+                value={activeTabId}
+                onValueChange={(value) => {
+                  setActiveTabId(value);
+                  onVariantSelect?.(value);
+                }}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <TabsList>
+                    {variants.map(variant => (
+                      <TabsTrigger
+                        key={variant.id}
+                        value={variant.id}
+                        className={variant.isBase ? "font-semibold" : ""}
+                      >
+                        {variant.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="New variant name"
+                      value={newVariantName}
+                      onChange={(e) => setNewVariantName(e.target.value)}
+                      className="w-48 h-8"
+                    />
+                    <Button
+                      onClick={handleCreateVariant}
+                      disabled={!newVariantName}
+                      size="sm"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                
+                {variants.map(variant => (
+                  <TabsContent key={variant.id} value={variant.id} className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            value={variant.name}
+                            onChange={(e) => 
+                              handleUpdateVariant(variant.id, { name: e.target.value })
                             }
-                            
-                            onVariantUpdate(selectedVariant.id, { 
-                              defaultData: updatedData 
-                            });
+                            className="w-48 font-medium"
+                          />
+                          {!variant.isBase && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteVariant(variant.id)}
+                            >
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                        <Input
+                          value={variant.description || ''}
+                          onChange={(e) => 
+                            handleUpdateVariant(variant.id, { description: e.target.value })
                           }
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
+                          placeholder="Variant description"
+                          className="w-full text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-sm font-medium">Properties</h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddProperty(variant.id)}
+                        >
+                          Add Property
+                        </Button>
+                      </div>
+                      
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[200px]">Name</TableHead>
+                            <TableHead className="w-[100px]">Type</TableHead>
+                            <TableHead>Value</TableHead>
+                            <TableHead className="w-[100px]">Override</TableHead>
+                            <TableHead className="w-[80px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {variant.properties.map(property => (
+                            <TableRow key={property.id}>
+                              <TableCell>
+                                <Input
+                                  value={property.name}
+                                  onChange={(e) => 
+                                    handlePropertyChange(variant.id, property.id, { name: e.target.value })
+                                  }
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <select
+                                  value={property.type}
+                                  onChange={(e) => 
+                                    handlePropertyChange(
+                                      variant.id, 
+                                      property.id, 
+                                      { type: e.target.value as PropertyType }
+                                    )
+                                  }
+                                  className="w-full h-8 rounded-md border border-input px-3 py-1"
+                                >
+                                  <option value="string">String</option>
+                                  <option value="number">Number</option>
+                                  <option value="boolean">Boolean</option>
+                                  <option value="color">Color</option>
+                                  <option value="select">Select</option>
+                                </select>
+                              </TableCell>
+                              <TableCell>
+                                {getPropertyValueInput(property, variant.id)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  <Switch
+                                    checked={property.isOverride}
+                                    onCheckedChange={(checked) => 
+                                      handlePropertyChange(variant.id, property.id, { isOverride: checked })
+                                    }
+                                    disabled={variant.isBase}
+                                  />
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteProperty(variant.id, property.id)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  ×
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {variant.properties.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={5} className="h-24 text-center">
+                                No properties defined
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
                 ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="text-center p-8 text-muted-foreground border rounded-lg">
-          Select a variant to view and manage its properties
-        </div>
-      )}
+              </Tabs>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
