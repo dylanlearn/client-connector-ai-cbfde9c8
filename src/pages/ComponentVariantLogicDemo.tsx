@@ -1,370 +1,351 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Check, Layout, Layers, Settings } from 'lucide-react';
-import ComponentVariantManager, { ComponentVariant } from '@/components/wireframe/variant/ComponentVariantManager';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ComponentVariantManager from '@/components/wireframe/variant/ComponentVariantManager';
 import ConditionalLogicSystem, { ConditionalRule } from '@/components/wireframe/condition/ConditionalLogicSystem';
+import { Plus, Settings, Check, AlertCircle, ArrowUpDown } from 'lucide-react';
 import { WireframeComponent } from '@/types/wireframe-component';
+import { useComponentVariantLogic } from '@/hooks/wireframe/use-component-variant-logic';
 
-type ComponentSize = 'sm' | 'md' | 'lg';
-
-// Extended WireframeComponent for demo purposes
-interface DemoComponent extends WireframeComponent {
-  size: ComponentSize;
-  style?: Record<string, any>;
+// Create an extended version of WireframeComponent for our demo
+interface DemoComponent extends Omit<WireframeComponent, 'size'> {
+  size: { width: number; height: number } | { width: string; height: string };
+  styling?: {
+    backgroundColor?: string;
+    borderColor?: string;
+    textColor?: string;
+    padding?: string;
+    rounded?: boolean;
+    shadow?: string;
+  };
 }
 
 const ComponentVariantLogicDemo: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("variants");
-  const [variants, setVariants] = useState<ComponentVariant[]>([
-    {
-      id: 'base-variant',
-      name: 'Default',
-      description: 'Default component styling',
-      properties: [
-        { id: 'prop-1', name: 'backgroundColor', value: '#f3f4f6', type: 'color', isOverride: true },
-        { id: 'prop-2', name: 'textColor', value: '#111827', type: 'color', isOverride: true },
-        { id: 'prop-3', name: 'borderRadius', value: '8', type: 'number', isOverride: true },
-        { id: 'prop-4', name: 'showIcon', value: true, type: 'boolean', isOverride: true },
-      ],
-      isBase: true
+  const [activeTab, setActiveTab] = useState('variants');
+  const [activeComponent, setActiveComponent] = useState<DemoComponent>({
+    id: 'demo-component',
+    type: 'box',
+    position: { x: 0, y: 0 },
+    size: { width: 300, height: 200 },
+    zIndex: 1,
+    props: {
+      text: 'Demo Component',
+      showIcon: true,
+      emphasis: 'medium'
     },
-    {
-      id: 'variant-2',
-      name: 'Primary',
-      description: 'Primary action styling',
-      properties: [
-        { id: 'prop-5', name: 'backgroundColor', value: '#2563eb', type: 'color', isOverride: true },
-        { id: 'prop-6', name: 'textColor', value: '#ffffff', type: 'color', isOverride: true },
-      ],
-      baseComponentId: 'base-variant'
-    },
-    {
-      id: 'variant-3',
-      name: 'Danger',
-      description: 'Destructive action styling',
-      properties: [
-        { id: 'prop-7', name: 'backgroundColor', value: '#ef4444', type: 'color', isOverride: true },
-        { id: 'prop-8', name: 'textColor', value: '#ffffff', type: 'color', isOverride: true },
-      ],
-      baseComponentId: 'base-variant'
+    visible: true,
+    styling: {
+      backgroundColor: '#f9fafb',
+      borderColor: '#e5e7eb',
+      textColor: '#1f2937',
+      padding: '1rem',
+      rounded: true,
+      shadow: 'sm'
     }
-  ]);
-  
+  });
+
+  const [variants, setVariants] = useState<Record<string, any>>({
+    'default': {
+      props: {
+        text: 'Default Variant',
+        showIcon: true,
+        emphasis: 'medium'
+      },
+      styling: {
+        backgroundColor: '#f9fafb',
+        borderColor: '#e5e7eb',
+        textColor: '#1f2937'
+      }
+    },
+    'primary': {
+      props: {
+        text: 'Primary Variant',
+        showIcon: true,
+        emphasis: 'high'
+      },
+      styling: {
+        backgroundColor: '#eff6ff',
+        borderColor: '#3b82f6',
+        textColor: '#1e40af'
+      }
+    },
+    'danger': {
+      props: {
+        text: 'Danger Variant',
+        showIcon: true,
+        emphasis: 'high'
+      },
+      styling: {
+        backgroundColor: '#fef2f2',
+        borderColor: '#ef4444',
+        textColor: '#b91c1c'
+      }
+    }
+  });
+
   const [rules, setRules] = useState<ConditionalRule[]>([
     {
       id: 'rule-1',
-      name: 'Show icon based on size',
+      name: 'Show Primary on Important',
+      active: true,
       logicGroups: [
         {
           id: 'group-1',
-          type: 'or',
-          conditions: [
-            { id: 'condition-1', field: 'size', operator: 'equals', value: 'md' },
-            { id: 'condition-2', field: 'size', operator: 'equals', value: 'lg' }
-          ]
-        }
-      ],
-      action: {
-        type: 'property',
-        target: 'button',
-        property: 'showIcon',
-        value: true
-      },
-      enabled: true
-    },
-    {
-      id: 'rule-2',
-      name: 'Use Primary variant for large buttons',
-      logicGroups: [
-        {
-          id: 'group-2',
           type: 'and',
           conditions: [
-            { id: 'condition-3', field: 'size', operator: 'equals', value: 'lg' }
+            {
+              id: 'condition-1',
+              field: 'props.emphasis',
+              operator: 'equals',
+              value: 'high'
+            }
           ]
         }
       ],
-      action: {
+      effect: {
         type: 'property',
-        target: 'button',
-        property: 'variant',
-        value: 'Primary'
-      },
-      enabled: true
+        target: 'component',
+        value: 'primary',
+        property: 'componentVariant'
+      }
     }
   ]);
-  
-  const [demoComponent, setDemoComponent] = useState<DemoComponent>({
-    id: 'demo-button',
-    type: 'button',
-    position: { x: 0, y: 0 },
-    size: 'md',
-    zIndex: 1,
-    style: {
-      backgroundColor: '#f3f4f6',
-      color: '#111827',
-      borderRadius: '8px',
-      padding: '12px 24px',
-      font: 'inherit',
-      cursor: 'pointer',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: 'none',
-      fontWeight: '500',
-      transition: 'all 0.2s ease'
-    }
-  });
-  
-  const [activeVariant, setActiveVariant] = useState<string>('base-variant');
-  const [showIcon, setShowIcon] = useState<boolean>(false);
-  
-  // Apply conditional rules to the component
+
+  // Setup the condition logic hook
+  const logic = useComponentVariantLogic(rules);
+
+  // Update our local rules state when the hook's rules change
   useEffect(() => {
-    if (!demoComponent) return;
+    setRules(logic.rules);
+  }, [logic.rules]);
+
+  // Handle variant selection change
+  const handleVariantChange = (variantName: string) => {
+    const newComponent = { ...activeComponent };
+    const selectedVariant = variants[variantName];
     
-    const enabledRules = rules.filter(rule => rule.enabled);
+    // Apply variant properties
+    newComponent.componentVariant = variantName;
     
-    // Start with default properties from the base variant
-    const baseVariant = variants.find(v => v.isBase);
-    let appliedVariant = baseVariant;
-    let updatedShowIcon = baseVariant?.properties.find(p => p.name === 'showIcon')?.value || false;
-    
-    // Apply all matching rules
-    for (const rule of enabledRules) {
-      const matches = evaluateRule(rule, demoComponent);
-      
-      if (matches) {
-        if (rule.action.type === 'property') {
-          if (rule.action.property === 'variant') {
-            // Apply a different variant
-            const variantToApply = variants.find(v => v.name === rule.action.value);
-            if (variantToApply) {
-              appliedVariant = variantToApply;
-            }
-          } else if (rule.action.property === 'showIcon') {
-            updatedShowIcon = Boolean(rule.action.value);
-          }
-        }
-      }
+    if (selectedVariant.props) {
+      newComponent.props = {
+        ...newComponent.props,
+        ...selectedVariant.props
+      };
     }
     
-    setActiveVariant(appliedVariant?.id || 'base-variant');
-    setShowIcon(updatedShowIcon);
-    
-    // Update component style based on variant properties
-    if (appliedVariant) {
-      setDemoComponent(prev => {
-        const updatedStyle = { ...prev.style };
-        
-        appliedVariant?.properties.forEach(prop => {
-          if (prop.name === 'backgroundColor') {
-            updatedStyle.backgroundColor = prop.value;
-          } else if (prop.name === 'textColor') {
-            updatedStyle.color = prop.value;
-          } else if (prop.name === 'borderRadius') {
-            updatedStyle.borderRadius = `${prop.value}px`;
-          }
-        });
-        
-        return {
-          ...prev,
-          style: updatedStyle
-        };
-      });
+    if (selectedVariant.styling) {
+      newComponent.styling = {
+        ...newComponent.styling,
+        ...selectedVariant.styling
+      };
     }
-  }, [demoComponent.size, rules, variants]);
-  
-  const evaluateRule = (rule: ConditionalRule, component: DemoComponent): boolean => {
-    // If any logic group matches, the rule matches
-    return rule.logicGroups.some(group => {
-      if (group.type === 'and') {
-        // All conditions must match
-        return group.conditions.every(condition => evaluateCondition(condition, component));
-      } else {
-        // At least one condition must match
-        return group.conditions.some(condition => evaluateCondition(condition, component));
-      }
+    
+    setActiveComponent(newComponent);
+  };
+
+  // Handle property changes in the component
+  const handlePropertyChange = (property: string, value: any) => {
+    const path = property.split('.');
+    const newComponent = { ...activeComponent };
+    
+    let current: any = newComponent;
+    for (let i = 0; i < path.length - 1; i++) {
+      const key = path[i];
+      if (!current[key]) current[key] = {};
+      current = current[key];
+    }
+    
+    current[path[path.length - 1]] = value;
+    
+    // Apply conditional logic effects
+    const effects = logic.evaluateRules({
+      ...newComponent,
+      props: newComponent.props || {}
     });
-  };
-  
-  const evaluateCondition = (
-    condition: { field: string; operator: string; value: any; },
-    component: DemoComponent
-  ): boolean => {
-    const componentValue = component[condition.field as keyof DemoComponent];
+    const updatedComponent = logic.applyEffects(effects, newComponent);
     
-    switch (condition.operator) {
-      case 'equals':
-        return componentValue === condition.value;
-      case 'notEquals':
-        return componentValue !== condition.value;
-      case 'contains':
-        return String(componentValue).includes(String(condition.value));
-      case 'greaterThan':
-        return Number(componentValue) > Number(condition.value);
-      case 'lessThan':
-        return Number(componentValue) < Number(condition.value);
-      case 'isEmpty':
-        return !componentValue || (Array.isArray(componentValue) && componentValue.length === 0);
-      case 'isNotEmpty':
-        return !!componentValue && (!Array.isArray(componentValue) || componentValue.length > 0);
-      default:
-        return false;
-    }
+    setActiveComponent(updatedComponent as DemoComponent);
   };
-  
-  const handleSizeChange = (size: ComponentSize) => {
-    setDemoComponent(prev => ({
-      ...prev,
-      size
-    }));
+
+  // Update conditional rules
+  const handleRulesUpdate = (updatedRules: ConditionalRule[]) => {
+    setRules(updatedRules);
+    
+    // Re-evaluate with the new rules
+    const effects = logic.evaluateRules({
+      ...activeComponent,
+      props: activeComponent.props || {}
+    });
+    const updatedComponent = logic.applyEffects(effects, activeComponent);
+    
+    setActiveComponent(updatedComponent as DemoComponent);
   };
-  
+
+  // Demo component render based on current state
+  const renderDemoComponent = () => {
+    const { styling = {}, props = {} } = activeComponent;
+    
+    return (
+      <div 
+        className={`
+          border p-4 mb-4
+          ${styling.rounded ? 'rounded-lg' : ''}
+          ${styling.shadow === 'sm' ? 'shadow-sm' : 
+            styling.shadow === 'md' ? 'shadow-md' : 
+            styling.shadow === 'lg' ? 'shadow-lg' : ''}
+        `}
+        style={{
+          backgroundColor: styling.backgroundColor || '#fff',
+          borderColor: styling.borderColor || '#e5e7eb',
+          color: styling.textColor || '#000',
+          padding: styling.padding || '1rem',
+          width: typeof activeComponent.size.width === 'number' 
+            ? `${activeComponent.size.width}px` 
+            : activeComponent.size.width,
+          height: typeof activeComponent.size.height === 'number'
+            ? `${activeComponent.size.height}px`
+            : activeComponent.size.height,
+          display: activeComponent.visible ? 'block' : 'none'
+        }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-medium">{props.text || 'Component'}</h3>
+          {props.showIcon && (
+            props.emphasis === 'high' ? (
+              <AlertCircle className="h-5 w-5" />
+            ) : props.emphasis === 'medium' ? (
+              <ArrowUpDown className="h-5 w-5" />
+            ) : (
+              <Check className="h-5 w-5" />
+            )
+          )}
+        </div>
+        <div className="text-sm">
+          <p>Current variant: <strong>{activeComponent.componentVariant || 'none'}</strong></p>
+          <p>Emphasis level: <strong>{props.emphasis || 'low'}</strong></p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Component Variant & Logic System</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="variants" className="flex-1">
-                <Layers className="w-4 h-4 mr-2" /> Component Variants
+        <div className="lg:col-span-2 space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="variants">
+                Component Variants
               </TabsTrigger>
-              <TabsTrigger value="logic" className="flex-1">
-                <Layout className="w-4 h-4 mr-2" /> Conditional Logic
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex-1">
-                <Settings className="w-4 h-4 mr-2" /> Component Settings
+              <TabsTrigger value="conditions">
+                Conditional Logic
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="variants" className="pt-6">
-              <ComponentVariantManager
-                components={[]}
+            <TabsContent value="variants">
+              <ComponentVariantManager 
                 variants={variants}
-                activeVariantId={activeVariant}
-                onVariantCreate={(variant) => setVariants([...variants, variant])}
-                onVariantUpdate={(updatedVariant) => {
-                  setVariants(variants.map(v => v.id === updatedVariant.id ? updatedVariant : v));
-                }}
-                onVariantDelete={(variantId) => {
-                  setVariants(variants.filter(v => v.id !== variantId));
-                }}
-                onVariantSelect={setActiveVariant}
+                onVariantsChange={setVariants}
               />
             </TabsContent>
             
-            <TabsContent value="logic" className="pt-6">
-              <ConditionalLogicSystem
+            <TabsContent value="conditions">
+              <ConditionalLogicSystem 
                 rules={rules}
-                onRuleChange={setRules}
-                availableFields={['size', 'type', 'position', 'zIndex']}
-                availableTargets={['button', 'container', 'text', 'image']}
+                onRulesChange={handleRulesUpdate}
+                availableFields={[
+                  'props.text',
+                  'props.showIcon',
+                  'props.emphasis',
+                  'visible',
+                  'componentVariant'
+                ]}
               />
-            </TabsContent>
-            
-            <TabsContent value="settings" className="pt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Component Settings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium">Size</h3>
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={() => handleSizeChange('sm')}
-                          variant={demoComponent.size === 'sm' ? "default" : "outline"}
-                          size="sm"
-                        >
-                          Small
-                        </Button>
-                        <Button
-                          onClick={() => handleSizeChange('md')}
-                          variant={demoComponent.size === 'md' ? "default" : "outline"}
-                          size="sm"
-                        >
-                          Medium
-                        </Button>
-                        <Button
-                          onClick={() => handleSizeChange('lg')}
-                          variant={demoComponent.size === 'lg' ? "default" : "outline"}
-                          size="sm"
-                        >
-                          Large
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </div>
         
         <div>
-          <Card className="h-full">
+          <Card>
             <CardHeader>
-              <CardTitle>Preview</CardTitle>
+              <CardTitle className="flex justify-between items-center">
+                <span>Component Preview</span>
+                <Select
+                  value={activeComponent.componentVariant || 'default'}
+                  onValueChange={handleVariantChange}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select variant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(variants).map(variant => (
+                      <SelectItem key={variant} value={variant}>
+                        {variant}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center h-full space-y-6">
-                <div className="p-8 border rounded-lg flex items-center justify-center">
-                  <button
-                    style={{
-                      ...demoComponent.style,
-                      padding: demoComponent.size === 'sm' ? '8px 16px' : 
-                              demoComponent.size === 'md' ? '12px 24px' : '16px 32px',
-                      fontSize: demoComponent.size === 'sm' ? '0.875rem' : 
-                               demoComponent.size === 'md' ? '1rem' : '1.125rem',
-                    }}
-                  >
-                    {showIcon && <Check className="mr-2 h-4 w-4" />}
-                    Demo Button
-                  </button>
-                </div>
+            <CardContent className="space-y-4">
+              {renderDemoComponent()}
+              
+              <div className="space-y-4 pt-4 border-t">
+                <h3 className="font-medium">Properties</h3>
                 
-                <Card className="w-full">
-                  <CardContent className="pt-6">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Current Size:</span>
-                        <span className="font-medium capitalize">{demoComponent.size}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Active Variant:</span>
-                        <span className="font-medium">{variants.find(v => v.id === activeVariant)?.name}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Show Icon:</span>
-                        <span className="font-medium">{showIcon ? 'Yes' : 'No'}</span>
-                      </div>
-                      <Separator />
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Background:</span>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: demoComponent.style?.backgroundColor }}
-                          />
-                          <span>{demoComponent.style?.backgroundColor}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <div className="text-sm text-muted-foreground text-center">
-                  <p>Try changing the size to see how conditional logic affects the component.</p>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="component-text">Text</Label>
+                    <Input
+                      id="component-text"
+                      value={activeComponent.props?.text || ''}
+                      onChange={(e) => handlePropertyChange('props.text', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="show-icon"
+                      checked={!!activeComponent.props?.showIcon}
+                      onCheckedChange={(checked) => handlePropertyChange('props.showIcon', checked)}
+                    />
+                    <Label htmlFor="show-icon">Show Icon</Label>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="emphasis-level">Emphasis Level</Label>
+                    <Select
+                      value={activeComponent.props?.emphasis || 'low'}
+                      onValueChange={(value) => handlePropertyChange('props.emphasis', value)}
+                    >
+                      <SelectTrigger id="emphasis-level">
+                        <SelectValue placeholder="Select emphasis" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="component-visible"
+                      checked={activeComponent.visible}
+                      onCheckedChange={(checked) => handlePropertyChange('visible', checked)}
+                    />
+                    <Label htmlFor="component-visible">Visible</Label>
+                  </div>
                 </div>
               </div>
             </CardContent>

@@ -1,56 +1,81 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CircleCheck, CircleX, GitBranch, LayoutList, Settings } from 'lucide-react';
+import { Check, X, Plus, Trash2, Settings2, SlidersHorizontal } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+// Define specific operator types to avoid string type errors
+export type ConditionOperator = 
+  | "equals" 
+  | "notEquals" 
+  | "contains" 
+  | "greaterThan" 
+  | "lessThan" 
+  | "isEmpty" 
+  | "isNotEmpty"
+  | "isTrue"
+  | "isFalse";
+
+// Define the structure of a single condition
 export interface Condition {
   id: string;
   field: string;
-  operator: 'equals' | 'notEquals' | 'contains' | 'greaterThan' | 'lessThan' | 'isEmpty' | 'isNotEmpty';
-  value: any;
+  operator: ConditionOperator;
+  value: string | number | boolean;
 }
 
+// Define the structure of a logic group
 export interface LogicGroup {
   id: string;
   type: 'and' | 'or';
   conditions: Condition[];
 }
 
+// Define effect types that can be applied when conditions are met
+export type EffectType = 'show' | 'hide' | 'style' | 'class' | 'property';
+
+// Define the structure of effects applied when conditions are met
+export interface Effect {
+  type: EffectType;
+  target: string;
+  value: any;
+  property?: string;
+}
+
+// Define the complete conditional rule structure
 export interface ConditionalRule {
   id: string;
   name: string;
   logicGroups: LogicGroup[];
-  action: {
-    type: 'show' | 'hide' | 'style' | 'property';
-    target: string;
-    property?: string;
-    value: any;
-  };
-  enabled: boolean;
+  effect: Effect;
+  active: boolean;
 }
 
 interface ConditionalLogicSystemProps {
-  rules: ConditionalRule[];
-  onRuleChange: (rules: ConditionalRule[]) => void;
+  rules?: ConditionalRule[];
+  onRulesChange?: (rules: ConditionalRule[]) => void;
   availableFields?: string[];
-  availableTargets?: string[];
 }
 
-const ConditionalLogicSystem: React.FC<ConditionalLogicSystemProps> = ({
-  rules = [],
-  onRuleChange,
-  availableFields = ['title', 'subtitle', 'content', 'image', 'button'],
-  availableTargets = ['section', 'heading', 'button', 'image', 'container']
+export const ConditionalLogicSystem: React.FC<ConditionalLogicSystemProps> = ({
+  rules: initialRules = [],
+  onRulesChange,
+  availableFields = ['text', 'visible', 'enabled', 'size', 'color', 'style']
 }) => {
-  const [selectedRule, setSelectedRule] = useState<string | null>(rules.length > 0 ? rules[0].id : null);
-  
-  const addNewRule = () => {
+  const [rules, setRules] = useState<ConditionalRule[]>(initialRules);
+
+  const handleAddRule = () => {
     const newRule: ConditionalRule = {
       id: `rule-${Date.now()}`,
       name: `Rule ${rules.length + 1}`,
@@ -61,512 +86,506 @@ const ConditionalLogicSystem: React.FC<ConditionalLogicSystemProps> = ({
           conditions: [
             {
               id: `condition-${Date.now()}`,
-              field: availableFields[0] || 'field',
+              field: availableFields[0] || 'text',
               operator: 'equals',
               value: ''
             }
           ]
         }
       ],
-      action: {
-        type: 'show',
-        target: availableTargets[0] || 'target',
-        value: true
+      effect: {
+        type: 'style',
+        target: 'component',
+        value: 'bg-blue-500',
+        property: 'backgroundColor'
       },
-      enabled: true
+      active: true
     };
-    
-    onRuleChange([...rules, newRule]);
-    setSelectedRule(newRule.id);
+
+    const updatedRules = [...rules, newRule];
+    setRules(updatedRules);
+    onRulesChange?.(updatedRules);
   };
-  
-  const deleteRule = (ruleId: string) => {
-    const updatedRules = rules.filter(rule => rule.id !== ruleId);
-    onRuleChange(updatedRules);
-    
-    if (selectedRule === ruleId) {
-      setSelectedRule(updatedRules.length > 0 ? updatedRules[0].id : null);
-    }
+
+  const handleRuleChange = (index: number, rule: ConditionalRule) => {
+    const updatedRules = [...rules];
+    updatedRules[index] = rule;
+    setRules(updatedRules);
+    onRulesChange?.(updatedRules);
   };
-  
-  const updateRule = (updatedRule: ConditionalRule) => {
-    const updatedRules = rules.map(rule => 
-      rule.id === updatedRule.id ? updatedRule : rule
-    );
-    onRuleChange(updatedRules);
+
+  const handleDeleteRule = (index: number) => {
+    const updatedRules = rules.filter((_, i) => i !== index);
+    setRules(updatedRules);
+    onRulesChange?.(updatedRules);
   };
-  
-  const addCondition = (ruleId: string, groupId: string) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
-    const updatedGroups = rule.logicGroups.map(group => {
-      if (group.id === groupId) {
-        return {
-          ...group,
-          conditions: [
-            ...group.conditions,
-            {
-              id: `condition-${Date.now()}`,
-              field: availableFields[0] || 'field',
-              operator: 'equals',
-              value: ''
-            }
-          ]
-        };
-      }
-      return group;
-    });
-    
-    updateRule({
-      ...rule,
-      logicGroups: updatedGroups
-    });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Conditional Logic Rules</h2>
+        <Button onClick={handleAddRule}>
+          <Plus className="mr-2 h-4 w-4" /> Add Rule
+        </Button>
+      </div>
+
+      {rules.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            <p>No rules defined yet. Click "Add Rule" to create your first conditional rule.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {rules.map((rule, index) => (
+            <RuleCard
+              key={rule.id}
+              rule={rule}
+              availableFields={availableFields}
+              onChange={(updatedRule) => handleRuleChange(index, updatedRule)}
+              onDelete={() => handleDeleteRule(index)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface RuleCardProps {
+  rule: ConditionalRule;
+  availableFields: string[];
+  onChange: (rule: ConditionalRule) => void;
+  onDelete: () => void;
+}
+
+const RuleCard: React.FC<RuleCardProps> = ({
+  rule,
+  availableFields,
+  onChange,
+  onDelete
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...rule, name: e.target.value });
   };
-  
-  const addLogicGroup = (ruleId: string) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
+
+  const handleActiveChange = (checked: boolean) => {
+    onChange({ ...rule, active: checked });
+  };
+
+  const handleAddLogicGroup = () => {
     const newGroup: LogicGroup = {
       id: `group-${Date.now()}`,
       type: 'and',
       conditions: [
         {
           id: `condition-${Date.now()}`,
-          field: availableFields[0] || 'field',
+          field: availableFields[0] || 'text',
           operator: 'equals',
           value: ''
         }
       ]
     };
-    
-    updateRule({
+
+    onChange({
       ...rule,
       logicGroups: [...rule.logicGroups, newGroup]
     });
   };
-  
-  const updateCondition = (ruleId: string, groupId: string, conditionId: string, updates: Partial<Condition>) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
-    const updatedGroups = rule.logicGroups.map(group => {
-      if (group.id === groupId) {
-        return {
-          ...group,
-          conditions: group.conditions.map(condition => {
-            if (condition.id === conditionId) {
-              return { ...condition, ...updates };
-            }
-            return condition;
-          })
-        };
-      }
-      return group;
-    });
-    
-    updateRule({
-      ...rule,
-      logicGroups: updatedGroups
-    });
+
+  const handleLogicGroupChange = (index: number, group: LogicGroup) => {
+    const updatedGroups = [...rule.logicGroups];
+    updatedGroups[index] = group;
+    onChange({ ...rule, logicGroups: updatedGroups });
   };
-  
-  const deleteCondition = (ruleId: string, groupId: string, conditionId: string) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
-    const updatedGroups = rule.logicGroups.map(group => {
-      if (group.id === groupId) {
-        return {
-          ...group,
-          conditions: group.conditions.filter(c => c.id !== conditionId)
-        };
-      }
-      return group;
-    });
-    
-    // Don't allow empty condition groups
-    const finalGroups = updatedGroups.filter(group => group.conditions.length > 0);
-    
-    updateRule({
-      ...rule,
-      logicGroups: finalGroups.length > 0 ? finalGroups : [{
-        id: `group-${Date.now()}`,
-        type: 'and',
-        conditions: [{
-          id: `condition-${Date.now()}`,
-          field: availableFields[0] || 'field',
-          operator: 'equals',
-          value: ''
-        }]
-      }]
-    });
+
+  const handleLogicGroupDelete = (index: number) => {
+    if (rule.logicGroups.length <= 1) return;
+    const updatedGroups = rule.logicGroups.filter((_, i) => i !== index);
+    onChange({ ...rule, logicGroups: updatedGroups });
   };
-  
-  const updateGroupType = (ruleId: string, groupId: string, type: 'and' | 'or') => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
-    const updatedGroups = rule.logicGroups.map(group => {
-      if (group.id === groupId) {
-        return { ...group, type };
-      }
-      return group;
-    });
-    
-    updateRule({
-      ...rule,
-      logicGroups: updatedGroups
-    });
+
+  const handleEffectChange = (effect: Effect) => {
+    onChange({ ...rule, effect });
   };
-  
-  const updateAction = (ruleId: string, updates: Partial<ConditionalRule['action']>) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
-    updateRule({
-      ...rule,
-      action: { ...rule.action, ...updates }
-    });
-  };
-  
-  const toggleRuleEnabled = (ruleId: string) => {
-    const rule = rules.find(r => r.id === ruleId);
-    if (!rule) return;
-    
-    updateRule({
-      ...rule,
-      enabled: !rule.enabled
-    });
-  };
-  
-  const selectedRuleData = selectedRule ? rules.find(r => r.id === selectedRule) : null;
-  
+
   return (
-    <div className="space-y-6 w-full">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium">Conditional Logic Rules</h3>
-          <p className="text-sm text-muted-foreground">Define rules for component behavior based on conditions</p>
+    <Card className={rule.active ? 'border-primary' : 'border-muted'}>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <div className="flex-1">
+            <Input
+              value={rule.name}
+              onChange={handleNameChange}
+              className="text-lg font-bold h-8 p-2"
+            />
+          </div>
+          <div className="flex items-center gap-2 ml-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={rule.active}
+                onCheckedChange={handleActiveChange}
+                id={`rule-active-${rule.id}`}
+              />
+              <Label htmlFor={`rule-active-${rule.id}`} className="cursor-pointer">
+                {rule.active ? 'Active' : 'Inactive'}
+              </Label>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
         </div>
-        <Button onClick={addNewRule} size="sm">Add Rule</Button>
-      </div>
+      </CardHeader>
       
-      {rules.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center text-center p-4">
-              <GitBranch className="h-10 w-10 text-muted-foreground" />
-              <h3 className="mt-4">No Rules Defined</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                Create your first conditional rule to control how components behave based on specific criteria.
-              </p>
-              <Button onClick={addNewRule} className="mt-4">Create Rule</Button>
+      {isExpanded && (
+        <>
+          <CardContent className="pb-3 pt-0 space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">When these conditions are met:</h4>
+                {rule.logicGroups.length > 1 && (
+                  <p className="text-sm text-muted-foreground">Logic groups are combined with OR operator</p>
+                )}
+              </div>
+              
+              {rule.logicGroups.map((group, index) => (
+                <LogicGroupCard
+                  key={group.id}
+                  group={group}
+                  availableFields={availableFields}
+                  onChange={(updatedGroup) => handleLogicGroupChange(index, updatedGroup)}
+                  onDelete={() => handleLogicGroupDelete(index)}
+                  showDelete={rule.logicGroups.length > 1}
+                />
+              ))}
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddLogicGroup}
+                className="w-full mt-2"
+              >
+                <Plus className="mr-2 h-3 w-3" /> Add Logic Group (OR)
+              </Button>
+            </div>
+
+            <div className="pt-4 border-t">
+              <h4 className="font-medium mb-3">Then apply this effect:</h4>
+              <EffectEditor
+                effect={rule.effect}
+                onChange={handleEffectChange}
+              />
             </div>
           </CardContent>
-        </Card>
+        </>
+      )}
+    </Card>
+  );
+};
+
+interface LogicGroupCardProps {
+  group: LogicGroup;
+  availableFields: string[];
+  onChange: (group: LogicGroup) => void;
+  onDelete: () => void;
+  showDelete: boolean;
+}
+
+const LogicGroupCard: React.FC<LogicGroupCardProps> = ({
+  group,
+  availableFields,
+  onChange,
+  onDelete,
+  showDelete
+}) => {
+  const handleTypeChange = (type: 'and' | 'or') => {
+    onChange({ ...group, type });
+  };
+
+  const handleAddCondition = () => {
+    const newCondition: Condition = {
+      id: `condition-${Date.now()}`,
+      field: availableFields[0] || 'text',
+      operator: 'equals',
+      value: ''
+    };
+
+    onChange({
+      ...group,
+      conditions: [...group.conditions, newCondition]
+    });
+  };
+
+  const handleConditionChange = (index: number, condition: Condition) => {
+    const updatedConditions = [...group.conditions];
+    updatedConditions[index] = condition;
+    onChange({ ...group, conditions: updatedConditions });
+  };
+
+  const handleConditionDelete = (index: number) => {
+    if (group.conditions.length <= 1) return;
+    const updatedConditions = group.conditions.filter((_, i) => i !== index);
+    onChange({ ...group, conditions: updatedConditions });
+  };
+
+  return (
+    <Card className="bg-muted/30">
+      <CardContent className="p-3 space-y-3">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Logic:</span>
+            <div className="flex rounded-md overflow-hidden">
+              <Button
+                size="sm"
+                variant={group.type === 'and' ? 'default' : 'outline'}
+                className="rounded-none rounded-l-md px-2 py-1 h-8"
+                onClick={() => handleTypeChange('and')}
+              >
+                AND
+              </Button>
+              <Button
+                size="sm"
+                variant={group.type === 'or' ? 'default' : 'outline'}
+                className="rounded-none rounded-r-md px-2 py-1 h-8"
+                onClick={() => handleTypeChange('or')}
+              >
+                OR
+              </Button>
+            </div>
+          </div>
+          {showDelete && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onDelete}>
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {group.conditions.map((condition, index) => (
+            <ConditionEditor
+              key={condition.id}
+              condition={condition}
+              availableFields={availableFields}
+              onChange={(updatedCondition) => handleConditionChange(index, updatedCondition)}
+              onDelete={() => handleConditionDelete(index)}
+              showDelete={group.conditions.length > 1}
+            />
+          ))}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleAddCondition}
+            className="w-full mt-2 border border-dashed"
+          >
+            <Plus className="mr-1 h-3 w-3" /> Add Condition
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface ConditionEditorProps {
+  condition: Condition;
+  availableFields: string[];
+  onChange: (condition: Condition) => void;
+  onDelete: () => void;
+  showDelete: boolean;
+}
+
+const ConditionEditor: React.FC<ConditionEditorProps> = ({
+  condition,
+  availableFields,
+  onChange,
+  onDelete,
+  showDelete
+}) => {
+  const operators: { value: ConditionOperator; label: string }[] = [
+    { value: 'equals', label: 'Equals' },
+    { value: 'notEquals', label: 'Not Equals' },
+    { value: 'contains', label: 'Contains' },
+    { value: 'greaterThan', label: 'Greater Than' },
+    { value: 'lessThan', label: 'Less Than' },
+    { value: 'isEmpty', label: 'Is Empty' },
+    { value: 'isNotEmpty', label: 'Is Not Empty' },
+    { value: 'isTrue', label: 'Is True' },
+    { value: 'isFalse', label: 'Is False' }
+  ];
+
+  const handleFieldChange = (value: string) => {
+    onChange({ ...condition, field: value });
+  };
+
+  const handleOperatorChange = (value: ConditionOperator) => {
+    onChange({ ...condition, operator: value });
+  };
+
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...condition, value: e.target.value });
+  };
+
+  const needsValueInput = !['isEmpty', 'isNotEmpty', 'isTrue', 'isFalse'].includes(condition.operator);
+
+  return (
+    <div className="flex gap-2 items-center">
+      <div className="w-1/3">
+        <Select
+          value={condition.field}
+          onValueChange={handleFieldChange}
+        >
+          <SelectTrigger className="h-8">
+            <SelectValue placeholder="Select field" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableFields.map(field => (
+              <SelectItem key={field} value={field}>{field}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="w-1/3">
+        <Select
+          value={condition.operator}
+          onValueChange={handleOperatorChange as (value: string) => void}
+        >
+          <SelectTrigger className="h-8">
+            <SelectValue placeholder="Operator" />
+          </SelectTrigger>
+          <SelectContent>
+            {operators.map(op => (
+              <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {needsValueInput ? (
+        <div className="flex-1">
+          <Input
+            value={condition.value as string}
+            onChange={handleValueChange}
+            placeholder="Value"
+            className="h-8"
+          />
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="col-span-1">
-            <Card className="h-full">
-              <CardHeader className="py-3">
-                <CardTitle className="text-sm font-medium">Rules</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ul className="space-y-1">
-                  {rules.map(rule => (
-                    <li key={rule.id}>
-                      <div 
-                        className={`flex items-center p-2 rounded-md text-sm cursor-pointer ${
-                          selectedRule === rule.id ? 'bg-primary/10' : 'hover:bg-muted'
-                        }`}
-                        onClick={() => setSelectedRule(rule.id)}
-                      >
-                        <span className="flex-1">{rule.name}</span>
-                        <span className="mr-2">
-                          {rule.enabled ? 
-                            <CircleCheck className="h-4 w-4 text-green-500" /> : 
-                            <CircleX className="h-4 w-4 text-red-500" />
-                          }
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-          
-          <div className="col-span-1 md:col-span-3">
-            {selectedRuleData ? (
-              <Card>
-                <CardHeader className="py-4 flex flex-row items-center">
-                  <div className="flex flex-col flex-1">
-                    <div className="flex items-center">
-                      <Input 
-                        value={selectedRuleData.name} 
-                        onChange={(e) => updateRule({
-                          ...selectedRuleData,
-                          name: e.target.value
-                        })}
-                        className="h-7 text-base font-medium border-none shadow-none focus-visible:ring-0 p-0 mr-2"
-                      />
-                      <div className="flex items-center space-x-2 ml-auto">
-                        <Switch 
-                          id="rule-enabled"
-                          checked={selectedRuleData.enabled}
-                          onCheckedChange={() => toggleRuleEnabled(selectedRuleData.id)}
-                        />
-                        <Label htmlFor="rule-enabled" className="text-xs">Enabled</Label>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Logic Groups */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium flex items-center">
-                        <LayoutList className="h-4 w-4 mr-2" />
-                        Conditions
-                      </h4>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => addLogicGroup(selectedRuleData.id)}
-                      >
-                        Add Group
-                      </Button>
-                    </div>
-                    
-                    {selectedRuleData.logicGroups.map((group, groupIndex) => (
-                      <div key={group.id} className="border rounded-md p-3 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Select
-                            value={group.type}
-                            onValueChange={(value) => updateGroupType(
-                              selectedRuleData.id, 
-                              group.id, 
-                              value as 'and' | 'or'
-                            )}
-                          >
-                            <SelectTrigger className="w-[120px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="and">AND</SelectItem>
-                              <SelectItem value="or">OR</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                          {groupIndex > 0 && (
-                            <span className="text-sm text-muted-foreground">OR</span>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          {group.conditions.map((condition, index) => (
-                            <div key={condition.id} className="grid grid-cols-12 gap-2 items-center">
-                              <div className="col-span-3">
-                                <Select
-                                  value={condition.field}
-                                  onValueChange={(value) => updateCondition(
-                                    selectedRuleData.id, 
-                                    group.id, 
-                                    condition.id, 
-                                    { field: value }
-                                  )}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {availableFields.map(field => (
-                                      <SelectItem key={field} value={field}>
-                                        {field}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              <div className="col-span-3">
-                                <Select
-                                  value={condition.operator}
-                                  onValueChange={(value) => updateCondition(
-                                    selectedRuleData.id, 
-                                    group.id, 
-                                    condition.id, 
-                                    { operator: value as Condition['operator'] }
-                                  )}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="equals">equals</SelectItem>
-                                    <SelectItem value="notEquals">not equals</SelectItem>
-                                    <SelectItem value="contains">contains</SelectItem>
-                                    <SelectItem value="greaterThan">greater than</SelectItem>
-                                    <SelectItem value="lessThan">less than</SelectItem>
-                                    <SelectItem value="isEmpty">is empty</SelectItem>
-                                    <SelectItem value="isNotEmpty">is not empty</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              <div className="col-span-4">
-                                {!['isEmpty', 'isNotEmpty'].includes(condition.operator) && (
-                                  <Input
-                                    value={condition.value}
-                                    onChange={(e) => updateCondition(
-                                      selectedRuleData.id, 
-                                      group.id, 
-                                      condition.id, 
-                                      { value: e.target.value }
-                                    )}
-                                    placeholder="Value"
-                                  />
-                                )}
-                              </div>
-                              
-                              <div className="col-span-2 flex justify-end space-x-1">
-                                {index === group.conditions.length - 1 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => addCondition(selectedRuleData.id, group.id)}
-                                    className="h-8 w-8"
-                                  >
-                                    <span className="sr-only">Add condition</span>
-                                    +
-                                  </Button>
-                                )}
-                                
-                                {group.conditions.length > 1 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => deleteCondition(selectedRuleData.id, group.id, condition.id)}
-                                    className="h-8 w-8 text-red-500 hover:text-red-600"
-                                  >
-                                    <span className="sr-only">Delete condition</span>
-                                    ×
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Actions */}
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <Settings className="h-4 w-4 mr-2" />
-                      <h4 className="text-sm font-medium">Action</h4>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                      <div className="md:col-span-3">
-                        <Select
-                          value={selectedRuleData.action.type}
-                          onValueChange={(value) => updateAction(
-                            selectedRuleData.id, 
-                            { type: value as ConditionalRule['action']['type'] }
-                          )}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="show">Show</SelectItem>
-                            <SelectItem value="hide">Hide</SelectItem>
-                            <SelectItem value="style">Set Style</SelectItem>
-                            <SelectItem value="property">Set Property</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="md:col-span-3">
-                        <Select
-                          value={selectedRuleData.action.target}
-                          onValueChange={(value) => updateAction(selectedRuleData.id, { target: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Target" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableTargets.map(target => (
-                              <SelectItem key={target} value={target}>
-                                {target}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {['style', 'property'].includes(selectedRuleData.action.type) && (
-                        <div className="md:col-span-3">
-                          <Input
-                            value={selectedRuleData.action.property || ''}
-                            onChange={(e) => updateAction(selectedRuleData.id, { property: e.target.value })}
-                            placeholder={selectedRuleData.action.type === 'style' ? 'color' : 'visible'}
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="md:col-span-3">
-                        {['show', 'hide'].includes(selectedRuleData.action.type) ? (
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id="action-value"
-                              checked={!!selectedRuleData.action.value}
-                              onCheckedChange={(checked) => updateAction(selectedRuleData.id, { value: checked })}
-                            />
-                            <Label htmlFor="action-value">
-                              {selectedRuleData.action.type === 'show' ? 'Visible' : 'Hidden'}
-                            </Label>
-                          </div>
-                        ) : (
-                          <Input
-                            value={selectedRuleData.action.value || ''}
-                            onChange={(e) => updateAction(selectedRuleData.id, { value: e.target.value })}
-                            placeholder="Value"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between pt-4 border-t">
-                    <Button 
-                      variant="outline"
-                      onClick={() => deleteRule(selectedRuleData.id)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      Delete Rule
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center justify-center text-center p-4">
-                    <GitBranch className="h-10 w-10 text-muted-foreground" />
-                    <h3 className="mt-4">Select a Rule</h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Select a rule from the list or create a new one to get started.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        <div className="flex-1 h-8 flex items-center px-2 bg-muted rounded-md">
+          <span className="text-sm text-muted-foreground">No value needed</span>
+        </div>
+      )}
+
+      {showDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onDelete}
+          className="h-8 w-8 flex-shrink-0"
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  );
+};
+
+interface EffectEditorProps {
+  effect: Effect;
+  onChange: (effect: Effect) => void;
+}
+
+const EffectEditor: React.FC<EffectEditorProps> = ({
+  effect,
+  onChange
+}) => {
+  const effectTypes = [
+    { value: 'show', label: 'Show Element' },
+    { value: 'hide', label: 'Hide Element' },
+    { value: 'style', label: 'Apply Style' },
+    { value: 'class', label: 'Toggle Class' },
+    { value: 'property', label: 'Set Property' }
+  ];
+
+  const handleTypeChange = (value: string) => {
+    onChange({ ...effect, type: value as EffectType });
+  };
+
+  const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...effect, target: e.target.value });
+  };
+
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...effect, value: e.target.value });
+  };
+
+  const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ ...effect, property: e.target.value });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor="effect-type">Effect Type</Label>
+          <Select
+            value={effect.type}
+            onValueChange={handleTypeChange}
+          >
+            <SelectTrigger id="effect-type">
+              <SelectValue placeholder="Select effect" />
+            </SelectTrigger>
+            <SelectContent>
+              {effectTypes.map(type => (
+                <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <Label htmlFor="effect-target">Target Element</Label>
+          <Input
+            id="effect-target"
+            value={effect.target}
+            onChange={handleTargetChange}
+            placeholder="Element ID or selector"
+          />
+        </div>
+      </div>
+
+      {(effect.type === 'style' || effect.type === 'property') && (
+        <div>
+          <Label htmlFor="effect-property">Property Name</Label>
+          <Input
+            id="effect-property"
+            value={effect.property || ''}
+            onChange={handlePropertyChange}
+            placeholder={effect.type === 'style' ? 'backgroundColor' : 'enabled'}
+          />
+        </div>
+      )}
+
+      {effect.type !== 'show' && effect.type !== 'hide' && (
+        <div>
+          <Label htmlFor="effect-value">Value</Label>
+          <Input
+            id="effect-value"
+            value={effect.value}
+            onChange={handleValueChange}
+            placeholder={effect.type === 'class' ? 'active highlighted' : 
+                        effect.type === 'style' ? 'rgb(59, 130, 246)' : 'true'}
+          />
         </div>
       )}
     </div>
