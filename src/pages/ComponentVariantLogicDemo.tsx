@@ -1,109 +1,138 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ComponentVariantManager from '@/components/wireframe/variant/ComponentVariantManager';
-import ConditionalLogicSystem, { ConditionalRule } from '@/components/wireframe/condition/ConditionalLogicSystem';
-import { Plus, Settings, Check, AlertCircle, ArrowUpDown } from 'lucide-react';
+import { Check, ArrowRight, Sliders, Tag } from 'lucide-react';
+import { 
+  ConditionalRule, 
+  LogicGroup 
+} from '@/components/wireframe/condition/ConditionalLogicSystem';
 import { WireframeComponent } from '@/types/wireframe-component';
 import { useComponentVariantLogic } from '@/hooks/wireframe/use-component-variant-logic';
 
-// Create an extended version of WireframeComponent for our demo
+// Extended component type for demo purposes
 interface DemoComponent extends Omit<WireframeComponent, 'size'> {
-  size: { width: number; height: number } | { width: string; height: string };
-  styling?: {
-    backgroundColor?: string;
-    borderColor?: string;
-    textColor?: string;
-    padding?: string;
-    rounded?: boolean;
-    shadow?: string;
-  };
+  size: { width: number; height: number } | string; // Allow string sizes for demo
+  styling?: Record<string, any>; // Add styling property
+  variants?: ComponentVariant[]; // Add variants property
+  activeVariant?: string;
+}
+
+interface ComponentVariant {
+  id: string;
+  name: string;
+  styling: Record<string, any>;
+  properties?: Record<string, any>;
 }
 
 const ComponentVariantLogicDemo: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('variants');
-  const [activeComponent, setActiveComponent] = useState<DemoComponent>({
+  const [activeTab, setActiveTab] = useState('logic');
+  const [component, setComponent] = useState<DemoComponent>({
     id: 'demo-component',
     type: 'box',
     position: { x: 0, y: 0 },
-    size: { width: 300, height: 200 },
+    size: { width: 200, height: 100 },
     zIndex: 1,
-    props: {
-      text: 'Demo Component',
-      showIcon: true,
-      emphasis: 'medium'
-    },
     visible: true,
+    style: { backgroundColor: '#3498db', color: '#ffffff', padding: '1rem' },
     styling: {
-      backgroundColor: '#f9fafb',
-      borderColor: '#e5e7eb',
-      textColor: '#1f2937',
+      backgroundColor: '#3498db',
+      color: '#ffffff',
       padding: '1rem',
-      rounded: true,
-      shadow: 'sm'
-    }
+      borderRadius: '4px',
+    },
+    variants: [
+      {
+        id: 'default',
+        name: 'Default',
+        styling: {
+          backgroundColor: '#3498db',
+          color: '#ffffff',
+          padding: '1rem',
+          borderRadius: '4px',
+        }
+      },
+      {
+        id: 'success',
+        name: 'Success',
+        styling: {
+          backgroundColor: '#2ecc71',
+          color: '#ffffff',
+          padding: '1rem',
+          borderRadius: '4px',
+        }
+      },
+      {
+        id: 'warning',
+        name: 'Warning',
+        styling: {
+          backgroundColor: '#f39c12',
+          color: '#ffffff',
+          padding: '1rem',
+          borderRadius: '4px',
+        }
+      },
+      {
+        id: 'error',
+        name: 'Error',
+        styling: {
+          backgroundColor: '#e74c3c',
+          color: '#ffffff',
+          padding: '1rem',
+          borderRadius: '8px',
+          border: '2px solid #c0392b'
+        }
+      }
+    ],
+    activeVariant: 'default',
   });
 
-  const [variants, setVariants] = useState<Record<string, any>>({
-    'default': {
-      props: {
-        text: 'Default Variant',
-        showIcon: true,
-        emphasis: 'medium'
-      },
-      styling: {
-        backgroundColor: '#f9fafb',
-        borderColor: '#e5e7eb',
-        textColor: '#1f2937'
-      }
-    },
-    'primary': {
-      props: {
-        text: 'Primary Variant',
-        showIcon: true,
-        emphasis: 'high'
-      },
-      styling: {
-        backgroundColor: '#eff6ff',
-        borderColor: '#3b82f6',
-        textColor: '#1e40af'
-      }
-    },
-    'danger': {
-      props: {
-        text: 'Danger Variant',
-        showIcon: true,
-        emphasis: 'high'
-      },
-      styling: {
-        backgroundColor: '#fef2f2',
-        borderColor: '#ef4444',
-        textColor: '#b91c1c'
-      }
-    }
+  const [componentState, setComponentState] = useState({
+    visible: true,
+    active: false,
+    hover: false,
+    focused: false,
+    selected: false,
+    disabled: false,
+    loading: false,
+    valid: true,
+    customProperty: 'default value',
   });
 
-  const [rules, setRules] = useState<ConditionalRule[]>([
-    {
-      id: 'rule-1',
-      name: 'Show Primary on Important',
+  const {
+    rules,
+    addRule,
+    updateRule,
+    deleteRule,
+    evaluateRules,
+    applyEffects
+  } = useComponentVariantLogic([]);
+
+  // Sample rules for demonstration
+  useEffect(() => {
+    // Add a few sample rules when the component loads
+    addRule("Set Success Variant When Active");
+    addRule("Increase Border Radius When Hovered");
+    addRule("Change Color When Selected");
+    
+    // Configure the rules
+    updateRule(rules[0]?.id || '', {
       active: true,
       logicGroups: [
         {
-          id: 'group-1',
+          id: 'lg1',
           type: 'and',
           conditions: [
             {
-              id: 'condition-1',
-              field: 'props.emphasis',
+              id: 'c1',
+              field: 'active',
               operator: 'equals',
-              value: 'high'
+              value: true
             }
           ]
         }
@@ -111,246 +140,252 @@ const ComponentVariantLogicDemo: React.FC = () => {
       effect: {
         type: 'property',
         target: 'component',
-        value: 'primary',
-        property: 'componentVariant'
+        property: 'activeVariant',
+        value: 'success'
       }
-    }
-  ]);
+    });
 
-  // Setup the condition logic hook
-  const logic = useComponentVariantLogic(rules);
+    updateRule(rules[1]?.id || '', {
+      active: true,
+      logicGroups: [
+        {
+          id: 'lg2',
+          type: 'and',
+          conditions: [
+            {
+              id: 'c2',
+              field: 'hover',
+              operator: 'equals',
+              value: true
+            }
+          ]
+        }
+      ],
+      effect: {
+        type: 'style',
+        target: 'component',
+        property: 'borderRadius',
+        value: '12px'
+      }
+    });
 
-  // Update our local rules state when the hook's rules change
+    updateRule(rules[2]?.id || '', {
+      active: true,
+      logicGroups: [
+        {
+          id: 'lg3',
+          type: 'and',
+          conditions: [
+            {
+              id: 'c3',
+              field: 'selected',
+              operator: 'equals',
+              value: true
+            }
+          ]
+        }
+      ],
+      effect: {
+        type: 'style',
+        target: 'component',
+        property: 'backgroundColor',
+        value: '#9b59b6'
+      }
+    });
+  }, []);
+
+  // Apply conditional logic on component state changes
   useEffect(() => {
-    setRules(logic.rules);
-  }, [logic.rules]);
+    const effects = evaluateRules(componentState);
+    const updatedState = applyEffects(effects, component);
+    
+    setComponent(prev => ({
+      ...prev,
+      ...updatedState,
+      style: {
+        ...prev.style,
+        ...updatedState.style
+      }
+    }));
+  }, [componentState, rules]);
 
-  // Handle variant selection change
-  const handleVariantChange = (variantName: string) => {
-    const newComponent = { ...activeComponent };
-    const selectedVariant = variants[variantName];
-    
-    // Apply variant properties
-    newComponent.componentVariant = variantName;
-    
-    if (selectedVariant.props) {
-      newComponent.props = {
-        ...newComponent.props,
-        ...selectedVariant.props
-      };
-    }
-    
-    if (selectedVariant.styling) {
-      newComponent.styling = {
-        ...newComponent.styling,
-        ...selectedVariant.styling
-      };
-    }
-    
-    setActiveComponent(newComponent);
+  const handleToggleState = (stateName: string) => {
+    setComponentState(prev => ({
+      ...prev,
+      [stateName]: !prev[stateName]
+    }));
   };
 
-  // Handle property changes in the component
-  const handlePropertyChange = (property: string, value: any) => {
-    const path = property.split('.');
-    const newComponent = { ...activeComponent };
+  const handleVariantChange = (variantId: string) => {
+    const selectedVariant = component.variants?.find(v => v.id === variantId);
     
-    let current: any = newComponent;
-    for (let i = 0; i < path.length - 1; i++) {
-      const key = path[i];
-      if (!current[key]) current[key] = {};
-      current = current[key];
+    if (selectedVariant) {
+      setComponent(prev => ({
+        ...prev,
+        activeVariant: variantId,
+        style: {
+          ...prev.style,
+          ...selectedVariant.styling
+        }
+      }));
     }
-    
-    current[path[path.length - 1]] = value;
-    
-    // Apply conditional logic effects
-    const effects = logic.evaluateRules({
-      ...newComponent,
-      props: newComponent.props || {}
-    });
-    const updatedComponent = logic.applyEffects(effects, newComponent);
-    
-    setActiveComponent(updatedComponent as DemoComponent);
   };
 
-  // Update conditional rules
-  const handleRulesUpdate = (updatedRules: ConditionalRule[]) => {
-    setRules(updatedRules);
-    
-    // Re-evaluate with the new rules
-    const effects = logic.evaluateRules({
-      ...activeComponent,
-      props: activeComponent.props || {}
-    });
-    const updatedComponent = logic.applyEffects(effects, activeComponent);
-    
-    setActiveComponent(updatedComponent as DemoComponent);
-  };
+  const renderComponent = () => {
+    const activeVariantData = component.variants?.find(v => v.id === component.activeVariant) || component.variants?.[0];
+    const styling = {
+      ...component.style,
+      ...(activeVariantData?.styling || {}),
+    };
 
-  // Demo component render based on current state
-  const renderDemoComponent = () => {
-    const { styling = {}, props = {} } = activeComponent;
-    
     return (
-      <div 
-        className={`
-          border p-4 mb-4
-          ${styling.rounded ? 'rounded-lg' : ''}
-          ${styling.shadow === 'sm' ? 'shadow-sm' : 
-            styling.shadow === 'md' ? 'shadow-md' : 
-            styling.shadow === 'lg' ? 'shadow-lg' : ''}
-        `}
+      <div
         style={{
-          backgroundColor: styling.backgroundColor || '#fff',
-          borderColor: styling.borderColor || '#e5e7eb',
-          color: styling.textColor || '#000',
-          padding: styling.padding || '1rem',
-          width: typeof activeComponent.size.width === 'number' 
-            ? `${activeComponent.size.width}px` 
-            : activeComponent.size.width,
-          height: typeof activeComponent.size.height === 'number'
-            ? `${activeComponent.size.height}px`
-            : activeComponent.size.height,
-          display: activeComponent.visible ? 'block' : 'none'
+          width: typeof component.size === 'string' ? 'auto' : component.size.width,
+          height: typeof component.size === 'string' ? 'auto' : component.size.height,
+          ...styling,
+          display: component.visible ? 'flex' : 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '20px auto',
+          transition: 'all 0.3s ease'
         }}
       >
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-medium">{props.text || 'Component'}</h3>
-          {props.showIcon && (
-            props.emphasis === 'high' ? (
-              <AlertCircle className="h-5 w-5" />
-            ) : props.emphasis === 'medium' ? (
-              <ArrowUpDown className="h-5 w-5" />
-            ) : (
-              <Check className="h-5 w-5" />
-            )
-          )}
-        </div>
-        <div className="text-sm">
-          <p>Current variant: <strong>{activeComponent.componentVariant || 'none'}</strong></p>
-          <p>Emphasis level: <strong>{props.emphasis || 'low'}</strong></p>
-        </div>
+        Demo Component
+        {componentState.active && <Check className="ml-2" size={16} />}
       </div>
     );
   };
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Component Variant & Logic System</h1>
+      <h1 className="text-3xl font-bold mb-6">Component Variant Logic Demo</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="variants">
-                Component Variants
-              </TabsTrigger>
-              <TabsTrigger value="conditions">
-                Conditional Logic
-              </TabsTrigger>
-            </TabsList>
+        <Card className="col-span-1 lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Component Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderComponent()}
             
-            <TabsContent value="variants">
-              <ComponentVariantManager 
-                variants={variants}
-                onVariantsChange={setVariants}
-              />
-            </TabsContent>
-            
-            <TabsContent value="conditions">
-              <ConditionalLogicSystem 
-                rules={rules}
-                onRulesChange={handleRulesUpdate}
-                availableFields={[
-                  'props.text',
-                  'props.showIcon',
-                  'props.emphasis',
-                  'visible',
-                  'componentVariant'
-                ]}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>Component Preview</span>
-                <Select
-                  value={activeComponent.componentVariant || 'default'}
-                  onValueChange={handleVariantChange}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select variant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(variants).map(variant => (
-                      <SelectItem key={variant} value={variant}>
-                        {variant}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {renderDemoComponent()}
-              
-              <div className="space-y-4 pt-4 border-t">
-                <h3 className="font-medium">Properties</h3>
-                
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="component-text">Text</Label>
-                    <Input
-                      id="component-text"
-                      value={activeComponent.props?.text || ''}
-                      onChange={(e) => handlePropertyChange('props.text', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-3">Component States</h2>
+              <div className="flex flex-wrap gap-3">
+                {Object.keys(componentState).map(stateName => (
+                  <div key={stateName} className="flex items-center space-x-2">
                     <Switch
-                      id="show-icon"
-                      checked={!!activeComponent.props?.showIcon}
-                      onCheckedChange={(checked) => handlePropertyChange('props.showIcon', checked)}
+                      checked={componentState[stateName as keyof typeof componentState] as boolean}
+                      onCheckedChange={() => handleToggleState(stateName)}
                     />
-                    <Label htmlFor="show-icon">Show Icon</Label>
+                    <Label className="capitalize">{stateName}</Label>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="emphasis-level">Emphasis Level</Label>
-                    <Select
-                      value={activeComponent.props?.emphasis || 'low'}
-                      onValueChange={(value) => handlePropertyChange('props.emphasis', value)}
-                    >
-                      <SelectTrigger id="emphasis-level">
-                        <SelectValue placeholder="Select emphasis" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="component-visible"
-                      checked={activeComponent.visible}
-                      onCheckedChange={(checked) => handlePropertyChange('visible', checked)}
-                    />
-                    <Label htmlFor="component-visible">Visible</Label>
-                  </div>
-                </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-3">Component Variants</h2>
+              <div className="flex gap-2">
+                {component.variants?.map(variant => (
+                  <Button
+                    key={variant.id}
+                    variant={component.activeVariant === variant.id ? 'default' : 'outline'}
+                    onClick={() => handleVariantChange(variant.id)}
+                  >
+                    {variant.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Component Logic</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger value="logic">
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Conditions
+                </TabsTrigger>
+                <TabsTrigger value="variants">
+                  <Tag className="mr-2 h-4 w-4" />
+                  Variants
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="logic" className="space-y-4 mt-4">
+                <h3 className="font-semibold">Active Rules</h3>
+                {rules.length === 0 ? (
+                  <p className="text-gray-500">No rules defined yet</p>
+                ) : (
+                  rules.map(rule => (
+                    <div key={rule.id} className="border rounded-md p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4>{rule.name}</h4>
+                        <Switch
+                          checked={rule.active}
+                          onCheckedChange={(checked) => 
+                            updateRule(rule.id, { active: checked })
+                          }
+                        />
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500">When: </span>
+                        {rule.logicGroups.map((group, i) => (
+                          <span key={group.id}>
+                            {i > 0 && " OR "}
+                            {group.conditions.map((cond, j) => (
+                              <span key={cond.id}>
+                                {j > 0 && " AND "}
+                                <span className="font-medium">{cond.field}</span> {cond.operator} <span className="text-blue-600">{String(cond.value)}</span>
+                              </span>
+                            ))}
+                          </span>
+                        ))}
+                        <br />
+                        <span className="text-gray-500">Then: </span>
+                        <span className="font-medium">{rule.effect.property}</span> = <span className="text-green-600">{String(rule.effect.value)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+                
+                <Button
+                  onClick={() => addRule(`New Rule ${rules.length + 1}`)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Add New Rule
+                </Button>
+              </TabsContent>
+              
+              <TabsContent value="variants" className="mt-4">
+                <h3 className="font-semibold mb-3">Available Variants</h3>
+                <div className="space-y-3">
+                  {component.variants?.map(variant => (
+                    <div key={variant.id} className="border rounded-md p-3">
+                      <h4 className="font-medium">{variant.name}</h4>
+                      <div 
+                        className="mt-2 h-6 rounded-sm" 
+                        style={{ backgroundColor: variant.styling.backgroundColor }}
+                      />
+                      <div className="mt-2 text-sm text-gray-500">
+                        {Object.entries(variant.styling).map(([key, value]) => (
+                          <div key={key}>{key}: {String(value)}</div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
