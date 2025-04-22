@@ -1,330 +1,175 @@
-
-import React, { useState } from 'react';
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle
-} from '@/components/ui/card';
-import { Maximize2, Plus, Trash2 } from 'lucide-react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel
-} from '@/components/ui/form';
+import React, { useState, useCallback } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';  // Change from card to button
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useComponentConstraints } from '@/hooks/wireframe/use-component-constraints';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { toast } from 'sonner';
+import { Plus, Trash2, Check, RefreshCw } from 'lucide-react';
 
 interface ComponentConstraintPanelProps {
   wireframe: WireframeData;
   onUpdateWireframe?: (updated: WireframeData) => void;
 }
 
-const ComponentConstraintPanel: React.FC<ComponentConstraintPanelProps> = ({ wireframe, onUpdateWireframe }) => {
-  const [formData, setFormData] = useState({
+const ComponentConstraintPanel: React.FC<ComponentConstraintPanelProps> = ({
+  wireframe,
+  onUpdateWireframe
+}) => {
+  const {
+    constraints,
+    constraintTypes,
+    analyzing,
+    analyze,
+    addConstraint,
+    updateConstraint,
+    removeConstraint,
+    applyConstraints
+  } = useComponentConstraints(wireframe, onUpdateWireframe);
+
+  const [newConstraint, setNewConstraint] = useState({
     name: '',
     type: 'size',
     target: '',
     rule: '',
     value: '',
-    priority: 'medium',
+    priority: 'medium'
   });
-  
-  const { 
-    constraints, 
-    constraintTypes, 
-    analyzing, 
-    analyze, 
-    addConstraint, 
-    updateConstraint, 
-    removeConstraint, 
-    applyConstraints 
-  } = useComponentConstraints(wireframe, onUpdateWireframe);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setNewConstraint({ ...newConstraint, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setNewConstraint({ ...newConstraint, [name]: value });
+  };
 
   const handleAddConstraint = () => {
-    addConstraint({
-      name: formData.name,
-      type: formData.type as "size" | "position" | "alignment" | "spacing" | "relationship",
-      target: formData.target,
-      rule: formData.rule,
-      value: formData.value,
-      priority: formData.priority as "low" | "medium" | "high",
-      enabled: true
-    });
-    
-    // Reset form
-    setFormData({
-      name: '',
-      type: 'size',
-      target: '',
-      rule: '',
-      value: '',
-      priority: 'medium',
-    });
-  };
-
-  const handleToggleConstraint = (index: number, enabled: boolean) => {
-    const constraint = constraints[index];
-    updateConstraint(index, { ...constraint, enabled });
-  };
-
-  const handleRemoveConstraint = (index: number) => {
-    removeConstraint(index);
-  };
-
-  // Available constraint rules based on constraint type
-  const getRulesForType = (type: string) => {
-    switch (type) {
-      case 'size':
-        return [
-          { value: 'fixed-width', label: 'Fixed Width' },
-          { value: 'fixed-height', label: 'Fixed Height' },
-          { value: 'min-width', label: 'Minimum Width' },
-          { value: 'max-width', label: 'Maximum Width' },
-          { value: 'aspect-ratio', label: 'Aspect Ratio' }
-        ];
-      case 'position':
-        return [
-          { value: 'fixed-position', label: 'Fixed Position' },
-          { value: 'relative-position', label: 'Relative Position' },
-          { value: 'center-in-parent', label: 'Center in Parent' },
-          { value: 'align-edges', label: 'Align Edges' }
-        ];
-      case 'alignment':
-        return [
-          { value: 'left-align', label: 'Left Align' },
-          { value: 'center-align', label: 'Center Align' },
-          { value: 'right-align', label: 'Right Align' },
-          { value: 'top-align', label: 'Top Align' },
-          { value: 'middle-align', label: 'Middle Align' },
-          { value: 'bottom-align', label: 'Bottom Align' }
-        ];
-      case 'spacing':
-        return [
-          { value: 'fixed-spacing', label: 'Fixed Spacing' },
-          { value: 'proportional-spacing', label: 'Proportional Spacing' },
-          { value: 'equal-spacing', label: 'Equal Spacing' }
-        ];
-      case 'relationship':
-        return [
-          { value: 'parent-child', label: 'Parent-Child' },
-          { value: 'sibling', label: 'Sibling' },
-          { value: 'group', label: 'Group' }
-        ];
-      default:
-        return [];
+    if (newConstraint.name && newConstraint.type && newConstraint.target && newConstraint.rule && newConstraint.value) {
+      addConstraint(newConstraint);
+      setNewConstraint({
+        name: '',
+        type: 'size',
+        target: '',
+        rule: '',
+        value: '',
+        priority: 'medium'
+      });
+    } else {
+      toast.error('Please fill in all fields');
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Component Constraints</h3>
-          <p className="text-sm text-muted-foreground">
-            Define how components should behave when resized or repositioned
-          </p>
+    <Card className="w-full h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-xl">Component Constraints</CardTitle>
+        <Button variant="outline" size="sm" onClick={analyze} disabled={analyzing}>
+          {analyzing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+          {analyzing ? 'Analyzing...' : 'Analyze Components'}
+        </Button>
+      </CardHeader>
+      <CardContent className="overflow-auto flex-grow">
+        <div className="grid gap-4">
+          <h4 className="text-md font-semibold">Add New Constraint</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input type="text" id="name" name="name" value={newConstraint.name} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="type">Type</Label>
+              <Select onValueChange={(value) => handleSelectChange('type', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {constraintTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="target">Target</Label>
+              <Input type="text" id="target" name="target" value={newConstraint.target} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="rule">Rule</Label>
+              <Input type="text" id="rule" name="rule" value={newConstraint.rule} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="value">Value</Label>
+              <Input type="text" id="value" name="value" value={newConstraint.value} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="priority">Priority</Label>
+              <Select onValueChange={(value) => handleSelectChange('priority', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <Button variant="secondary" size="sm" onClick={handleAddConstraint}>
+            Add Constraint
+          </Button>
+
+          <h4 className="text-md font-semibold">Existing Constraints</h4>
+          {constraints.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No constraints defined. Analyze components to get suggestions.</p>
+          ) : (
+            <div className="grid gap-2">
+              {constraints.map((constraint, index) => (
+                <div key={index} className="border rounded-md p-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div><strong>Name:</strong> {constraint.name}</div>
+                    <div><strong>Type:</strong> {constraint.type}</div>
+                    <div><strong>Target:</strong> {constraint.target}</div>
+                    <div><strong>Rule:</strong> {constraint.rule}</div>
+                    <div><strong>Value:</strong> {constraint.value}</div>
+                    <div><strong>Priority:</strong> {constraint.priority}</div>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <Switch
+                      id={`enabled-${index}`}
+                      checked={constraint.enabled}
+                      onCheckedChange={(checked) => {
+                        updateConstraint(index, { ...constraint, enabled: checked });
+                      }}
+                    />
+                    <Label htmlFor={`enabled-${index}`} className="text-sm text-muted-foreground">
+                      {constraint.enabled ? 'Enabled' : 'Disabled'}
+                    </Label>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => removeConstraint(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={analyze} 
-          disabled={analyzing}
-        >
-          <Maximize2 className="mr-2 h-4 w-4" />
-          {analyzing ? 'Analyzing...' : 'Analyze Layout'}
+      </CardContent>
+      <div className="p-4">
+        <Button onClick={applyConstraints} className="w-full">
+          <Check className="mr-2 h-4 w-4" />
+          Apply Constraints
         </Button>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Constraint</CardTitle>
-          <CardDescription>
-            Create rules for how components should adapt
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="constraint-name">Name</Label>
-                <Input 
-                  id="constraint-name" 
-                  placeholder="Constraint name" 
-                  value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="constraint-type">Type</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={value => setFormData({...formData, type: value})}
-                >
-                  <SelectTrigger id="constraint-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {constraintTypes.map(type => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="constraint-target">Target Element</Label>
-                <Input 
-                  id="constraint-target" 
-                  placeholder="CSS selector or component ID" 
-                  value={formData.target} 
-                  onChange={e => setFormData({...formData, target: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="constraint-rule">Rule</Label>
-                <Select 
-                  value={formData.rule} 
-                  onValueChange={value => setFormData({...formData, rule: value})}
-                >
-                  <SelectTrigger id="constraint-rule">
-                    <SelectValue placeholder="Select rule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getRulesForType(formData.type).map(rule => (
-                      <SelectItem key={rule.value} value={rule.value}>
-                        {rule.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="constraint-value">Value</Label>
-                <Input 
-                  id="constraint-value" 
-                  placeholder="e.g. 100px, 2rem, 1:1" 
-                  value={formData.value} 
-                  onChange={e => setFormData({...formData, value: e.target.value})}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <RadioGroup 
-                  value={formData.priority} 
-                  onValueChange={value => setFormData({...formData, priority: value})}
-                  className="flex items-center space-x-4"
-                >
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem value="low" id="priority-low" />
-                    <Label htmlFor="priority-low">Low</Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem value="medium" id="priority-medium" />
-                    <Label htmlFor="priority-medium">Medium</Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem value="high" id="priority-high" />
-                    <Label htmlFor="priority-high">High</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-            
-            <Button onClick={handleAddConstraint} className="w-full">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Constraint
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {constraints.length > 0 ? (
-        <>
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Active Constraints</h3>
-            
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-2">
-                {constraints.map((constraint, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{constraint.name || `Constraint ${index + 1}`}</h4>
-                        <Badge variant={
-                          constraint.priority === 'high' ? 'destructive' : 
-                          constraint.priority === 'medium' ? 'default' : 
-                          'outline'
-                        }>
-                          {constraint.priority}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {constraint.type} - {constraint.rule}: {constraint.value}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch 
-                        checked={constraint.enabled} 
-                        onCheckedChange={(checked) => handleToggleConstraint(index, checked)}
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleRemoveConstraint(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-          
-          <Button onClick={applyConstraints} className="w-full">
-            Apply Constraints to Wireframe
-          </Button>
-        </>
-      ) : (
-        <div className="rounded-md bg-muted p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            No constraints added yet. Add constraints above or analyze your layout to get suggestions.
-          </p>
-        </div>
-      )}
-    </div>
+    </Card>
   );
 };
 
