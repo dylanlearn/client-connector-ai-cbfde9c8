@@ -14,7 +14,9 @@ import {
   Brain, 
   LayoutGrid,
   Lightbulb,
-  Puzzle
+  Puzzle,
+  Route,
+  BookOpen
 } from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import LayoutAnalysisPanel from './LayoutAnalysisPanel';
@@ -23,6 +25,8 @@ import AccessibilityAnalysisPanel from './AccessibilityAnalysisPanel';
 import SmartLayoutAlternativesPanel from './SmartLayoutAlternativesPanel';
 import DesignPrincipleAnalysisPanel from './DesignPrincipleAnalysisPanel';
 import ComponentRecommendationPanel from './ComponentRecommendationPanel';
+import UserFlowAnalysisPanel from './UserFlowAnalysisPanel';
+import ContentStructureAnalysisPanel from './ContentStructureAnalysisPanel';
 
 interface DesignIntelligencePanelProps {
   wireframe: WireframeData;
@@ -52,7 +56,7 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
-        <TabsList className="grid grid-cols-6">
+        <TabsList className="grid grid-cols-8">
           <TabsTrigger value="layout" className="text-xs">
             <LayoutTemplate className="h-4 w-4 mr-1" />
             Layout
@@ -76,6 +80,14 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
           <TabsTrigger value="components" className="text-xs">
             <Puzzle className="h-4 w-4 mr-1" />
             Components
+          </TabsTrigger>
+          <TabsTrigger value="userflow" className="text-xs">
+            <Route className="h-4 w-4 mr-1" />
+            User Flow
+          </TabsTrigger>
+          <TabsTrigger value="structure" className="text-xs">
+            <BookOpen className="h-4 w-4 mr-1" />
+            Structure
           </TabsTrigger>
         </TabsList>
         
@@ -120,6 +132,20 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
         
         <TabsContent value="components" className="pt-4">
           <ComponentRecommendationPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="userflow" className="pt-4">
+          <UserFlowAnalysisPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="structure" className="pt-4">
+          <ContentStructureAnalysisPanel
             wireframe={wireframe}
             onUpdateWireframe={onUpdateWireframe}
           />
