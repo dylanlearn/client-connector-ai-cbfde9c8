@@ -78,33 +78,29 @@ export function useContentGeneration(): UseContentGenerationReturn {
         const processedComponents: ComponentContent[] = Array.isArray(section.components) 
           ? section.components.map(comp => {
               // Create a new object with required content property
-              const componentWithContent: ComponentContent = {
+              return {
                 id: comp.id || undefined,
                 // Ensure every component has a content property
                 content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
                 ...comp
               };
-              return componentWithContent;
             })
           : [];
         
         // Create section response with required sectionId property
-        const sectionResponse: SectionContentResponse = {
+        return {
           sectionId: section.id || '',
           name: section.name || '',
           content: section.content || '',
-          components: processedComponents,
-          ...section
+          components: processedComponents
         };
-        
-        return sectionResponse;
       });
       
+      // Ensure the return value matches the GeneratedContent interface
       const generatedContent: GeneratedContent = {
         pageTitle: result.pageTitle || '',
         pageDescription: result.pageDescription || '',
-        contentSections: transformedSections,
-        ...result
+        contentSections: transformedSections
       };
       
       return generatedContent;
@@ -149,21 +145,20 @@ export function useContentGeneration(): UseContentGenerationReturn {
       const transformedComponents: ComponentContent[] = Array.isArray(result.components) 
         ? result.components.map(comp => {
             // Create a new object with required content property
-            const componentWithContent: ComponentContent = {
+            return {
               id: comp.id || undefined,
               // Ensure every component has a content property
               content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
               ...comp
             };
-            return componentWithContent;
           })
         : [];
       
+      // Ensure the return value matches the GeneratedSectionContent interface
       const generatedSectionContent: GeneratedSectionContent = {
         name: result.name || '',
         content: result.content || '',
-        components: transformedComponents,
-        ...result
+        components: transformedComponents
       };
       
       return generatedSectionContent;
