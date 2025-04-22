@@ -3,32 +3,40 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Braces, FileBarChart, Brush, Boxes, LayoutGrid, MoveHorizontal } from 'lucide-react';
-import { StyleConsistencyPanel } from './StyleConsistencyPanel';
-import { DesignDecisionPanel } from './DesignDecisionPanel';
-import { ContentGenerationPanel } from './ContentGenerationPanel';
-import { UserFlowAnalysisPanel } from './UserFlowAnalysisPanel';
-import { ContentStructureAnalysisPanel } from './ContentStructureAnalysisPanel';
-import { OptimizationPanel } from './OptimizationPanel';
-import { ComponentCompositionPanel } from './ComponentCompositionPanel';
-import { ComponentConstraintPanel } from './ComponentConstraintPanel';
+import { Braces, FileBarChart, Brush, Boxes, LayoutGrid, MoveHorizontal, X } from 'lucide-react';
+import StyleConsistencyPanel from './StyleConsistencyPanel';
+import DesignDecisionPanel from './DesignDecisionPanel';
+import ContentGenerationPanel from './ContentGenerationPanel';
+import UserFlowAnalysisPanel from './UserFlowAnalysisPanel';
+import ContentStructureAnalysisPanel from './ContentStructureAnalysisPanel';
+import OptimizationPanel from './OptimizationPanel';
+import ComponentCompositionPanel from './ComponentCompositionPanel';
+import ComponentConstraintPanel from './ComponentConstraintPanel';
+import { Button } from '@/components/ui/button';
 
 interface DesignIntelligencePanelProps {
   wireframe: WireframeData;
   onUpdateWireframe?: (updated: WireframeData) => void;
+  onClose?: () => void; // Added onClose prop
 }
 
 const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
   wireframe,
-  onUpdateWireframe
+  onUpdateWireframe,
+  onClose
 }) => {
   return (
     <Card className="w-full h-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl flex items-center gap-2">
           <Braces className="h-5 w-5" />
           Design Intelligence
         </CardTitle>
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="optimizations">

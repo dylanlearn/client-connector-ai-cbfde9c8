@@ -1,18 +1,16 @@
 
-import React, { useState, useCallback } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Settings, Save, Layers, Plus, Trash2 } from 'lucide-react';
-import { useComponentComposition } from '@/hooks/wireframe/use-component-composition';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { WireframeComponent } from '@/types/wireframe-component';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { useComponentComposition } from '@/hooks/wireframe/use-component-composition';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Boxes, Plus, Tag, Trash } from 'lucide-react';
 
 interface ComponentCompositionPanelProps {
   wireframe: WireframeData;
@@ -26,128 +24,257 @@ const ComponentCompositionPanel: React.FC<ComponentCompositionPanelProps> = ({
   const {
     compositions,
     isCreating,
-    selectedComponent,
+    selectedComponents,
     createComposition,
-    saveAsComposition,
     applyComposition,
-    selectComponent,
     deleteComposition,
-    componentHierarchy
+    toggleComponentSelection
   } = useComponentComposition(wireframe, onUpdateWireframe);
   
-  const [newCompositionName, setNewCompositionName] = useState('');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newComposition, setNewComposition] = useState({
+    name: '',
+    description: '',
+    tags: ''
+  });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('library');
 
-  const handleSaveAsComposition = () => {
-    if (selectedComponent) {
-      saveAsComposition(selectedComponent, newCompositionName);
-      setNewCompositionName('');
-      setShowCreateForm(false);
+  const handleCreateComposition = () => {
+    if (newComposition.name) {
+      const tags = newComposition.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean);
+        
+      createComposition(newComposition.name, newComposition.description, tags);
+      setNewComposition({ name: '', description: '', tags: '' });
+      setDialogOpen(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Component Compositions</h3>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setShowCreateForm(!showCreateForm)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create New
-        </Button>
+    <div className="component-composition-panel space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+        <div>
+          <h3 className="text-xl font-medium">Component Composition</h3>
+          <p className="text-sm text-muted-foreground">
+            Create reusable component compositions with nesting and inheritance
+          </p>
+        </div>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Composition
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Composition</DialogTitle>
+              <DialogDescription>
+                Save a reusable group of components as a composition.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="comp-name">Name</Label>
+                <Input 
+                  id="comp-name" 
+                  value={newComposition.name}
+                  onChange={e => setNewComposition({...newComposition, name: e.target.value})}
+                  placeholder="Hero Section with CTA"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="comp-description">Description</Label>
+                <Textarea 
+                  id="comp-description" 
+                  value={newComposition.description}
+                  onChange={e => setNewComposition({...newComposition, description: e.target.value})}
+                  placeholder="A hero section with a headline, subheading, and call to action button"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="comp-tags">Tags (comma separated)</Label>
+                <Input 
+                  id="comp-tags" 
+                  value={newComposition.tags}
+                  onChange={e => setNewComposition({...newComposition, tags: e.target.value})}
+                  placeholder="hero, cta, landing-page"
+                />
+              </div>
+              
+              <div className="border rounded-md p-3 mt-4">
+                <p className="text-sm font-medium mb-2">Selected Components</p>
+                {selectedComponents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No components selected</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedComponents.map(id => {
+                      const section = wireframe.sections.find(s => s.id === id);
+                      return (
+                        <Badge key={id} variant="outline">
+                          {section?.sectionType || section?.name || id}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateComposition}
+                  disabled={!newComposition.name || selectedComponents.length === 0}
+                >
+                  Create Composition
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       
-      {showCreateForm && (
-        <Card className="mb-4">
-          <CardContent className="pt-4 space-y-3">
-            <Label htmlFor="composition-name">Composition Name</Label>
-            <Input 
-              id="composition-name"
-              placeholder="Enter name for new composition"
-              value={newCompositionName}
-              onChange={(e) => setNewCompositionName(e.target.value)}
-            />
-            <div className="flex justify-between items-center mt-2">
-              <Select onValueChange={(value) => selectComponent(value)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select component" />
-                </SelectTrigger>
-                <SelectContent>
-                  {componentHierarchy.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.type} ({item.id.slice(-4)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                size="sm" 
-                onClick={handleSaveAsComposition}
-                disabled={!selectedComponent || !newCompositionName}
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save
-              </Button>
+      <Tabs defaultValue="library" onValueChange={setActiveTab}>
+        <TabsList className="w-full">
+          <TabsTrigger value="library">Composition Library</TabsTrigger>
+          <TabsTrigger value="selection">Component Selection</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="library" className="space-y-4">
+          {compositions.length === 0 ? (
+            <div className="text-center py-12">
+              <Boxes className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
+              <h3 className="mt-4 text-lg font-medium">No Compositions Yet</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Create your first component composition to start building reusable elements.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <ScrollArea className="h-[400px] rounded-md border p-4">
-        {compositions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No component compositions saved yet
-          </div>
-        ) : (
-          <Accordion type="single" collapsible className="w-full">
-            {compositions.map((composition) => (
-              <AccordionItem key={composition.id} value={composition.id}>
-                <AccordionTrigger className="hover:bg-muted/50 px-2 rounded-md">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4" />
-                    <span>{composition.name}</span>
-                    <Badge variant="outline" className="ml-2">
-                      {composition.type}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="p-2 space-y-2">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground">Properties:</span>
-                      <div className="text-xs rounded bg-muted p-2 font-mono">
-                        {Object.keys(composition.properties || {}).map(key => (
-                          <div key={key}>{key}: {JSON.stringify(composition.properties[key])}</div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between mt-2">
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              {compositions.map(composition => (
+                <Card key={composition.id} className="h-full">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-base">{composition.name}</CardTitle>
                       <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => applyComposition(composition.id)}
-                      >
-                        Apply
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6" 
                         onClick={() => deleteComposition(composition.id)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
+                    <CardDescription className="line-clamp-2">
+                      {composition.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {composition.tags.map((tag, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    <div className="border rounded-md bg-muted/20 h-24 flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground">
+                        {composition.components.length} component(s)
+                      </p>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <Button 
+                        size="sm" 
+                        className="w-full" 
+                        onClick={() => applyComposition(composition.id)}
+                      >
+                        Apply to Wireframe
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="selection" className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">
+                Select Components ({selectedComponents.length} selected)
+              </h3>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                disabled={selectedComponents.length === 0}
+                onClick={() => setSelectedComponents([])}
+              >
+                Clear Selection
+              </Button>
+            </div>
+            
+            <div className="border rounded-md divide-y">
+              {wireframe.sections.map((section, index) => (
+                <div 
+                  key={section.id || index} 
+                  className={`flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 
+                    ${selectedComponents.includes(section.id) ? 'bg-muted/30' : ''}`}
+                  onClick={() => toggleComponentSelection(section.id)}
+                >
+                  <div>
+                    <p className="font-medium">
+                      {section.sectionType || section.name || `Section ${index + 1}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ID: {section.id.substring(0, 8)}...
+                    </p>
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        )}
-      </ScrollArea>
+                  <div className="flex items-center">
+                    {selectedComponents.includes(section.id) && (
+                      <Badge>Selected</Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {wireframe.sections.length === 0 && (
+                <p className="p-4 text-center text-muted-foreground">
+                  No sections available in this wireframe
+                </p>
+              )}
+            </div>
+            
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  if (selectedComponents.length > 0) {
+                    setActiveTab('library');
+                    setDialogOpen(true);
+                  }
+                }}
+                disabled={selectedComponents.length === 0}
+              >
+                Create Composition from Selection
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
