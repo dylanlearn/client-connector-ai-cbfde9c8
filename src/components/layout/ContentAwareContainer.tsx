@@ -26,7 +26,7 @@ const ContentAwareContainer: React.FC<ContentAwareContainerProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | { x: number; y: number }>(1);
   const [isOverflowing, setIsOverflowing] = useState(false);
 
   useResizeObserver(containerRef, () => {
@@ -54,7 +54,7 @@ const ContentAwareContainer: React.FC<ContentAwareContainerProps> = ({
         ? Math.min(widthScale, heightScale)
         : { x: widthScale, y: heightScale };
 
-      setScale(typeof newScale === 'number' ? newScale : 1);
+      setScale(newScale);
 
       // Adjust font size if enabled
       if (adaptiveFont) {
@@ -74,6 +74,15 @@ const ContentAwareContainer: React.FC<ContentAwareContainerProps> = ({
     adjustContent();
   }, [children]);
 
+  // Helper function to generate the CSS transform value
+  const getTransformValue = () => {
+    if (typeof scale === 'number') {
+      return `scale(${scale})`;
+    } else {
+      return `scale(${scale.x}, ${scale.y})`;
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -92,7 +101,7 @@ const ContentAwareContainer: React.FC<ContentAwareContainerProps> = ({
         ref={contentRef}
         className="content-wrapper"
         style={{
-          transform: `scale(${typeof scale === 'number' ? scale : `${scale.x}, ${scale.y}`})`,
+          transform: getTransformValue(),
           transformOrigin: 'center',
           transition: 'transform 0.2s ease-out'
         }}
