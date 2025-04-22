@@ -1,6 +1,11 @@
 
 import { useState, useCallback } from 'react';
-import { ContextAwareContentService, ContentGenerationRequest, SectionContentGenerationRequest, GeneratedContentSection } from '@/services/ai/wireframe/content/context-aware-content-service';
+import { 
+  ContextAwareContentService, 
+  ContentGenerationRequest, 
+  SectionContentGenerationRequest, 
+  GeneratedContentSection 
+} from '@/services/ai/wireframe/content/context-aware-content-service';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 // Define required types for content generation
@@ -68,24 +73,26 @@ export function useContentGeneration(): UseContentGenerationReturn {
       const result = await ContextAwareContentService.generateWireframeContent(request);
       
       // Transform the contentSections to ensure they match the expected SectionContentResponse type
-      const transformedSections: SectionContentResponse[] = result.contentSections?.map(section => {
+      const transformedSections: SectionContentResponse[] = (result.contentSections || []).map(section => {
         // Ensure components array contains objects with content property
         const processedComponents: ComponentContent[] = Array.isArray(section.components) 
           ? section.components.map(comp => ({
               id: comp.id || undefined,
+              // Ensure every component has a content property
               content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
               ...comp
             }))
           : [];
         
         return {
+          // Ensure the sectionId property exists (required by SectionContentResponse)
           sectionId: section.id || '',
           name: section.name || '',
           content: section.content || '',
           components: processedComponents,
           ...section
         };
-      }) || [];
+      });
       
       const generatedContent: GeneratedContent = {
         pageTitle: result.pageTitle || '',
@@ -136,6 +143,7 @@ export function useContentGeneration(): UseContentGenerationReturn {
       const transformedComponents: ComponentContent[] = Array.isArray(result.components) 
         ? result.components.map(comp => ({
             id: comp.id || undefined,
+            // Ensure every component has a content property
             content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
             ...comp
           }))
