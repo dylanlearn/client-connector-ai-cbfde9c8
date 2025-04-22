@@ -69,20 +69,20 @@ export function useContentGeneration(): UseContentGenerationReturn {
       
       // Transform the contentSections to ensure they match the expected SectionContentResponse type
       const transformedSections: SectionContentResponse[] = result.contentSections?.map(section => {
+        // Ensure components array contains objects with content property
+        const processedComponents: ComponentContent[] = Array.isArray(section.components) 
+          ? section.components.map(comp => ({
+              id: comp.id || undefined,
+              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+              ...comp
+            }))
+          : [];
+        
         return {
           sectionId: section.id || '',
           name: section.name || '',
           content: section.content || '',
-          // Ensure components array contains objects with content property
-          components: Array.isArray(section.components) 
-            ? section.components.map(comp => {
-                return {
-                  id: comp.id || undefined,
-                  content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-                  ...comp
-                } as ComponentContent;
-              })
-            : [],
+          components: processedComponents,
           ...section
         };
       }) || [];
@@ -132,13 +132,11 @@ export function useContentGeneration(): UseContentGenerationReturn {
       
       // Ensure components have the required content property
       const transformedComponents: ComponentContent[] = Array.isArray(result.components) 
-        ? result.components.map(comp => {
-            return {
-              id: comp.id || undefined,
-              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-              ...comp
-            } as ComponentContent;
-          })
+        ? result.components.map(comp => ({
+            id: comp.id || undefined,
+            content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+            ...comp
+          }))
         : [];
       
       return {
