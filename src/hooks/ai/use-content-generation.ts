@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { ContextAwareContentService, ContentGenerationRequest, SectionContentGenerationRequest } from '@/services/ai/wireframe/content/context-aware-content-service';
+import { ContextAwareContentService, ContentGenerationRequest, SectionContentGenerationRequest, GeneratedContentSection } from '@/services/ai/wireframe/content/context-aware-content-service';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 // Define required types for content generation
@@ -87,12 +87,14 @@ export function useContentGeneration(): UseContentGenerationReturn {
         };
       }) || [];
       
-      return {
+      const generatedContent: GeneratedContent = {
         pageTitle: result.pageTitle || '',
         pageDescription: result.pageDescription || '',
         contentSections: transformedSections,
         ...result
       };
+      
+      return generatedContent;
     } catch (e) {
       const errorInstance = e instanceof Error ? e : new Error(String(e));
       setError(errorInstance);
@@ -139,12 +141,14 @@ export function useContentGeneration(): UseContentGenerationReturn {
           }))
         : [];
       
-      return {
+      const generatedSectionContent: GeneratedSectionContent = {
         name: result.name || '',
         content: result.content || '',
         components: transformedComponents,
         ...result
       };
+      
+      return generatedSectionContent;
     } catch (e) {
       const errorInstance = e instanceof Error ? e : new Error(String(e));
       setError(errorInstance);

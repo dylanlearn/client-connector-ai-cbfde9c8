@@ -11,7 +11,7 @@ interface ContentGenerationPanelProps {
   wireframe: WireframeData;
   selectedSection?: WireframeSection | null;
   onContentGenerated?: (content: GeneratedContent | GeneratedSectionContent) => void;
-  onUpdate?: (updated: WireframeData) => void; // Add this prop to match DesignIntelligencePanel
+  onUpdate?: (updated: WireframeData) => void;
 }
 
 const ContentGenerationPanel: React.FC<ContentGenerationPanelProps> = ({
