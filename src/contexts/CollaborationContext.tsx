@@ -118,9 +118,13 @@ export const CollaborationProvider: React.FC<{ children: ReactNode }> = ({ child
   }, []);
 
   const updateUserPresence = useCallback((presence: Partial<UserPresence>) => {
+    // Fix the payload structure to match what the reducer expects
     dispatch({
       type: 'UPDATE_USER_PRESENCE',
-      payload: { userId: 'current-user', presence },
+      payload: { 
+        userId: 'current-user', 
+        presence: presence 
+      },
     });
   }, []);
 

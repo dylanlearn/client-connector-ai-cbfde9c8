@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollaboration } from '@/contexts/CollaborationContext';
 import UserPresenceOverlay from './UserPresenceOverlay';
 import { useUser } from '@/hooks/useUser';
-import { nanoid } from 'nanoid';
 
 interface CollaborativeEditorProps {
   documentId: string;
@@ -71,8 +70,9 @@ Multiple users can edit simultaneously, and changes are synchronized in real-tim
     // using operational transforms to resolve conflicts
     
     // For this demo, we'll simulate applying remote changes
-    // Fix: Pass the changes directly without type conversion
-    applyChanges(state.changes);
+    // Fix: Extract the IDs from the changes array
+    const changeIds = state.changes.map(change => change.id);
+    applyChanges(changeIds);
     
   }, [state.changes, applyChanges]);
   

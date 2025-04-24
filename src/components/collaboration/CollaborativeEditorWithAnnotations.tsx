@@ -1,91 +1,84 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useCollaboration } from '@/contexts/CollaborationContext';
+import CollaborativeEditor from './CollaborativeEditor';
+import { AnnotationMarker } from '@/components/annotations/AnnotationMarker';
+import { AnnotationPanel } from '@/components/annotations/AnnotationPanel';
+import { Annotation } from '@/types/annotations';
+import { MessageSquare, Mic, Video, PenLine, Plus } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { nanoid } from 'nanoid';
-import { Annotation, AnnotationType } from '@/types/annotations';
-import { DocumentChange } from '@/types/collaboration';
-import CollaborativeEditor from './CollaborativeEditor';
-import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
-import { AnnotationMarker } from '../annotations/AnnotationMarker';
-import { AnnotationPanel } from '../annotations/AnnotationPanel';
-import { AnnotationCreator } from '../annotations/AnnotationCreator';
 
 interface CollaborativeEditorWithAnnotationsProps {
   documentId: string;
 }
 
 const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ documentId }) => {
-  const { state, addChange, applyChanges } = useCollaboration();
-  const userId = useUser();
+  const { state, addChange } = useCollaboration();
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
-  const [creatingAnnotation, setCreatingAnnotation] = useState<{ type: AnnotationType; position: { x: number; y: number } } | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
+  const [isAddingAnnotation, setIsAddingAnnotation] = useState(false);
+  const [annotationType, setAnnotationType] = useState<'text' | 'voice' | 'video' | 'sketch'>('text');
+  const userId = useUser();
 
-  // Extract annotations from document changes
+  // Load annotations from collaborative state
   useEffect(() => {
-    // Filter changes to find annotation-related operations
-    const annotationChanges = state.changes.filter(change => {
-      // Check if the change is related to annotations
-      return change.path.startsWith('annotations');
-    });
-
+    // Filter changes for annotation operations
+    const annotationChanges = state.changes.filter(change => 
+      change.path === 'annotations' && 
+      (change.operation === 'insert' || change.operation === 'update' || change.operation === 'delete')
+    );
+    
+    // Build annotation list from changes
+    // (In a real app, would need more sophisticated merging logic)
     if (annotationChanges.length > 0) {
-      // Process annotation changes
-      const updatedAnnotations = [...annotations];
-
+      const newAnnotations: Annotation[] = [];
+      
       annotationChanges.forEach(change => {
         if (change.operation === 'insert') {
-          // Add new annotation
-          updatedAnnotations.push(change.value as Annotation);
-        } else if (change.operation === 'update') {
-          // Update existing annotation
-          const index = updatedAnnotations.findIndex(a => a.id === (change.value as Annotation).id);
-          if (index !== -1) {
-            updatedAnnotations[index] = change.value as Annotation;
-          }
+          newAnnotations.push(change.value as Annotation);
         } else if (change.operation === 'delete') {
-          // Remove annotation
-          const index = updatedAnnotations.findIndex(a => a.id === change.value);
+          // Remove annotation with matching ID
+          const idToRemove = (change.value as { id: string }).id;
+          const index = newAnnotations.findIndex(a => a.id === idToRemove);
           if (index !== -1) {
-            updatedAnnotations.splice(index, 1);
+            newAnnotations.splice(index, 1);
+          }
+        } else if (change.operation === 'update') {
+          // Update annotation with matching ID
+          const updatedAnnotation = change.value as Annotation;
+          const index = newAnnotations.findIndex(a => a.id === updatedAnnotation.id);
+          if (index !== -1) {
+            newAnnotations[index] = updatedAnnotation;
+          } else {
+            newAnnotations.push(updatedAnnotation);
           }
         }
       });
-
-      setAnnotations(updatedAnnotations);
+      
+      setAnnotations(newAnnotations);
     }
   }, [state.changes]);
-
-  const handleCreateAnnotation = (type: AnnotationType) => {
-    setCreatingAnnotation({ type, position: { x: 0, y: 0 } });
-  };
-
-  const handleDocumentClick = (e: React.MouseEvent) => {
-    if (creatingAnnotation && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      setCreatingAnnotation({
-        ...creatingAnnotation,
-        position: { x, y }
-      });
-    }
-  };
-
-  const handleSaveAnnotation = (content: string) => {
-    if (!creatingAnnotation) return;
-
+  
+  // Handle document click to place annotation
+  const handleDocumentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isAddingAnnotation) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Create a new annotation
     const newAnnotation: Annotation = {
       id: nanoid(),
       documentId,
       userId,
-      type: creatingAnnotation.type,
-      content,
-      position: creatingAnnotation.position,
+      type: annotationType,
+      content: '',
+      position: { x, y },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       status: 'open',
@@ -93,117 +86,191 @@ const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnota
         replies: 0
       }
     };
-
-    // Add the annotation to the collaboration system
+    
+    // Add annotation to collaborative state
     addChange({
       userId,
       documentId,
       operation: 'insert',
-      path: `annotations.${newAnnotation.id}`,
-      value: newAnnotation,
-      id: nanoid(), // Add missing id property
-      timestamp: new Date().toISOString() // Add missing timestamp property
+      path: 'annotations',
+      value: newAnnotation
     });
-
-    setAnnotations([...annotations, newAnnotation]);
-    setCreatingAnnotation(null);
+    
+    // Update local state
+    setAnnotations(prevAnnotations => [...prevAnnotations, newAnnotation]);
+    setSelectedAnnotation(newAnnotation);
+    setIsAddingAnnotation(false);
   };
-
-  const handleCancelAnnotation = () => {
-    setCreatingAnnotation(null);
-  };
-
-  const handleAnnotationClick = (id: string) => {
-    setActiveAnnotationId(id === activeAnnotationId ? null : id);
-  };
-
-  const handleUpdateAnnotation = (updatedAnnotation: Annotation) => {
+  
+  // Handle annotation update
+  const handleAnnotationUpdate = (updatedAnnotation: Annotation) => {
+    // Add update to collaborative state
     addChange({
       userId,
       documentId,
       operation: 'update',
-      path: `annotations.${updatedAnnotation.id}`,
-      value: updatedAnnotation,
-      id: nanoid(), // Add missing id property
-      timestamp: new Date().toISOString() // Add missing timestamp property
+      path: 'annotations',
+      value: updatedAnnotation
     });
-
-    setAnnotations(annotations.map(a => a.id === updatedAnnotation.id ? updatedAnnotation : a));
+    
+    // Update local state
+    setAnnotations(prevAnnotations => 
+      prevAnnotations.map(a => a.id === updatedAnnotation.id ? updatedAnnotation : a)
+    );
+    setSelectedAnnotation(updatedAnnotation);
   };
-
-  const handleDeleteAnnotation = (annotationId: string) => {
+  
+  // Handle annotation delete
+  const handleAnnotationDelete = (annotationId: string) => {
+    // Add delete to collaborative state
     addChange({
       userId,
       documentId,
       operation: 'delete',
-      path: `annotations.${annotationId}`,
-      value: annotationId,
-      id: nanoid(), // Add missing id property
-      timestamp: new Date().toISOString() // Add missing timestamp property
+      path: 'annotations',
+      value: { id: annotationId }
     });
-
-    setAnnotations(annotations.filter(a => a.id !== annotationId));
-    setActiveAnnotationId(null);
+    
+    // Update local state
+    setAnnotations(prevAnnotations => prevAnnotations.filter(a => a.id !== annotationId));
+    setSelectedAnnotation(null);
   };
-
+  
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <AnnotationToolbar 
-          onCreateAnnotation={handleCreateAnnotation} 
-          disabled={Boolean(creatingAnnotation)}
-        />
-      </div>
-      
-      <div 
-        ref={containerRef} 
-        className="relative"
-        onClick={creatingAnnotation ? handleDocumentClick : undefined}
-      >
-        <Card>
-          <CardContent className="p-0">
-            <CollaborativeEditor documentId={documentId} />
-          </CardContent>
-        </Card>
-        
-        {/* Annotation Markers */}
-        {annotations.map(annotation => (
-          <AnnotationMarker
-            key={annotation.id}
-            annotation={annotation}
-            isActive={annotation.id === activeAnnotationId}
-            onClick={() => handleAnnotationClick(annotation.id)}
-          />
-        ))}
-        
-        {/* Annotation Creator */}
-        {creatingAnnotation && creatingAnnotation.position.x > 0 && (
-          <AnnotationCreator
-            type={creatingAnnotation.type}
-            position={creatingAnnotation.position}
-            onSave={handleSaveAnnotation}
-            onCancel={handleCancelAnnotation}
-          />
-        )}
-      </div>
-      
-      {/* Active Annotation Panel */}
-      {activeAnnotationId && (
-        <div>
-          {(() => {
-            const activeAnnotation = annotations.find(a => a.id === activeAnnotationId);
-            return activeAnnotation ? (
+    <Card className="w-full">
+      <CardHeader className="border-b flex flex-row items-center justify-between">
+        <Tabs defaultValue="document" className="w-full">
+          <TabsList>
+            <TabsTrigger value="document">Document</TabsTrigger>
+            <TabsTrigger value="annotations">Annotations ({annotations.length})</TabsTrigger>
+          </TabsList>
+          
+          <div className="absolute right-6 top-4 flex gap-2">
+            <Button 
+              size="sm" 
+              variant={isAddingAnnotation && annotationType === 'text' ? 'default' : 'outline'}
+              onClick={() => {
+                setAnnotationType('text');
+                setIsAddingAnnotation(prev => !prev);
+              }}
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Text
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant={isAddingAnnotation && annotationType === 'voice' ? 'default' : 'outline'}
+              onClick={() => {
+                setAnnotationType('voice');
+                setIsAddingAnnotation(prev => !prev);
+              }}
+            >
+              <Mic className="h-4 w-4 mr-1" />
+              Voice
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant={isAddingAnnotation && annotationType === 'video' ? 'default' : 'outline'}
+              onClick={() => {
+                setAnnotationType('video');
+                setIsAddingAnnotation(prev => !prev);
+              }}
+            >
+              <Video className="h-4 w-4 mr-1" />
+              Video
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant={isAddingAnnotation && annotationType === 'sketch' ? 'default' : 'outline'}
+              onClick={() => {
+                setAnnotationType('sketch');
+                setIsAddingAnnotation(prev => !prev);
+              }}
+            >
+              <PenLine className="h-4 w-4 mr-1" />
+              Sketch
+            </Button>
+          </div>
+          
+          <TabsContent value="document" className="mt-6">
+            <div 
+              className="relative" 
+              onClick={handleDocumentClick}
+            >
+              <CollaborativeEditor documentId={documentId} />
+              
+              {/* Annotation markers */}
+              {annotations.map(annotation => (
+                <AnnotationMarker 
+                  key={annotation.id}
+                  annotation={annotation}
+                  isActive={selectedAnnotation?.id === annotation.id}
+                  onClick={() => setSelectedAnnotation(annotation)}
+                />
+              ))}
+              
+              {isAddingAnnotation && (
+                <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-background border rounded-md p-4 shadow-lg z-50">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Click anywhere on the document to place a new {annotationType} annotation</span>
+                    <Button size="sm" variant="ghost" onClick={() => setIsAddingAnnotation(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Selected annotation panel */}
+            {selectedAnnotation && (
               <AnnotationPanel
-                annotation={activeAnnotation}
-                onUpdate={handleUpdateAnnotation}
-                onDelete={handleDeleteAnnotation}
-                onClose={() => setActiveAnnotationId(null)}
+                annotation={selectedAnnotation}
+                onUpdate={handleAnnotationUpdate}
+                onDelete={handleAnnotationDelete}
+                onClose={() => setSelectedAnnotation(null)}
               />
-            ) : null;
-          })()}
-        </div>
-      )}
-    </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="annotations" className="mt-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">All Annotations ({annotations.length})</h3>
+              
+              {annotations.length === 0 ? (
+                <p className="text-muted-foreground">No annotations yet. Add annotations to collaborate.</p>
+              ) : (
+                <div className="space-y-4">
+                  {annotations.map(annotation => (
+                    <Card key={annotation.id} className="p-4 cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAnnotation(annotation)}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          {annotation.type === 'text' && <MessageSquare className="h-4 w-4" />}
+                          {annotation.type === 'voice' && <Mic className="h-4 w-4" />}
+                          {annotation.type === 'video' && <Video className="h-4 w-4" />}
+                          {annotation.type === 'sketch' && <PenLine className="h-4 w-4" />}
+                          <span className="font-medium">{annotation.type.charAt(0).toUpperCase() + annotation.type.slice(1)} Annotation</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(annotation.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm line-clamp-2">{annotation.content || 'No content yet'}</p>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardHeader>
+      <CardContent>
+        {/* Content moved to Tabs */}
+      </CardContent>
+    </Card>
   );
 };
 
