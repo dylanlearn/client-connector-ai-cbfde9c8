@@ -56,7 +56,7 @@ export type CollaborationAction =
   | { type: 'SET_DOCUMENT_ID'; payload: string | null }
   | { type: 'USER_JOINED'; payload: User }
   | { type: 'USER_LEFT'; payload: string }
-  | { type: 'UPDATE_USER_PRESENCE'; payload: { userId: string; presence: UserPresence } }
+  | { type: 'UPDATE_USER_PRESENCE'; payload: { userId: string; presence: Partial<UserPresence> } }
   | { type: 'ADD_CHANGE'; payload: DocumentChange }
   | { type: 'CHANGES_APPLIED'; payload: string[] }
   | { type: 'SET_CONNECTION_STATUS'; payload: boolean }

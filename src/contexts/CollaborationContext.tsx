@@ -40,14 +40,29 @@ const collaborationReducer = (state: CollaborationState, action: CollaborationAc
         activeUsers: state.activeUsers.filter((id) => id !== action.payload),
       };
     case 'UPDATE_USER_PRESENCE':
+      // Get the current user data or create a new user object if it doesn't exist
+      const currentUser = state.users[action.payload.userId] || {
+        id: action.payload.userId,
+        name: `User ${action.payload.userId.substring(0, 4)}`,
+        color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+        avatar: null,
+        presence: {
+          status: 'active',
+          focusElement: null,
+          cursorPosition: null,
+          lastActive: new Date().toISOString(),
+        }
+      };
+      
+      // Update the user with the new presence data, merging it with existing data
       return {
         ...state,
         users: {
           ...state.users,
           [action.payload.userId]: {
-            ...state.users[action.payload.userId],
+            ...currentUser,
             presence: {
-              ...state.users[action.payload.userId]?.presence,
+              ...currentUser.presence,
               ...action.payload.presence,
             },
           },
@@ -118,12 +133,11 @@ export const CollaborationProvider: React.FC<{ children: ReactNode }> = ({ child
   }, []);
 
   const updateUserPresence = useCallback((presence: Partial<UserPresence>) => {
-    // Fix the payload structure to match what the reducer expects
     dispatch({
       type: 'UPDATE_USER_PRESENCE',
       payload: { 
         userId: 'current-user', 
-        presence: presence 
+        presence 
       },
     });
   }, []);
