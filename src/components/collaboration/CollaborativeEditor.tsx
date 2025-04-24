@@ -85,7 +85,7 @@ Multiple users can edit simultaneously, and changes are synchronized in real-tim
       const addedText = newContent.substring(content.length);
       
       addChange({
-        userId: userId || nanoid(), // Use the current user's ID
+        userId: userId,
         documentId: documentId,
         operation: 'insert',
         path: `content.${content.length}`,
@@ -96,7 +96,7 @@ Multiple users can edit simultaneously, and changes are synchronized in real-tim
       const deletedText = content.substring(newContent.length);
       
       addChange({
-        userId: userId || nanoid(),
+        userId: userId,
         documentId: documentId,
         operation: 'delete',
         path: `content.${newContent.length}`,
@@ -107,7 +107,7 @@ Multiple users can edit simultaneously, and changes are synchronized in real-tim
       // In a real app we would compute an actual diff rather than full replacement
       
       addChange({
-        userId: userId || nanoid(),
+        userId: userId,
         documentId: documentId,
         operation: 'update',
         path: 'content',
