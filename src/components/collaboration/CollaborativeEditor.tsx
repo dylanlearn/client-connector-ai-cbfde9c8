@@ -71,6 +71,7 @@ Multiple users can edit simultaneously, and changes are synchronized in real-tim
     // using operational transforms to resolve conflicts
     
     // For this demo, we'll simulate applying remote changes
+    // Fix: Pass the changes directly without type conversion
     applyChanges(state.changes);
     
   }, [state.changes, applyChanges]);
