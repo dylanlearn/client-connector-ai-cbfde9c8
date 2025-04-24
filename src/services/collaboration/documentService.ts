@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { nanoid } from "nanoid";
-import { DocumentChange, Annotation, User } from "@/types/collaboration";
+import { DocumentChange, User } from "@/types/collaboration";
+import { Annotation } from "@/types/annotations";
 
 /**
  * Service for handling collaborative document operations
