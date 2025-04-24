@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import WireframeEditorDemo from './pages/WireframeEditorDemo';
 import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
 import ComponentVariantLogicDemo from './pages/ComponentVariantLogicDemo';
+import CollaborationDemo from './pages/CollaborationDemo';
 import { AppProviders } from './providers/AppProviders';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
           <Route path="/wireframe-demo" element={<WireframeEditorDemo />} />
           <Route path="/project/:projectId/wireframe" element={<AdvancedWireframeGeneratorPage />} />
           <Route path="/variant-logic" element={<ComponentVariantLogicDemo />} />
+          <Route path="/collaboration" element={<CollaborationDemo />} />
           <Route path="/" element={<ComponentVariantLogicDemo />} />
         </Routes>
       </Router>
