@@ -2365,6 +2365,39 @@ export type Database = {
           },
         ]
       }
+      user_view_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          show_annotations: boolean | null
+          show_client_feedback: boolean | null
+          show_developer_notes: boolean | null
+          updated_at: string | null
+          user_id: string | null
+          view_role: Database["public"]["Enums"]["view_role"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          show_annotations?: boolean | null
+          show_client_feedback?: boolean | null
+          show_developer_notes?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          view_role?: Database["public"]["Enums"]["view_role"] | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          show_annotations?: boolean | null
+          show_client_feedback?: boolean | null
+          show_developer_notes?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          view_role?: Database["public"]["Enums"]["view_role"] | null
+        }
+        Relationships: []
+      }
       variant_styles: {
         Row: {
           created_at: string
@@ -3852,6 +3885,8 @@ export type Database = {
         | "VIEW_ADMIN_PANEL"
         | "ACCESS_PREMIUM_FEATURES"
       content_type: "page" | "section" | "component"
+      feedback_priority: "low" | "medium" | "high" | "urgent"
+      feedback_status: "open" | "in_progress" | "resolved" | "closed"
       fidelity_level: "wireframe" | "low" | "medium" | "high"
       subscription_status:
         | "free"
@@ -3869,6 +3904,7 @@ export type Database = {
         | "trial"
         | "template-buyer"
         | "admin"
+      view_role: "developer" | "designer" | "client" | "manager"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4008,6 +4044,8 @@ export const Constants = {
         "ACCESS_PREMIUM_FEATURES",
       ],
       content_type: ["page", "section", "component"],
+      feedback_priority: ["low", "medium", "high", "urgent"],
+      feedback_status: ["open", "in_progress", "resolved", "closed"],
       fidelity_level: ["wireframe", "low", "medium", "high"],
       subscription_status: [
         "free",
@@ -4027,6 +4065,7 @@ export const Constants = {
         "template-buyer",
         "admin",
       ],
+      view_role: ["developer", "designer", "client", "manager"],
     },
   },
 } as const
