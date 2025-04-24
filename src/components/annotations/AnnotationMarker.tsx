@@ -49,8 +49,7 @@ export const AnnotationMarker: React.FC<AnnotationMarkerProps> = ({
   };
 
   const getThreadCount = () => {
-    // In a real implementation, you would check the thread count
-    // For now, we'll just return a placeholder
+    // Return replies count from metadata if it exists, otherwise return 0
     return annotation.metadata?.replies || 0;
   };
 

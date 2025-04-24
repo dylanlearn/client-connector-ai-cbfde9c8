@@ -32,6 +32,7 @@ export interface AnnotationMetadata {
   labelColor?: string; // For categorizing annotations
   assignedTo?: string; // User ID
   priority?: 'low' | 'medium' | 'high';
+  replies?: number; // Number of replies in a thread
 }
 
 export interface AnnotationThread {
