@@ -31,6 +31,7 @@ import ResponsiveSystemPage from './pages/ResponsiveSystemPage';
 import VisualStatesSystemPage from './pages/VisualStatesSystemPage';
 import DesignPicker from './pages/DesignPicker';
 import IntakeForm from './pages/IntakeForm';
+import CollaborativeDocumentPage from './pages/CollaborativeDocumentPage';
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
@@ -166,6 +167,12 @@ const router = createBrowserRouter([
   {
     path: '/user/profile',
     element: <ProtectedRoute><DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">User Profile</h1></div></DashboardLayout></ProtectedRoute>,
+  },
+  
+  // Collaborative Document Editor
+  {
+    path: '/collaborative-document',
+    element: <Layout><CollaborativeDocumentPage /></Layout>,
   },
 
   // Not found

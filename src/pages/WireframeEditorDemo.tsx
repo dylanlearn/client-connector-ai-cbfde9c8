@@ -1,71 +1,29 @@
 
-import React, { useState } from 'react';
-import { FidelityProvider } from '@/components/wireframe/fidelity/FidelityContext';
-import FidelityDemo from '@/components/wireframe/fidelity/FidelityDemo';
-import MaterialSystemDemo from '@/components/wireframe/demo/MaterialSystemDemo';
-import AdaptationDemo from '@/components/wireframe/adaptation/AdaptationDemo';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles, Palette, Layout } from 'lucide-react';
+import React from 'react';
+import CollaborativeEditorWithAnnotations from '@/components/collaboration/CollaborativeEditorWithAnnotations';
+import { nanoid } from 'nanoid';
 
 const WireframeEditorDemo: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("fidelity");
-
+  const documentId = React.useMemo(() => nanoid(), []);
+  
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Wireframe Design System Demo</h1>
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-2xl font-bold mb-6">Wireframe Editor with Annotations</h1>
+      <CollaborativeEditorWithAnnotations documentId={documentId} />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="fidelity" className="flex items-center">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Fidelity Levels
-          </TabsTrigger>
-          <TabsTrigger value="materials" className="flex items-center">
-            <Palette className="mr-2 h-4 w-4" />
-            Material System
-          </TabsTrigger>
-          <TabsTrigger value="adaptation" className="flex items-center">
-            <Layout className="mr-2 h-4 w-4" />
-            Adaptive Elements
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="fidelity">
-          <Card>
-            <CardHeader>
-              <CardTitle>Design Fidelity Exploration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FidelityProvider initialLevel="medium" transitionDuration={300}>
-                <FidelityDemo />
-              </FidelityProvider>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="materials">
-          <Card>
-            <CardHeader>
-              <CardTitle>Material Rendering Techniques</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MaterialSystemDemo />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="adaptation">
-          <Card>
-            <CardHeader>
-              <CardTitle>Context-Aware Element Adaptation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdaptationDemo />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <div className="mt-8 bg-gray-100 rounded-md p-4">
+        <h2 className="text-lg font-medium mb-2">About this Demo</h2>
+        <p>
+          This is a demo of the collaborative editor with a comprehensive annotation system.
+          You can create annotations by clicking the toolbar icons and then clicking on the 
+          document where you want to add the annotation.
+        </p>
+        <p className="mt-2">
+          In a real application, changes and annotations would be synchronized between users
+          in real-time. Future enhancements will include role-based access control and
+          version control with branching.
+        </p>
+      </div>
     </div>
   );
 };
