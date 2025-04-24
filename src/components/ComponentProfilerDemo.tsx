@@ -1,332 +1,301 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useComponentProfiler from '@/hooks/use-component-profiler';
+import { useComponentProfiler } from '@/hooks/use-component-profiler';
 import useNestedState from '@/hooks/use-nested-state';
+import { toast } from 'sonner';
 
-// Demo component for profiling
-const ProfiledComponent: React.FC<{ complexity: number }> = ({ complexity }) => {
-  const [counter, setCounter] = useState(0);
-  
-  // Simulate expensive rendering
+// Demo component that will be profiled
+const DemoComponent: React.FC<{ level: number; iterations?: number }> = ({ level, iterations = 1000 }) => {
+  const [count, setCount] = useState(0);
+
+  // Expensive operation to simulate performance issues
   useEffect(() => {
-    const startTime = performance.now();
-    // Simulate work that takes time based on complexity
-    for (let i = 0; i < complexity * 1000; i++) {
-      Math.sqrt(i * complexity);
+    // Create artificial load
+    const start = performance.now();
+    let result = 0;
+    for (let i = 0; i < iterations; i++) {
+      result += Math.sqrt(i);
     }
-    console.log(`Render work took: ${performance.now() - startTime}ms`);
-  }, [complexity, counter]);
-  
+    const end = performance.now();
+    console.log(`DemoComponent (level ${level}) rendered with ${iterations} iterations in ${(end - start).toFixed(2)}ms`);
+  }, [level, iterations]);
+
   return (
     <div className="p-4 border rounded-md">
-      <h3 className="text-lg font-medium">Profiled Component</h3>
-      <p>Counter: {counter}</p>
-      <p>Complexity: {complexity}</p>
-      <Button onClick={() => setCounter(c => c + 1)} className="mt-2">
-        Trigger Re-render
-      </Button>
+      <h3 className="text-lg font-semibold mb-2">Demo Component (Level {level})</h3>
+      <p className="mb-2">Iterations: {iterations.toLocaleString()}</p>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => setCount(count + 1)}>
+          Increment: {count}
+        </Button>
+      </div>
     </div>
   );
 };
 
-// Demo for the nested state system
-const NestedStateDemo: React.FC = () => {
-  // Create a nested state system for theme settings
-  const { NestedProvider, useNestedStateContext } = useNestedState({
-    theme: {
-      colors: {
-        primary: '#3b82f6',
-        secondary: '#10b981',
-        background: '#ffffff'
-      },
-      fonts: {
-        heading: 'Inter',
-        body: 'Roboto'
-      },
-      spacing: {
-        sm: '0.5rem',
-        md: '1rem',
-        lg: '1.5rem'
-      }
-    },
-    settings: {
-      darkMode: false,
-      animations: true,
-      notifications: true
+// Create nested state for demo
+const { NestedProvider, useNestedStateContext } = useNestedState({
+  theme: {
+    darkMode: false,
+    animations: true,
+    notifications: true,
+  },
+  user: {
+    name: "User",
+    preferences: {
+      language: "English",
+      timezone: "UTC",
     }
-  });
+  }
+});
 
-  // Component that displays and manages theme settings
-  const ThemeManager: React.FC = () => {
-    const { state, overrideState, resetState, isOverridden } = useNestedStateContext();
-
-    return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Theme Manager</h3>
-        
-        <div className="grid gap-2">
-          <div className="flex items-center justify-between">
-            <span>Primary Color:</span>
-            <div className="flex items-center space-x-2">
-              <div 
-                className="w-6 h-6 rounded-full" 
-                style={{ backgroundColor: state.theme.colors.primary }}
-              />
-              <input
-                type="color"
-                value={state.theme.colors.primary}
-                onChange={(e) => overrideState('theme.colors.primary', e.target.value)}
-                className="w-10 h-8"
-              />
-              {isOverridden('theme.colors.primary') && (
-                <Badge variant="outline" className="ml-2 cursor-pointer" onClick={() => resetState('theme.colors.primary')}>
-                  Reset
-                </Badge>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span>Secondary Color:</span>
-            <div className="flex items-center space-x-2">
-              <div 
-                className="w-6 h-6 rounded-full" 
-                style={{ backgroundColor: state.theme.colors.secondary }}
-              />
-              <input
-                type="color"
-                value={state.theme.colors.secondary}
-                onChange={(e) => overrideState('theme.colors.secondary', e.target.value)}
-                className="w-10 h-8"
-              />
-              {isOverridden('theme.colors.secondary') && (
-                <Badge variant="outline" className="ml-2 cursor-pointer" onClick={() => resetState('theme.colors.secondary')}>
-                  Reset
-                </Badge>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <span>Dark Mode:</span>
-            <input
-              type="checkbox"
-              checked={state.settings.darkMode}
-              onChange={(e) => overrideState('settings.darkMode', e.target.checked)}
-              className="h-4 w-4"
-            />
-          </div>
+// Child component that uses nested state
+const ThemeControls: React.FC = () => {
+  const { state, overrideState, isOverridden } = useNestedStateContext();
+  
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Theme Controls</h3>
+      
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span>Dark Mode:</span>
+          <Button 
+            size="sm" 
+            variant={state.theme.darkMode ? "default" : "outline"}
+            onClick={() => overrideState('theme.darkMode', !state.theme.darkMode)}
+          >
+            {state.theme.darkMode ? 'On' : 'Off'}
+          </Button>
+          {isOverridden('theme.darkMode') && <Badge>Overridden</Badge>}
         </div>
         
-        <Button onClick={() => resetState()} variant="outline" size="sm">
-          Reset All
-        </Button>
+        <div className="flex items-center gap-2">
+          <span>Animations:</span>
+          <Button 
+            size="sm" 
+            variant={state.theme.animations ? "default" : "outline"}
+            onClick={() => overrideState('theme.animations', !state.theme.animations)}
+          >
+            {state.theme.animations ? 'On' : 'Off'}
+          </Button>
+          {isOverridden('theme.animations') && <Badge>Overridden</Badge>}
+        </div>
         
-        <div className="mt-4 p-4 border rounded bg-gray-50">
-          <h4 className="text-sm font-medium mb-2">Current State:</h4>
-          <pre className="text-xs overflow-auto max-h-40">
-            {JSON.stringify(state, null, 2)}
-          </pre>
+        <div className="flex items-center gap-2">
+          <span>Notifications:</span>
+          <Button 
+            size="sm" 
+            variant={state.theme.notifications ? "default" : "outline"}
+            onClick={() => overrideState('theme.notifications', !state.theme.notifications)}
+          >
+            {state.theme.notifications ? 'On' : 'Off'}
+          </Button>
+          {isOverridden('theme.notifications') && <Badge>Overridden</Badge>}
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
-  // Child component that inherits theme
-  const ChildComponent: React.FC = () => {
-    const ChildNestedProvider = NestedProvider;
-    return (
-      <ChildNestedProvider initialState={{ settings: { animations: false } }}>
-        <ChildContent />
-      </ChildNestedProvider>
-    );
-  };
-
-  const ChildContent: React.FC = () => {
-    const { state, inheritState } = useNestedStateContext();
-
-    return (
-      <div className="border p-4 mt-4 rounded-md">
-        <h3 className="text-lg font-semibold">Child Component</h3>
-        <p>This component inherits and can override parent state</p>
-        
-        <div className="mt-2">
-          <Button 
-            onClick={() => inheritState('theme.colors.primary')}
-            size="sm"
-          >
-            Inherit Primary Color
+// Child component that inherits theme state
+const UserPreferences: React.FC = () => {
+  const { state, overrideState, inheritState, resetState } = useNestedStateContext();
+  
+  return (
+    <div className="space-y-4 mt-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">User Preferences</h3>
+        <div className="space-x-2">
+          <Button size="sm" variant="outline" onClick={() => inheritState('theme')}>
+            Inherit Theme
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => resetState('theme')}>
+            Reset Theme
           </Button>
         </div>
-        
-        <div className="mt-4 p-4 border rounded bg-gray-50">
-          <h4 className="text-sm font-medium mb-2">Child State:</h4>
-          <pre className="text-xs overflow-auto max-h-40">
-            {JSON.stringify(state, null, 2)}
-          </pre>
-        </div>
       </div>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="pb-4">
-        <h2 className="text-xl font-bold mb-4">Nested State Management</h2>
-        <p className="text-gray-600 mb-4">
-          This demo shows how state can be shared and inherited between parent and child components,
-          with the ability to override specific values.
-        </p>
+      
+      <p>Using theme configuration:</p>
+      <pre className="bg-muted p-2 rounded text-sm">
+        {JSON.stringify(state.theme, null, 2)}
+      </pre>
+      
+      <div className="flex items-center gap-2">
+        <span>Language:</span>
+        <Button 
+          size="sm" 
+          variant="outline"
+          onClick={() => {
+            const newLang = state.user.preferences.language === "English" ? "Spanish" : "English";
+            overrideState('user.preferences.language', newLang);
+          }}
+        >
+          {state.user.preferences.language}
+        </Button>
       </div>
-
-      <NestedProvider>
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-4">
-            <ThemeManager />
-          </Card>
-          <Card className="p-4">
-            <ChildComponent />
-          </Card>
-        </div>
-      </NestedProvider>
     </div>
   );
 };
 
-// Main component that demonstrates both profiler and nested state
-export const ComponentProfilerDemo: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('profiler');
-  const [complexity, setComplexity] = useState<number>(5);
+// Component that uses nested state providers to demonstrate state inheritance
+const NestedStateDemo: React.FC = () => {
+  return (
+    <NestedProvider>
+      <Card>
+        <CardHeader>
+          <CardTitle>Parent Component</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ThemeControls />
+          <Separator className="my-4" />
+          
+          <NestedProvider initialState={{ theme: { darkMode: true, animations: true, notifications: false } }}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Child Component (With Initial Override)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ThemeControls />
+                <UserPreferences />
+              </CardContent>
+            </Card>
+          </NestedProvider>
+          
+          <div className="mt-4">
+            <NestedProvider>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Child Component (Inherits All)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ThemeControls />
+                  <UserPreferences />
+                </CardContent>
+              </Card>
+            </NestedProvider>
+          </div>
+        </CardContent>
+      </Card>
+    </NestedProvider>
+  );
+};
 
-  // Initialize the profiler
-  const { 
-    metrics, 
-    captureRenderStart, 
-    captureRenderEnd,
-    resetMetrics,
-    analyzePerformance
-  } = useComponentProfiler('ProfiledComponent', {
+export const ComponentProfilerDemo: React.FC = () => {
+  const [level, setLevel] = useState(1);
+  const [iterations, setIterations] = useState(10000);
+  const { metrics, captureRenderStart, captureRenderEnd, resetMetrics, analyzePerformance } = useComponentProfiler('DemoComponent', {
     trackMemory: true,
     trackDOMNodes: true,
-    logToConsole: true
+    logToConsole: true,
+    sampleInterval: 0,
+    trackProps: true
   });
 
-  // Profile the component
-  const ProfilerDemo = () => {
-    useEffect(() => {
-      captureRenderStart();
-      return () => {
-        captureRenderEnd();
-      };
-    }, []);
+  // Function to handle profiling click
+  const handleProfile = () => {
+    resetMetrics();
+    captureRenderStart();
+    setTimeout(() => {
+      captureRenderEnd();
+      toast.success('Performance metrics updated!');
+    }, 100);
+  };
 
+  // Demo component with the full configuration object
+  const ConfiguredComponent = () => {
+    // Fix: provide all required properties
+    const config = {
+      darkMode: false,
+      animations: false,
+      notifications: false
+    };
+    
     return (
-      <div className="space-y-6">
-        <div className="pb-4">
-          <h2 className="text-xl font-bold mb-4">Component Performance Profiler</h2>
-          <p className="text-gray-600 mb-4">
-            This demo shows how to profile component rendering performance and get metrics
-            to optimize your React components.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4 mb-4">
-          <span>Complexity:</span>
-          <input 
-            type="range" 
-            min="1" 
-            max="20" 
-            value={complexity} 
-            onChange={(e) => setComplexity(parseInt(e.target.value))}
-            className="w-40"
-          />
-          <span>{complexity}</span>
-          <Button onClick={resetMetrics} variant="outline" size="sm">Reset Metrics</Button>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-4">
-            <ProfiledComponent complexity={complexity} />
-          </Card>
-          
-          <Card className="p-4">
-            <h3 className="text-lg font-medium mb-2">Performance Metrics</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Render Count:</span>
-                <span className="font-medium">{metrics.renderCount}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Last Render Time:</span>
-                <span className="font-medium">{metrics.lastRenderTime.toFixed(2)} ms</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Average Render Time:</span>
-                <span className="font-medium">{metrics.averageRenderTime.toFixed(2)} ms</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Max Render Time:</span>
-                <span className="font-medium">{metrics.maxRenderTime.toFixed(2)} ms</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Render Time:</span>
-                <span className="font-medium">{metrics.totalRenderTime.toFixed(2)} ms</span>
-              </div>
-              {metrics.memoryUsage !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Memory Usage:</span>
-                  <span className="font-medium">{metrics.memoryUsage.toFixed(2)} MB</span>
-                </div>
-              )}
-              {metrics.domNodes !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">DOM Nodes:</span>
-                  <span className="font-medium">{metrics.domNodes}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-gray-600">Unnecessary Renders:</span>
-                <span className="font-medium">{metrics.rerenderedWithoutPropChanges}</span>
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <h4 className="font-medium mb-2">Recommendations</h4>
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                {analyzePerformance().length > 0 ? (
-                  analyzePerformance().map((rec, i) => (
-                    <li key={i} className="text-amber-700">{rec}</li>
-                  ))
-                ) : (
-                  <li className="text-green-600">No performance issues detected</li>
-                )}
-              </ul>
-            </div>
-          </Card>
-        </div>
+      <div className="p-4 border rounded">
+        <h3>Configured Component</h3>
+        <pre>{JSON.stringify(config, null, 2)}</pre>
       </div>
     );
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="profiler">Performance Profiler</TabsTrigger>
-        <TabsTrigger value="nestedState">Nested State Management</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="profiler">
-        <ProfilerDemo />
-      </TabsContent>
-      
-      <TabsContent value="nestedState">
-        <NestedStateDemo />
-      </TabsContent>
-    </Tabs>
+    <div className="space-y-8">
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Component Profiler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Controls</h3>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" onClick={handleProfile}>
+                    Run Profiling
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setIterations(iterations * 2)}>
+                    2x Iterations
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setIterations(Math.max(1000, iterations / 2))}>
+                    ÷2 Iterations
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => resetMetrics()}>
+                    Reset
+                  </Button>
+                </div>
+              </div>
+              
+              <DemoComponent level={level} iterations={iterations} />
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Performance Metrics</h3>
+                <div className="bg-muted p-4 rounded-md space-y-2">
+                  <p><strong>Render Count:</strong> {metrics.renderCount}</p>
+                  <p><strong>Last Render Time:</strong> {metrics.lastRenderTime.toFixed(2)}ms</p>
+                  <p><strong>Average Render Time:</strong> {metrics.averageRenderTime.toFixed(2)}ms</p>
+                  <p><strong>Max Render Time:</strong> {metrics.maxRenderTime.toFixed(2)}ms</p>
+                  {metrics.memoryUsage !== undefined && (
+                    <p><strong>Memory Usage:</strong> {metrics.memoryUsage.toFixed(2)} MB</p>
+                  )}
+                  {metrics.domNodes !== undefined && (
+                    <p><strong>DOM Nodes:</strong> {metrics.domNodes}</p>
+                  )}
+                  <p><strong>Unnecessary Renders:</strong> {metrics.rerenderedWithoutPropChanges}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Recommendations</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  {analyzePerformance().map((rec, idx) => (
+                    <li key={idx} className="text-sm">{rec}</li>
+                  ))}
+                  {analyzePerformance().length === 0 && (
+                    <li className="text-sm">No recommendations at this time.</li>
+                  )}
+                </ul>
+              </div>
+              
+              <ConfiguredComponent />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Nested State Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <NestedStateDemo />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
