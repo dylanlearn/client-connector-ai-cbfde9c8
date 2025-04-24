@@ -1,129 +1,149 @@
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
-import { User, UserPresence, DocumentChange, CollaborationState, CollaborationAction } from '@/types/collaboration';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
 import { nanoid } from 'nanoid';
+import { User, DocumentChange, CollaborationState, CollaborationAction, UserPresence, CursorPosition } from '@/types/collaboration';
+import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/hooks/useUser';
 
-// Mock data for demonstration purposes
-const mockUsers: Record<string, User> = {
-  'user-1': {
-    id: 'user-1',
-    name: 'Alex Johnson',
-    color: '#4C6EF5',
-    avatar: null,
-    presence: {
-      status: 'active',
-      focusElement: 'editor',
-      cursorPosition: { x: 150, y: 80 },
-      lastActive: new Date().toISOString(),
-    },
-  },
-  'user-2': {
-    id: 'user-2',
-    name: 'Taylor Smith',
-    color: '#FA5252',
-    avatar: null,
-    presence: {
-      status: 'idle',
-      focusElement: 'comments',
-      cursorPosition: { x: 250, y: 120 },
-      lastActive: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-    },
-  },
-};
-
-// Initial state
+// Initial state for the collaboration context
 const initialState: CollaborationState = {
-  users: mockUsers,
-  activeUsers: Object.keys(mockUsers),
+  users: {},
+  activeUsers: [],
   documentId: null,
   changes: [],
   pendingChanges: [],
-  isConnected: true,
+  isConnected: false,
   error: null,
-  lastSyncedVersion: 0,
+  lastSyncedVersion: 0
 };
 
-// Reducer for state management
+const getRandomColor = () => {
+  const colors = [
+    '#f44336', '#e91e63', '#9c27b0', '#673ab7', 
+    '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', 
+    '#009688', '#4caf50', '#8bc34a', '#cddc39',
+    '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'
+  ];
+  
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
+// Mock names for demonstration
+const getRandomName = () => {
+  const names = [
+    'Alex', 'Blake', 'Casey', 'Dana', 'Ellis',
+    'Finley', 'Gray', 'Harper', 'Indigo', 'Jordan',
+    'Kennedy', 'Logan', 'Morgan', 'Noel', 'Parker',
+    'Quinn', 'Riley', 'Sawyer', 'Taylor', 'Vaughn'
+  ];
+  
+  const adjectives = [
+    'Quick', 'Smart', 'Clever', 'Bright', 'Swift',
+    'Eager', 'Happy', 'Calm', 'Bold', 'Brave'
+  ];
+  
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const name = names[Math.floor(Math.random() * names.length)];
+  
+  return `${adjective} ${name}`;
+};
+
+// Generate default user presence state
+const getDefaultPresence = (): UserPresence => ({
+  status: 'active',
+  focusElement: null,
+  cursorPosition: null,
+  lastActive: new Date().toISOString()
+});
+
+// Collaboration reducer function
 const collaborationReducer = (state: CollaborationState, action: CollaborationAction): CollaborationState => {
   switch (action.type) {
     case 'SET_DOCUMENT_ID':
       return {
         ...state,
-        documentId: action.payload,
+        documentId: action.payload
       };
-      
+    
     case 'USER_JOINED':
       return {
         ...state,
         users: {
           ...state.users,
-          [action.payload.id]: action.payload,
+          [action.payload.id]: action.payload
         },
-        activeUsers: [...state.activeUsers, action.payload.id],
+        activeUsers: [...state.activeUsers, action.payload.id]
       };
       
     case 'USER_LEFT':
+      const updatedUsers = { ...state.users };
+      if (updatedUsers[action.payload]) {
+        updatedUsers[action.payload] = {
+          ...updatedUsers[action.payload],
+          presence: {
+            ...updatedUsers[action.payload].presence,
+            status: 'offline'
+          }
+        };
+      }
+      
       return {
         ...state,
-        activeUsers: state.activeUsers.filter(id => id !== action.payload),
-        users: {
-          ...state.users,
-          [action.payload]: {
-            ...state.users[action.payload],
-            presence: {
-              ...state.users[action.payload].presence,
-              status: 'offline',
-            },
-          },
-        },
+        users: updatedUsers,
+        activeUsers: state.activeUsers.filter(id => id !== action.payload)
       };
       
     case 'UPDATE_USER_PRESENCE':
+      const { userId, presence } = action.payload;
+      
+      if (!state.users[userId]) {
+        return state;
+      }
+      
       return {
         ...state,
         users: {
           ...state.users,
-          [action.payload.userId]: {
-            ...state.users[action.payload.userId],
+          [userId]: {
+            ...state.users[userId],
             presence: {
-              ...state.users[action.payload.userId].presence,
-              ...action.payload.presence,
-            },
-          },
-        },
+              ...state.users[userId].presence,
+              ...presence
+            }
+          }
+        }
       };
       
     case 'ADD_CHANGE':
       return {
         ...state,
-        changes: [...state.changes, action.payload],
-        pendingChanges: [...state.pendingChanges, action.payload],
+        pendingChanges: [...state.pendingChanges, action.payload]
       };
       
     case 'CHANGES_APPLIED':
+      const changeIds = action.payload;
       return {
         ...state,
-        pendingChanges: state.pendingChanges.filter(
-          change => !action.payload.includes(change.id)
-        ),
-      };
-      
-    case 'SET_CONNECTION_STATUS':
-      return {
-        ...state,
-        isConnected: action.payload,
-      };
-      
-    case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload,
+        pendingChanges: state.pendingChanges.filter(change => !changeIds.includes(change.id)),
+        lastSyncedVersion: state.lastSyncedVersion + 1
       };
       
     case 'MERGE_REMOTE_CHANGES':
       return {
         ...state,
-        changes: [...state.changes, ...action.payload],
+        changes: [...state.changes, ...action.payload]
+      };
+      
+    case 'SET_CONNECTION_STATUS':
+      return {
+        ...state,
+        isConnected: action.payload
+      };
+      
+    case 'SET_ERROR':
+      return {
+        ...state,
+        error: action.payload
       };
       
     default:
@@ -131,16 +151,14 @@ const collaborationReducer = (state: CollaborationState, action: CollaborationAc
   }
 };
 
-// Create context
-interface CollaborationContextType {
+// Create the collaboration context
+type CollaborationContextType = {
   state: CollaborationState;
   setDocumentId: (id: string | null) => void;
-  userJoined: (user: User) => void;
-  userLeft: (userId: string) => void;
-  updateUserPresence: (presence: Partial<UserPresence>) => void;
   addChange: (change: Omit<DocumentChange, 'id' | 'timestamp'>) => void;
   applyChanges: (changes: DocumentChange[]) => void;
-}
+  updateUserPresence: (presence: Partial<UserPresence>) => void;
+};
 
 const CollaborationContext = createContext<CollaborationContextType | undefined>(undefined);
 
@@ -149,218 +167,185 @@ interface CollaborationProviderProps {
   children: ReactNode;
 }
 
-export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ children }) => {
+const CollaborationProvider = ({ children }: CollaborationProviderProps) => {
   const [state, dispatch] = useReducer(collaborationReducer, initialState);
+  const userId = useUser();
   
-  // Generate a unique ID for the current user
-  const currentUserId = useCallback(() => {
-    const storedId = localStorage.getItem('collaboration_user_id');
-    if (storedId) return storedId;
-    
-    const newId = nanoid();
-    localStorage.setItem('collaboration_user_id', newId);
-    return newId;
-  }, []);
-  
-  // Set up the current user when the provider mounts
+  // Initialize current user when component mounts
   useEffect(() => {
-    const userId = currentUserId();
+    if (!userId) return;
     
-    // Create a user if they don't exist yet
-    if (!state.users[userId]) {
-      const randomColors = [
-        '#4C6EF5', '#FA5252', '#40C057', '#FD7E14', '#7950F2',
-        '#12B886', '#228BE6', '#F783AC', '#82C91E', '#E64980',
-      ];
+    // Create user object for the current user
+    const user: User = {
+      id: userId,
+      name: getRandomName(),
+      color: getRandomColor(),
+      avatar: null,
+      presence: getDefaultPresence()
+    };
+    
+    // Add current user to the users list
+    dispatch({ type: 'USER_JOINED', payload: user });
+    
+    // Simulate some other users joining for demonstration
+    const demoUsersCount = Math.floor(Math.random() * 3) + 1; // 1-3 additional users
+    
+    for (let i = 0; i < demoUsersCount; i++) {
+      const demoUser: User = {
+        id: nanoid(),
+        name: getRandomName(),
+        color: getRandomColor(),
+        avatar: null,
+        presence: getDefaultPresence()
+      };
       
-      const randomColor = randomColors[Math.floor(Math.random() * randomColors.length)];
-      const randomNames = [
-        'Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey',
-        'Riley', 'Jamie', 'Avery', 'Quinn', 'Blake',
-      ];
-      const randomName = `${randomNames[Math.floor(Math.random() * randomNames.length)]}`;
-      
-      dispatch({
-        type: 'USER_JOINED',
-        payload: {
-          id: userId,
-          name: randomName,
-          color: randomColor,
-          avatar: null,
-          presence: {
-            status: 'active',
-            focusElement: null,
-            cursorPosition: null,
-            lastActive: new Date().toISOString(),
-          },
-        },
-      });
+      setTimeout(() => {
+        dispatch({ type: 'USER_JOINED', payload: demoUser });
+        
+        // Simulate user activity
+        simulateUserActivity(demoUser.id);
+      }, i * 2000); // Stagger user joins
     }
     
-    // Set up idle detection
-    let idleTimer: NodeJS.Timeout | null = null;
-    
-    const resetIdleTimer = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      
-      // Set to idle after 2 minutes of inactivity
-      idleTimer = setTimeout(() => {
-        dispatch({
-          type: 'UPDATE_USER_PRESENCE',
-          payload: {
-            userId,
-            presence: {
-              status: 'idle',
-              lastActive: new Date().toISOString(),
-            },
-          },
-        });
-      }, 2 * 60 * 1000);
-      
-      // If currently idle, set back to active
-      if (state.users[userId]?.presence.status === 'idle') {
-        dispatch({
-          type: 'UPDATE_USER_PRESENCE',
-          payload: {
-            userId,
-            presence: {
-              status: 'active',
-              lastActive: new Date().toISOString(),
-            },
-          },
-        });
-      }
+    return () => {
+      // Clean up any subscriptions or timers
     };
+  }, [userId]);
+  
+  // Set up real-time communication with Supabase (simulated for this demo)
+  useEffect(() => {
+    if (!state.documentId || !userId) return;
     
-    // Set up presence handlers
-    window.addEventListener('mousemove', resetIdleTimer);
-    window.addEventListener('keydown', resetIdleTimer);
+    // Simulate connection to real-time service
+    dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+    console.log(`Connected to document: ${state.documentId}`);
     
-    // In a real app, we would use a WebSocket to sync presence
-    // For demo purposes, simulate remote presence updates
-    const presenceInterval = setInterval(() => {
-      // Simulate other users moving their cursors
-      Object.keys(state.users).forEach(id => {
-        if (id !== userId && Math.random() > 0.7) {
-          const randomX = Math.floor(Math.random() * 500);
-          const randomY = Math.floor(Math.random() * 300);
-          
-          dispatch({
-            type: 'UPDATE_USER_PRESENCE',
-            payload: {
-              userId: id,
-              presence: {
-                cursorPosition: {
-                  x: randomX,
-                  y: randomY,
-                  elementId: 'collaborative-editor',
-                },
-                lastActive: new Date().toISOString(),
-              },
-            },
-          });
-        }
+    // Create a Supabase channel for real-time collaboration
+    const channel = supabase.channel(`document:${state.documentId}`, {
+      config: {
+        presence: {
+          key: userId,
+        },
+      },
+    });
+    
+    // Set up presence listeners
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = channel.presenceState();
+        console.log('Presence state synchronized:', presenceState);
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('User joined:', key, newPresences);
+        // In a real app, we would extract user details from newPresences
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('User left:', key, leftPresences);
+        dispatch({ type: 'USER_LEFT', payload: key });
       });
-    }, 5000);
     
-    // Handle browser tab visibility for presence
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
+    // Set up broadcast listeners for document changes
+    channel
+      .on('broadcast', { event: 'document_change' }, (payload) => {
+        console.log('Received document change:', payload);
+        // In a real app, we would process incoming document changes
+        // and apply operational transforms if needed
+      });
+    
+    // Subscribe to the channel
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        // Track user's presence with the complete UserPresence object
+        const currentPresence = {
+          status: 'active',
+          focusElement: null, 
+          cursorPosition: null,
+          lastActive: new Date().toISOString()
+        };
+        
+        await channel.track({
+          user: userId,
+          presence: currentPresence,
+        });
+        
+        console.log('Subscribed to real-time channel and tracking presence');
+      }
+    });
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [state.documentId, userId]);
+  
+  // Simulate user activity for demo purposes
+  const simulateUserActivity = useCallback((userId: string) => {
+    const activities = [
+      // Simulate user going idle
+      () => {
         dispatch({
           type: 'UPDATE_USER_PRESENCE',
           payload: {
             userId,
             presence: {
               status: 'idle',
-              lastActive: new Date().toISOString(),
-            },
-          },
+              focusElement: null,
+              cursorPosition: null,
+              lastActive: new Date().toISOString()
+            }
+          }
         });
-      } else {
+      },
+      // Simulate user becoming active again
+      () => {
         dispatch({
           type: 'UPDATE_USER_PRESENCE',
           payload: {
             userId,
-            presence: {
-              status: 'active',
-              lastActive: new Date().toISOString(),
-            },
-          },
-        });
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Simulate other users joining and leaving
-    const joinLeaveInterval = setInterval(() => {
-      if (Math.random() > 0.9) {
-        // Simulate a new user joining
-        const simulatedUserId = `sim-user-${nanoid(8)}`;
-        const randomColors = ['#4C6EF5', '#FA5252', '#40C057', '#FD7E14'];
-        const randomNames = ['Robin', 'Sam', 'Ash', 'Drew', 'Cameron'];
-        
-        dispatch({
-          type: 'USER_JOINED',
-          payload: {
-            id: simulatedUserId,
-            name: `${randomNames[Math.floor(Math.random() * randomNames.length)]}`,
-            color: randomColors[Math.floor(Math.random() * randomColors.length)],
-            avatar: null,
             presence: {
               status: 'active',
               focusElement: null,
-              cursorPosition: {
-                x: Math.floor(Math.random() * 500),
-                y: Math.floor(Math.random() * 300),
-                elementId: 'collaborative-editor',
-              },
-              lastActive: new Date().toISOString(),
-            },
-          },
-        });
-        
-        // And possibly leave after a while
-        setTimeout(() => {
-          if (Math.random() > 0.5) {
-            dispatch({ type: 'USER_LEFT', payload: simulatedUserId });
+              cursorPosition: null,
+              lastActive: new Date().toISOString()
+            }
           }
-        }, Math.random() * 60000 + 5000);
+        });
+      },
+      // Simulate cursor movement
+      () => {
+        const randomX = Math.floor(Math.random() * 800);
+        const randomY = Math.floor(Math.random() * 400);
+        
+        dispatch({
+          type: 'UPDATE_USER_PRESENCE',
+          payload: {
+            userId,
+            presence: {
+              status: 'active',
+              focusElement: 'editor',
+              cursorPosition: {
+                x: randomX,
+                y: randomY,
+                elementId: 'collaborative-editor'
+              },
+              lastActive: new Date().toISOString()
+            }
+          }
+        });
       }
-    }, 10000);
+    ];
     
-    // Clean up handlers and timers when unmounting
-    return () => {
-      window.removeEventListener('mousemove', resetIdleTimer);
-      window.removeEventListener('keydown', resetIdleTimer);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (idleTimer) clearTimeout(idleTimer);
-      clearInterval(presenceInterval);
-      clearInterval(joinLeaveInterval);
-    };
-  }, [currentUserId]);
-  
-  // Actions
-  const setDocumentId = useCallback((id: string | null) => {
-    dispatch({ type: 'SET_DOCUMENT_ID', payload: id });
+    // Randomly select an activity and schedule it
+    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+    const delay = Math.random() * 5000 + 2000; // 2-7 seconds
+    
+    setTimeout(() => {
+      randomActivity();
+      // Schedule another random activity
+      simulateUserActivity(userId);
+    }, delay);
   }, []);
   
-  const userJoined = useCallback((user: User) => {
-    dispatch({ type: 'USER_JOINED', payload: user });
-  }, []);
-  
-  const userLeft = useCallback((userId: string) => {
-    dispatch({ type: 'USER_LEFT', payload: userId });
-  }, []);
-  
-  const updateUserPresence = useCallback((presence: Partial<UserPresence>) => {
-    const userId = currentUserId();
-    dispatch({
-      type: 'UPDATE_USER_PRESENCE',
-      payload: { userId, presence },
-    });
-  }, [currentUserId]);
-  
+  // Generate a unique ID for each change
   const addChange = useCallback((change: Omit<DocumentChange, 'id' | 'timestamp'>) => {
     const completeChange: DocumentChange = {
       ...change,
@@ -370,36 +355,46 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
     
     dispatch({ type: 'ADD_CHANGE', payload: completeChange });
     
-    // In a real app, we would send this change to a server
-    // For this demo, we'll simulate successful application after a delay
+    // In a real app, we'd also broadcast this change to other users
+    // For demo purposes, we'll just apply it locally after a delay
     setTimeout(() => {
       dispatch({ type: 'CHANGES_APPLIED', payload: [completeChange.id] });
-    }, 500);
+    }, 300);
   }, []);
   
+  // Apply changes received from remote users
   const applyChanges = useCallback((changes: DocumentChange[]) => {
-    // In a real app, this would use operational transforms to merge changes
-    // For this demo, we'll just simulate the application
-    console.log('Applying changes:', changes);
-    
-    // Mark these changes as applied
-    setTimeout(() => {
-      dispatch({
-        type: 'CHANGES_APPLIED',
-        payload: changes.map(change => change.id),
-      });
-    }, 200);
+    dispatch({ type: 'MERGE_REMOTE_CHANGES', payload: changes });
   }, []);
   
-  // Context value
+  // Set the document ID for collaboration
+  const setDocumentId = useCallback((id: string | null) => {
+    dispatch({ type: 'SET_DOCUMENT_ID', payload: id });
+  }, []);
+  
+  // Update user presence
+  const updateUserPresence = useCallback((presenceUpdate: Partial<UserPresence>) => {
+    if (!userId) return;
+    
+    // Ensure we maintain the required UserPresence structure with defaults for missing fields
+    dispatch({
+      type: 'UPDATE_USER_PRESENCE',
+      payload: {
+        userId,
+        presence: presenceUpdate
+      }
+    });
+    
+    // In a real application, we would broadcast this presence update to other users
+    // via the Supabase real-time channel
+  }, [userId]);
+  
   const value = {
     state,
     setDocumentId,
-    userJoined,
-    userLeft,
-    updateUserPresence,
     addChange,
     applyChanges,
+    updateUserPresence
   };
   
   return (
@@ -409,13 +404,15 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
   );
 };
 
-// Custom hook for using the context
-export const useCollaboration = () => {
+// Hook to use the collaboration context
+const useCollaboration = () => {
   const context = useContext(CollaborationContext);
   
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useCollaboration must be used within a CollaborationProvider');
   }
   
   return context;
 };
+
+export { CollaborationProvider, useCollaboration };
