@@ -199,8 +199,8 @@ export function useComponentProfiler(
   }, [captureRenderEnd, sampleInterval]);
   
   // HOC to wrap component with performance tracking
-  const withProfiler = <P extends object>(Component: React.ComponentType<P>): React.FC<P> => {
-    return (props: P) => {
+  function withProfiler<P extends object>(Component: React.ComponentType<P>): React.FC<P> {
+    return function ProfiledComponent(props: P) {
       captureRenderStart();
       useEffect(() => {
         captureRenderEnd(props);
@@ -208,17 +208,17 @@ export function useComponentProfiler(
       
       return <Component {...props} />;
     };
-  };
+  }
 
   // Profile a function
-  const profileFunction = <T extends (...args: any[]) => any>(fn: T, functionName?: string): T => {
+  function profileFunction<T extends (...args: any[]) => any>(fn: T, functionName?: string): T {
     const profiled = (...args: Parameters<T>): ReturnType<T> => {
       const name = functionName || fn.name || 'anonymous';
       return trackPerformance(`${componentName}.${name}`, fn, ...args) as ReturnType<T>;
     };
     
     return profiled as T;
-  };
+  }
   
   return {
     metrics,

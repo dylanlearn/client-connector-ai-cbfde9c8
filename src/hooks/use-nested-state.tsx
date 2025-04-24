@@ -32,9 +32,10 @@ export function createNestedStateProvider<T extends Record<string, any>>(
         const inheritedState = { ...state };
         Object.keys(state).forEach(key => {
           if (!overrides[key]) {
-            inheritedState[key] = parent.state[key as keyof T] !== undefined 
-              ? parent.state[key as keyof T] 
-              : state[key];
+            const typedKey = key as keyof T;
+            inheritedState[typedKey] = parent.state[typedKey] !== undefined 
+              ? parent.state[typedKey] 
+              : state[typedKey];
           }
         });
         setLocalState(inheritedState);
@@ -59,20 +60,21 @@ export function createNestedStateProvider<T extends Record<string, any>>(
       const key = pathParts[0];
       
       setLocalState(prev => {
-        const newState = { ...prev };
+        const newState = { ...prev } as Record<string, any>;
         let current = newState;
         
         // Navigate to the nested property
         for (let i = 0; i < pathParts.length - 1; i++) {
-          if (!current[pathParts[i]] || typeof current[pathParts[i]] !== 'object') {
-            current[pathParts[i]] = {};
+          const part = pathParts[i];
+          if (!current[part] || typeof current[part] !== 'object') {
+            current[part] = {};
           }
-          current = current[pathParts[i]];
+          current = current[part];
         }
         
         // Set the value
         current[pathParts[pathParts.length - 1]] = value;
-        return newState;
+        return newState as T;
       });
       
       setOverrides(prev => ({
@@ -85,7 +87,7 @@ export function createNestedStateProvider<T extends Record<string, any>>(
       if (!parent) return undefined;
       
       const pathParts = path.split('.');
-      let value = parent.state;
+      let value = parent.state as Record<string, any>;
       
       // Navigate to the nested property in parent state
       for (const part of pathParts) {
@@ -108,7 +110,7 @@ export function createNestedStateProvider<T extends Record<string, any>>(
         const key = pathParts[0];
         
         setLocalState(prev => {
-          const newState = { ...prev };
+          const newState = { ...prev } as Record<string, any>;
           let current = newState;
           
           // Navigate to the nested property
@@ -118,12 +120,12 @@ export function createNestedStateProvider<T extends Record<string, any>>(
           }
           
           // Reset to default
-          const defaultValue = pathParts.reduce((obj, part) => {
+          const defaultValue = pathParts.reduce((obj: any, part) => {
             return obj && typeof obj === 'object' && part in obj ? obj[part] : undefined;
           }, defaultState as any);
           
           current[pathParts[pathParts.length - 1]] = defaultValue;
-          return newState;
+          return newState as T;
         });
         
         setOverrides(prev => {
