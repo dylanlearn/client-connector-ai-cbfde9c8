@@ -1,11 +1,33 @@
 
-import React, { createContext, useContext, useReducer, useCallback, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, useMemo } from 'react';
 import { nanoid } from 'nanoid';
-import { User, DocumentChange, CollaborationState, CollaborationAction, UserPresence, CursorPosition } from '@/types/collaboration';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/hooks/useUser';
+import { RealtimeChannel } from '@supabase/supabase-js';
+import { 
+  CollaborationState, 
+  CollaborationAction, 
+  User, 
+  DocumentChange,
+  UserPresence
+} from '@/types/collaboration';
 
-// Initial state for the collaboration context
+interface CollaborationContextType {
+  state: CollaborationState;
+  addUser: (user: User) => void;
+  removeUser: (userId: string) => void;
+  setDocumentId: (documentId: string | null) => void;
+  addChange: (change: Omit<DocumentChange, 'id' | 'timestamp'>) => void;
+  applyChanges: (changeIds: string[]) => void;
+  updateUserPresence: (presence: Partial<UserPresence>) => void;
+}
+
+const defaultPresence: UserPresence = {
+  status: 'offline',
+  focusElement: null,
+  cursorPosition: null,
+  lastActive: new Date().toISOString()
+};
+
 const initialState: CollaborationState = {
   users: {},
   activeUsers: [],
@@ -17,46 +39,6 @@ const initialState: CollaborationState = {
   lastSyncedVersion: 0
 };
 
-const getRandomColor = () => {
-  const colors = [
-    '#f44336', '#e91e63', '#9c27b0', '#673ab7', 
-    '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', 
-    '#009688', '#4caf50', '#8bc34a', '#cddc39',
-    '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'
-  ];
-  
-  return colors[Math.floor(Math.random() * colors.length)];
-};
-
-// Mock names for demonstration
-const getRandomName = () => {
-  const names = [
-    'Alex', 'Blake', 'Casey', 'Dana', 'Ellis',
-    'Finley', 'Gray', 'Harper', 'Indigo', 'Jordan',
-    'Kennedy', 'Logan', 'Morgan', 'Noel', 'Parker',
-    'Quinn', 'Riley', 'Sawyer', 'Taylor', 'Vaughn'
-  ];
-  
-  const adjectives = [
-    'Quick', 'Smart', 'Clever', 'Bright', 'Swift',
-    'Eager', 'Happy', 'Calm', 'Bold', 'Brave'
-  ];
-  
-  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const name = names[Math.floor(Math.random() * names.length)];
-  
-  return `${adjective} ${name}`;
-};
-
-// Generate default user presence state
-const getDefaultPresence = (): UserPresence => ({
-  status: 'active',
-  focusElement: null,
-  cursorPosition: null,
-  lastActive: new Date().toISOString()
-});
-
-// Collaboration reducer function
 const collaborationReducer = (state: CollaborationState, action: CollaborationAction): CollaborationState => {
   switch (action.type) {
     case 'SET_DOCUMENT_ID':
@@ -74,29 +56,20 @@ const collaborationReducer = (state: CollaborationState, action: CollaborationAc
         },
         activeUsers: [...state.activeUsers, action.payload.id]
       };
-      
+    
     case 'USER_LEFT':
-      const updatedUsers = { ...state.users };
-      if (updatedUsers[action.payload]) {
-        updatedUsers[action.payload] = {
-          ...updatedUsers[action.payload],
-          presence: {
-            ...updatedUsers[action.payload].presence,
-            status: 'offline'
-          }
-        };
-      }
-      
+      const { [action.payload]: removedUser, ...remainingUsers } = state.users;
       return {
         ...state,
-        users: updatedUsers,
+        users: remainingUsers,
         activeUsers: state.activeUsers.filter(id => id !== action.payload)
       };
-      
+    
     case 'UPDATE_USER_PRESENCE':
       const { userId, presence } = action.payload;
+      const user = state.users[userId];
       
-      if (!state.users[userId]) {
+      if (!user) {
         return state;
       }
       
@@ -105,292 +78,409 @@ const collaborationReducer = (state: CollaborationState, action: CollaborationAc
         users: {
           ...state.users,
           [userId]: {
-            ...state.users[userId],
+            ...user,
             presence: {
-              ...state.users[userId].presence,
+              ...user.presence,
               ...presence
             }
           }
         }
       };
-      
+    
     case 'ADD_CHANGE':
       return {
         ...state,
-        pendingChanges: [...state.pendingChanges, action.payload]
+        changes: [...state.changes, action.payload],
+        pendingChanges: [...state.pendingChanges, action.payload.id]
       };
-      
+    
     case 'CHANGES_APPLIED':
-      const changeIds = action.payload;
       return {
         ...state,
-        pendingChanges: state.pendingChanges.filter(change => !changeIds.includes(change.id)),
-        lastSyncedVersion: state.lastSyncedVersion + 1
+        pendingChanges: state.pendingChanges.filter(id => !action.payload.includes(id))
       };
-      
-    case 'MERGE_REMOTE_CHANGES':
-      return {
-        ...state,
-        changes: [...state.changes, ...action.payload]
-      };
-      
+    
     case 'SET_CONNECTION_STATUS':
       return {
         ...state,
         isConnected: action.payload
       };
-      
+    
     case 'SET_ERROR':
       return {
         ...state,
         error: action.payload
       };
-      
+    
+    case 'MERGE_REMOTE_CHANGES':
+      return {
+        ...state,
+        changes: [
+          ...state.changes,
+          ...action.payload.filter(change => 
+            !state.changes.some(existing => existing.id === change.id)
+          )
+        ]
+      };
+    
     default:
       return state;
   }
 };
 
-// Create the collaboration context
-type CollaborationContextType = {
-  state: CollaborationState;
-  setDocumentId: (id: string | null) => void;
-  addChange: (change: Omit<DocumentChange, 'id' | 'timestamp'>) => void;
-  applyChanges: (changes: DocumentChange[]) => void;
-  updateUserPresence: (presence: Partial<UserPresence>) => void;
-};
-
 const CollaborationContext = createContext<CollaborationContextType | undefined>(undefined);
 
-// Provider component
-interface CollaborationProviderProps {
-  children: ReactNode;
-}
-
-const CollaborationProvider = ({ children }: CollaborationProviderProps) => {
+export function CollaborationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(collaborationReducer, initialState);
-  const userId = useUser();
+  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   
-  // Initialize current user when component mounts
-  useEffect(() => {
-    if (!userId) return;
+  // Generate a user ID and create simulated user data for this client
+  const userId = useMemo(() => {
+    const storedUserId = localStorage.getItem('collaborative_user_id');
+    if (storedUserId) return storedUserId;
     
-    // Create user object for the current user
-    const user: User = {
-      id: userId,
-      name: getRandomName(),
-      color: getRandomColor(),
-      avatar: null,
-      presence: getDefaultPresence()
-    };
-    
-    // Add current user to the users list
-    dispatch({ type: 'USER_JOINED', payload: user });
-    
-    // Simulate some other users joining for demonstration
-    const demoUsersCount = Math.floor(Math.random() * 3) + 1; // 1-3 additional users
-    
-    for (let i = 0; i < demoUsersCount; i++) {
-      const demoUser: User = {
-        id: nanoid(),
-        name: getRandomName(),
-        color: getRandomColor(),
-        avatar: null,
-        presence: getDefaultPresence()
-      };
-      
-      setTimeout(() => {
-        dispatch({ type: 'USER_JOINED', payload: demoUser });
-        
-        // Simulate user activity
-        simulateUserActivity(demoUser.id);
-      }, i * 2000); // Stagger user joins
-    }
-    
-    return () => {
-      // Clean up any subscriptions or timers
-    };
-  }, [userId]);
+    const newUserId = nanoid();
+    localStorage.setItem('collaborative_user_id', newUserId);
+    return newUserId;
+  }, []);
   
-  // Set up real-time communication with Supabase (simulated for this demo)
-  useEffect(() => {
-    if (!state.documentId || !userId) return;
-    
-    // Simulate connection to real-time service
-    dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
-    console.log(`Connected to document: ${state.documentId}`);
-    
-    // Create a Supabase channel for real-time collaboration
-    const channel = supabase.channel(`document:${state.documentId}`, {
-      config: {
-        presence: {
-          key: userId,
-        },
-      },
-    });
-    
-    // Set up presence listeners
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const presenceState = channel.presenceState();
-        console.log('Presence state synchronized:', presenceState);
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('User joined:', key, newPresences);
-        // In a real app, we would extract user details from newPresences
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('User left:', key, leftPresences);
-        dispatch({ type: 'USER_LEFT', payload: key });
-      });
-    
-    // Set up broadcast listeners for document changes
-    channel
-      .on('broadcast', { event: 'document_change' }, (payload) => {
-        console.log('Received document change:', payload);
-        // In a real app, we would process incoming document changes
-        // and apply operational transforms if needed
-      });
-    
-    // Subscribe to the channel
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        // Track user's presence with the complete UserPresence object
-        const currentPresence = {
-          status: 'active',
-          focusElement: null, 
-          cursorPosition: null,
-          lastActive: new Date().toISOString()
-        };
-        
-        await channel.track({
-          user: userId,
-          presence: currentPresence,
-        });
-        
-        console.log('Subscribed to real-time channel and tracking presence');
-      }
-    });
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [state.documentId, userId]);
-  
-  // Simulate user activity for demo purposes
-  const simulateUserActivity = useCallback((userId: string) => {
-    const activities = [
-      // Simulate user going idle
-      () => {
-        dispatch({
-          type: 'UPDATE_USER_PRESENCE',
-          payload: {
-            userId,
-            presence: {
-              status: 'idle',
-              focusElement: null,
-              cursorPosition: null,
-              lastActive: new Date().toISOString()
-            }
-          }
-        });
-      },
-      // Simulate user becoming active again
-      () => {
-        dispatch({
-          type: 'UPDATE_USER_PRESENCE',
-          payload: {
-            userId,
-            presence: {
-              status: 'active',
-              focusElement: null,
-              cursorPosition: null,
-              lastActive: new Date().toISOString()
-            }
-          }
-        });
-      },
-      // Simulate cursor movement
-      () => {
-        const randomX = Math.floor(Math.random() * 800);
-        const randomY = Math.floor(Math.random() * 400);
-        
-        dispatch({
-          type: 'UPDATE_USER_PRESENCE',
-          payload: {
-            userId,
-            presence: {
-              status: 'active',
-              focusElement: 'editor',
-              cursorPosition: {
-                x: randomX,
-                y: randomY,
-                elementId: 'collaborative-editor'
-              },
-              lastActive: new Date().toISOString()
-            }
-          }
-        });
-      }
+  const userName = useMemo(() => {
+    const names = [
+      'Alex', 'Blake', 'Casey', 'Dana', 'Ellis',
+      'Francis', 'Glenn', 'Harper', 'Indigo', 'Jamie',
+      'Kai', 'Leslie', 'Morgan', 'Noel', 'Parker'
     ];
     
-    // Randomly select an activity and schedule it
-    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
-    const delay = Math.random() * 5000 + 2000; // 2-7 seconds
+    // Pseudo-random but consistent name for this user ID
+    const nameIndex = Array.from(userId).reduce((acc, char) => 
+      acc + char.charCodeAt(0), 0) % names.length;
     
-    setTimeout(() => {
-      randomActivity();
-      // Schedule another random activity
-      simulateUserActivity(userId);
-    }, delay);
-  }, []);
+    return names[nameIndex];
+  }, [userId]);
   
-  // Generate a unique ID for each change
-  const addChange = useCallback((change: Omit<DocumentChange, 'id' | 'timestamp'>) => {
-    const completeChange: DocumentChange = {
-      ...change,
-      id: nanoid(),
-      timestamp: new Date().toISOString(),
+  const userColor = useMemo(() => {
+    const colors = [
+      '#FF5733', '#33FF57', '#3357FF', '#F033FF', '#FF33F0',
+      '#33FFF0', '#F0FF33', '#FF8C33', '#8C33FF', '#33FFCC'
+    ];
+    
+    // Pseudo-random but consistent color for this user ID
+    const colorIndex = Array.from(userId).reduce((acc, char) => 
+      acc + char.charCodeAt(0), 0) % colors.length;
+    
+    return colors[colorIndex];
+  }, [userId]);
+  
+  // Effect to set up real-time collaboration when documentId changes
+  useEffect(() => {
+    if (!state.documentId) return;
+    
+    // Clean up any existing channel
+    if (channel) {
+      channel.unsubscribe();
+    }
+    
+    // Create a new channel for the document
+    const docChannel = supabase.channel(`document:${state.documentId}`);
+    
+    // Add local user to the document when joining
+    const localUser: User = {
+      id: userId,
+      name: userName,
+      color: userColor,
+      avatar: null,
+      presence: {
+        status: 'active',
+        focusElement: null,
+        cursorPosition: null,
+        lastActive: new Date().toISOString()
+      }
     };
     
-    dispatch({ type: 'ADD_CHANGE', payload: completeChange });
+    // Join the document and broadcast presence
+    docChannel
+      .on('presence', { event: 'sync' }, () => {
+        const presences = docChannel.presenceState();
+        console.log('Presence sync', presences);
+        
+        // Process joined users
+        Object.keys(presences).forEach(key => {
+          const presence = presences[key][0];
+          if (presence && presence.user && presence.user.id !== userId) {
+            dispatch({
+              type: 'USER_JOINED',
+              payload: presence.user as User
+            });
+          }
+        });
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        newPresences.forEach(presence => {
+          if (presence && presence.user && presence.user.id !== userId) {
+            dispatch({
+              type: 'USER_JOINED',
+              payload: presence.user as User
+            });
+          }
+        });
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        leftPresences.forEach(presence => {
+          if (presence && presence.user && presence.user.id !== userId) {
+            dispatch({
+              type: 'USER_LEFT',
+              payload: presence.user.id
+            });
+            
+            // Update user status to idle after leaving
+            dispatch({
+              type: 'UPDATE_USER_PRESENCE',
+              payload: {
+                userId: presence.user.id,
+                presence: {
+                  status: 'idle',
+                  focusElement: null,
+                  cursorPosition: null,
+                  lastActive: new Date().toISOString()
+                }
+              }
+            });
+          }
+        });
+      })
+      .on('broadcast', { event: 'user_activity' }, payload => {
+        if (payload.payload.userId !== userId) {
+          dispatch({
+            type: 'UPDATE_USER_PRESENCE',
+            payload: {
+              userId: payload.payload.userId,
+              presence: {
+                status: 'active',
+                focusElement: payload.payload.presence.focusElement || null,
+                cursorPosition: payload.payload.presence.cursorPosition || null,
+                lastActive: new Date().toISOString()
+              }
+            }
+          });
+        }
+      })
+      .on('broadcast', { event: 'cursor_move' }, payload => {
+        if (payload.payload.userId !== userId) {
+          dispatch({
+            type: 'UPDATE_USER_PRESENCE',
+            payload: {
+              userId: payload.payload.userId,
+              presence: {
+                status: payload.payload.presence.status || 'active',
+                focusElement: payload.payload.presence.focusElement || null,
+                cursorPosition: payload.payload.presence.cursorPosition || null,
+                lastActive: new Date().toISOString()
+              }
+            }
+          });
+        }
+      })
+      .on('broadcast', { event: 'document_change' }, payload => {
+        if (payload.payload.userId !== userId) {
+          dispatch({
+            type: 'MERGE_REMOTE_CHANGES',
+            payload: [payload.payload.change]
+          });
+        }
+      })
+      .subscribe(status => {
+        console.log('Channel status', status);
+        
+        if (status === 'SUBSCRIBED') {
+          dispatch({
+            type: 'SET_CONNECTION_STATUS',
+            payload: true
+          });
+          
+          // Track local user presence
+          docChannel.track({
+            user: localUser
+          });
+          
+          // Add local user to the state
+          dispatch({
+            type: 'USER_JOINED',
+            payload: localUser
+          });
+          
+          // Set up idle detection
+          let idleTimeout: number | undefined;
+          const resetIdleTimer = () => {
+            window.clearTimeout(idleTimeout);
+            
+            // If currently idle, set back to active
+            if (state.users[userId]?.presence.status === 'idle') {
+              const updatedPresence: UserPresence = {
+                status: 'active',
+                focusElement: state.users[userId]?.presence.focusElement || null,
+                cursorPosition: state.users[userId]?.presence.cursorPosition || null,
+                lastActive: new Date().toISOString()
+              };
+              
+              docChannel.send({
+                type: 'broadcast',
+                event: 'user_activity',
+                payload: {
+                  userId,
+                  presence: updatedPresence
+                }
+              });
+              
+              dispatch({
+                type: 'UPDATE_USER_PRESENCE',
+                payload: {
+                  userId,
+                  presence: updatedPresence
+                }
+              });
+            }
+            
+            // Set idle after 2 minutes of inactivity
+            idleTimeout = window.setTimeout(() => {
+              const updatedPresence: UserPresence = {
+                status: 'idle',
+                focusElement: state.users[userId]?.presence.focusElement || null,
+                cursorPosition: state.users[userId]?.presence.cursorPosition || null,
+                lastActive: new Date().toISOString()
+              };
+              
+              docChannel.send({
+                type: 'broadcast',
+                event: 'user_activity',
+                payload: {
+                  userId,
+                  presence: updatedPresence
+                }
+              });
+              
+              dispatch({
+                type: 'UPDATE_USER_PRESENCE',
+                payload: {
+                  userId,
+                  presence: updatedPresence
+                }
+              });
+            }, 2 * 60 * 1000);
+          };
+          
+          // Set up activity detection
+          window.addEventListener('mousemove', resetIdleTimer);
+          window.addEventListener('keydown', resetIdleTimer);
+          resetIdleTimer();
+          
+          return () => {
+            window.removeEventListener('mousemove', resetIdleTimer);
+            window.removeEventListener('keydown', resetIdleTimer);
+            window.clearTimeout(idleTimeout);
+          };
+        } else {
+          dispatch({
+            type: 'SET_CONNECTION_STATUS',
+            payload: false
+          });
+        }
+      });
     
-    // In a real app, we'd also broadcast this change to other users
-    // For demo purposes, we'll just apply it locally after a delay
-    setTimeout(() => {
-      dispatch({ type: 'CHANGES_APPLIED', payload: [completeChange.id] });
-    }, 300);
-  }, []);
-  
-  // Apply changes received from remote users
-  const applyChanges = useCallback((changes: DocumentChange[]) => {
-    dispatch({ type: 'MERGE_REMOTE_CHANGES', payload: changes });
-  }, []);
-  
-  // Set the document ID for collaboration
-  const setDocumentId = useCallback((id: string | null) => {
-    dispatch({ type: 'SET_DOCUMENT_ID', payload: id });
-  }, []);
-  
-  // Update user presence
-  const updateUserPresence = useCallback((presenceUpdate: Partial<UserPresence>) => {
-    if (!userId) return;
+    setChannel(docChannel);
     
-    // Ensure we maintain the required UserPresence structure with defaults for missing fields
+    // Clean up when unmounting or when documentId changes
+    return () => {
+      docChannel.unsubscribe();
+      setChannel(null);
+    };
+  }, [state.documentId, userId, userName, userColor]);
+  
+  const addUser = (user: User) => {
+    dispatch({
+      type: 'USER_JOINED',
+      payload: user
+    });
+  };
+  
+  const removeUser = (userId: string) => {
+    dispatch({
+      type: 'USER_LEFT',
+      payload: userId
+    });
+  };
+  
+  const setDocumentId = (documentId: string | null) => {
+    dispatch({
+      type: 'SET_DOCUMENT_ID',
+      payload: documentId
+    });
+  };
+  
+  const addChange = (change: Omit<DocumentChange, 'id' | 'timestamp'>) => {
+    const fullChange: DocumentChange = {
+      ...change,
+      id: nanoid(),
+      timestamp: new Date().toISOString()
+    };
+    
+    dispatch({
+      type: 'ADD_CHANGE',
+      payload: fullChange
+    });
+    
+    if (channel) {
+      channel.send({
+        type: 'broadcast',
+        event: 'document_change',
+        payload: {
+          userId,
+          change: fullChange
+        }
+      });
+    }
+  };
+  
+  const applyChanges = (changeIds: string[]) => {
+    dispatch({
+      type: 'CHANGES_APPLIED',
+      payload: changeIds
+    });
+  };
+  
+  const updateUserPresence = (presence: Partial<UserPresence>) => {
+    // Create a complete presence object by merging with current user presence or defaults
+    const currentUserPresence = state.users[userId]?.presence || defaultPresence;
+    const completePresence: UserPresence = {
+      ...currentUserPresence,
+      ...presence,
+      // Ensure lastActive is always updated
+      lastActive: new Date().toISOString()
+    };
+    
+    if (channel) {
+      channel.send({
+        type: 'broadcast',
+        event: 'cursor_move',
+        payload: {
+          userId,
+          presence: completePresence
+        }
+      });
+    }
+    
     dispatch({
       type: 'UPDATE_USER_PRESENCE',
       payload: {
         userId,
-        presence: presenceUpdate
+        presence: completePresence
       }
     });
-    
-    // In a real application, we would broadcast this presence update to other users
-    // via the Supabase real-time channel
-  }, [userId]);
+  };
   
-  const value = {
+  const contextValue = {
     state,
+    addUser,
+    removeUser,
     setDocumentId,
     addChange,
     applyChanges,
@@ -398,21 +488,18 @@ const CollaborationProvider = ({ children }: CollaborationProviderProps) => {
   };
   
   return (
-    <CollaborationContext.Provider value={value}>
+    <CollaborationContext.Provider value={contextValue}>
       {children}
     </CollaborationContext.Provider>
   );
-};
+}
 
-// Hook to use the collaboration context
-const useCollaboration = () => {
+export function useCollaboration() {
   const context = useContext(CollaborationContext);
   
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useCollaboration must be used within a CollaborationProvider');
   }
   
   return context;
-};
-
-export { CollaborationProvider, useCollaboration };
+}
