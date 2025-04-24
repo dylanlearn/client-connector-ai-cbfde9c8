@@ -768,6 +768,36 @@ export type Database = {
           },
         ]
       }
+      collaborative_documents: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          title: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
       color_schemes: {
         Row: {
           accessibility_rating: number | null
@@ -1205,6 +1235,104 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      document_annotations: {
+        Row: {
+          content: string
+          created_at: string | null
+          document_id: string
+          id: string
+          metadata: Json | null
+          parent_id: string | null
+          position: Json
+          status: string | null
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          document_id: string
+          id?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          position: Json
+          status?: string | null
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          document_id?: string
+          id?: string
+          metadata?: Json | null
+          parent_id?: string | null
+          position?: Json
+          status?: string | null
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_annotations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_annotations_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_annotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_changes: {
+        Row: {
+          document_id: string
+          id: string
+          operation: string
+          path: string
+          timestamp: string | null
+          user_id: string
+          value: Json
+          version: number | null
+        }
+        Insert: {
+          document_id: string
+          id?: string
+          operation: string
+          path: string
+          timestamp?: string | null
+          user_id: string
+          value: Json
+          version?: number | null
+        }
+        Update: {
+          document_id?: string
+          id?: string
+          operation?: string
+          path?: string
+          timestamp?: string | null
+          user_id?: string
+          value?: Json
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_changes_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       error_handling_config: {
         Row: {
@@ -2198,6 +2326,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_presence: {
+        Row: {
+          cursor_position: Json | null
+          document_id: string
+          focus_element: string | null
+          id: string
+          last_active: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          cursor_position?: Json | null
+          document_id: string
+          focus_element?: string | null
+          id?: string
+          last_active?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          cursor_position?: Json | null
+          document_id?: string
+          focus_element?: string | null
+          id?: string
+          last_active?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_presence_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       variant_styles: {
         Row: {

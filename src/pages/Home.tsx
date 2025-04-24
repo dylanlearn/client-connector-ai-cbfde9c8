@@ -20,7 +20,7 @@ const Home = () => {
             <p className="text-gray-600 mb-4">
               Create responsive wireframes with AI assistance and collaborative editing.
             </p>
-            <Link to="/wireframe-editor-demo">
+            <Link to="/wireframe-demo">
               <Button variant="outline">Try Wireframing</Button>
             </Link>
           </div>
