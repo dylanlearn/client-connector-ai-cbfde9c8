@@ -1,194 +1,225 @@
 
-import React, { useState, useEffect } from 'react';
-import { nanoid } from 'nanoid';
-import { useCollaboration } from '@/contexts/CollaborationContext';
-import { useUser } from '@/hooks/useUser';
-import { Annotation, AnnotationType } from '@/types/annotations';
-import { DocumentChange } from '@/types/collaboration';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import CollaborativeEditor from './CollaborativeEditor';
 import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
 import { AnnotationMarker } from '../annotations/AnnotationMarker';
-import { AnnotationCreator } from '../annotations/AnnotationCreator';
 import { AnnotationPanel } from '../annotations/AnnotationPanel';
+import { AnnotationCreator } from '../annotations/AnnotationCreator';
+import { useCollaboration } from '@/contexts/CollaborationContext';
+import { Annotation, AnnotationType } from '@/types/annotations';
+import { nanoid } from 'nanoid';
+import { DocumentChange } from '@/types/collaboration';
+import { useUser } from '@/hooks/useUser';
 
 interface CollaborativeEditorWithAnnotationsProps {
   documentId: string;
 }
 
-const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ 
-  documentId 
-}) => {
-  const { state, addChange, applyChanges } = useCollaboration();
+const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ documentId }) => {
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+  const [creatingAnnotation, setCreatingAnnotation] = useState<{
+    type: AnnotationType;
+    position: { x: number; y: number };
+  } | null>(null);
+  
+  const { state, addChange } = useCollaboration();
+  const containerRef = useRef<HTMLDivElement>(null);
   const userId = useUser();
   
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [activeAnnotation, setActiveAnnotation] = useState<string | null>(null);
-  const [isAddingAnnotation, setIsAddingAnnotation] = useState(false);
-  const [annotationType, setAnnotationType] = useState<AnnotationType>('text');
-  const [annotationPosition, setAnnotationPosition] = useState({ x: 0, y: 0 });
-  
-  // Apply incoming annotation changes
+  // Sync annotations from collaboration state
   useEffect(() => {
-    // Filter changes related to annotations
-    const annotationChanges = state.changes.filter(
-      change => change.path?.startsWith('annotations')
-    );
-    
-    if (annotationChanges.length > 0) {
-      // Process changes
-      annotationChanges.forEach(change => {
-        switch (change.operation) {
-          case 'insert':
-            if (typeof change.value === 'object') {
-              setAnnotations(prev => [...prev, change.value as Annotation]);
-            }
-            break;
-          case 'update':
-            if (typeof change.value === 'object') {
-              setAnnotations(prev => 
-                prev.map(ann => 
-                  ann.id === change.path.split('.')[1] ? { ...ann, ...change.value } : ann
-                )
-              );
-            }
-            break;
-          case 'delete':
-            const annotationId = change.path.split('.')[1];
-            setAnnotations(prev => prev.filter(ann => ann.id !== annotationId));
-            break;
-        }
-      });
+    if (state.changes && state.changes.length > 0) {
+      // Filter changes related to annotations
+      const annotationChanges = state.changes.filter(
+        (change) => typeof change !== 'string' && 
+          change.path && 
+          change.path.startsWith('annotations')
+      );
       
-      // Mark changes as applied
-      applyChanges(annotationChanges.map(change => change.id));
+      if (annotationChanges.length > 0) {
+        // Process annotation changes
+        const updatedAnnotations = [...annotations];
+        
+        annotationChanges.forEach(change => {
+          if (typeof change === 'string') return; // Skip string changes
+          
+          if (change.operation === 'add') {
+            if (change.value && typeof change.value !== 'string') {
+              updatedAnnotations.push(change.value as Annotation);
+            }
+          } else if (change.operation === 'update') {
+            const annotationId = change.path.split('.')[1];
+            const annotationIndex = updatedAnnotations.findIndex(a => a.id === annotationId);
+            
+            if (annotationIndex !== -1 && change.value && typeof change.value !== 'string') {
+              updatedAnnotations[annotationIndex] = {
+                ...updatedAnnotations[annotationIndex],
+                ...change.value
+              };
+            }
+          } else if (change.operation === 'delete') {
+            const annotationId = change.path.split('.')[1];
+            const annotationIndex = updatedAnnotations.findIndex(a => a.id === annotationId);
+            
+            if (annotationIndex !== -1) {
+              updatedAnnotations.splice(annotationIndex, 1);
+            }
+          }
+        });
+        
+        setAnnotations(updatedAnnotations);
+      }
     }
-  }, [state.changes, applyChanges]);
-  
-  const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isAddingAnnotation) return;
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    setAnnotationPosition({ x, y });
-  };
+  }, [state.changes]);
   
   const handleCreateAnnotation = (type: AnnotationType) => {
-    setIsAddingAnnotation(true);
-    setAnnotationType(type);
+    const handleCanvasClick = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      setCreatingAnnotation({
+        type,
+        position: { x, y }
+      });
+      
+      // Remove event listener after capturing position
+      document.removeEventListener('click', handleCanvasClick);
+    };
+    
+    // Add a one-time click listener to capture position
+    document.addEventListener('click', handleCanvasClick);
   };
   
   const handleSaveAnnotation = (content: string) => {
+    if (!creatingAnnotation || !userId) return;
+    
     const newAnnotation: Annotation = {
       id: nanoid(),
-      documentId,
-      userId,
-      type: annotationType,
-      content,
-      position: annotationPosition,
+      documentId: documentId,
+      userId: userId,
+      type: creatingAnnotation.type,
+      content: content,
+      position: creatingAnnotation.position,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       status: 'open',
-      metadata: {}
+      metadata: {
+        replies: 0
+      }
     };
     
-    // Add to local state
-    setAnnotations(prev => [...prev, newAnnotation]);
+    // Add annotation to local state
+    setAnnotations([...annotations, newAnnotation]);
     
-    // Broadcast to collaborators
+    // Add annotation to shared state
     addChange({
-      userId,
-      documentId,
-      operation: 'insert',
+      userId: userId,
+      documentId: documentId,
+      operation: 'add',
       path: `annotations.${newAnnotation.id}`,
       value: newAnnotation,
-    });
+    } as DocumentChange);
     
-    setIsAddingAnnotation(false);
-    setActiveAnnotation(newAnnotation.id);
+    setCreatingAnnotation(null);
   };
   
   const handleUpdateAnnotation = (annotation: Annotation) => {
-    // Update local state
-    setAnnotations(prev => 
-      prev.map(ann => ann.id === annotation.id ? annotation : ann)
+    // Update annotation in local state
+    const updatedAnnotations = annotations.map(a => 
+      a.id === annotation.id ? annotation : a
     );
     
-    // Broadcast to collaborators
+    setAnnotations(updatedAnnotations);
+    
+    // Update annotation in shared state
     addChange({
-      userId,
-      documentId,
+      userId: userId || '',
+      documentId: documentId,
       operation: 'update',
       path: `annotations.${annotation.id}`,
       value: annotation,
-    });
+    } as DocumentChange);
   };
   
   const handleDeleteAnnotation = (annotationId: string) => {
-    // Update local state
-    setAnnotations(prev => prev.filter(ann => ann.id !== annotationId));
+    // Remove annotation from local state
+    const updatedAnnotations = annotations.filter(a => a.id !== annotationId);
+    setAnnotations(updatedAnnotations);
     
-    // Broadcast to collaborators
+    // Remove annotation from shared state
     addChange({
-      userId,
-      documentId,
+      userId: userId || '',
+      documentId: documentId,
       operation: 'delete',
       path: `annotations.${annotationId}`,
-      value: annotationId,
-    });
+      value: null,
+    } as DocumentChange);
     
-    if (activeAnnotation === annotationId) {
-      setActiveAnnotation(null);
-    }
+    setActiveAnnotationId(null);
+  };
+  
+  const handleAnnotationClick = (annotationId: string) => {
+    setActiveAnnotationId(activeAnnotationId === annotationId ? null : annotationId);
   };
   
   return (
-    <div className="relative">
-      <div className="mb-2 flex justify-end">
-        <AnnotationToolbar 
-          onCreateAnnotation={handleCreateAnnotation} 
-          disabled={isAddingAnnotation}
-        />
-      </div>
-      
-      <div 
-        className="relative border rounded-md" 
-        onClick={handleEditorClick}
-      >
-        <CollaborativeEditor documentId={documentId} />
-        
-        {/* Annotation markers */}
-        {annotations.map(annotation => (
-          <AnnotationMarker 
-            key={annotation.id}
-            annotation={annotation}
-            isActive={activeAnnotation === annotation.id}
-            onClick={() => setActiveAnnotation(
-              activeAnnotation === annotation.id ? null : annotation.id
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-medium">Document Editor</h3>
+            <AnnotationToolbar 
+              onCreateAnnotation={handleCreateAnnotation}
+              disabled={creatingAnnotation !== null}
+            />
+          </div>
+          
+          <div ref={containerRef} className="relative border rounded-md">
+            <CollaborativeEditor documentId={documentId} />
+            
+            {/* Annotation Markers */}
+            {annotations.map(annotation => (
+              <AnnotationMarker 
+                key={annotation.id}
+                annotation={annotation}
+                isActive={activeAnnotationId === annotation.id}
+                onClick={() => handleAnnotationClick(annotation.id)}
+              />
+            ))}
+            
+            {/* Annotation Creator */}
+            {creatingAnnotation && (
+              <AnnotationCreator
+                type={creatingAnnotation.type}
+                position={creatingAnnotation.position}
+                onSave={handleSaveAnnotation}
+                onCancel={() => setCreatingAnnotation(null)}
+              />
             )}
-          />
-        ))}
-        
-        {/* Annotation creator */}
-        {isAddingAnnotation && (
-          <AnnotationCreator 
-            type={annotationType}
-            position={annotationPosition}
-            onSave={handleSaveAnnotation}
-            onCancel={() => setIsAddingAnnotation(false)}
-          />
-        )}
-      </div>
+          </div>
+        </CardContent>
+      </Card>
       
-      {/* Annotation panel */}
-      {activeAnnotation && (
-        <AnnotationPanel 
-          annotation={annotations.find(ann => ann.id === activeAnnotation)!}
-          onUpdate={handleUpdateAnnotation}
-          onDelete={handleDeleteAnnotation}
-          onClose={() => setActiveAnnotation(null)}
-        />
+      {/* Annotation Panel for active annotation */}
+      {activeAnnotationId && (
+        <div className="annotation-panel-container">
+          {annotations
+            .filter(a => a.id === activeAnnotationId)
+            .map(annotation => (
+              <AnnotationPanel
+                key={annotation.id}
+                annotation={annotation}
+                onUpdate={handleUpdateAnnotation}
+                onDelete={handleDeleteAnnotation}
+                onClose={() => setActiveAnnotationId(null)}
+              />
+            ))}
+        </div>
       )}
     </div>
   );
