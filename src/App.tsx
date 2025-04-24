@@ -4,6 +4,7 @@ import WireframeEditorDemo from './pages/WireframeEditorDemo';
 import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
 import ComponentVariantLogicDemo from './pages/ComponentVariantLogicDemo';
 import CollaborationDemo from './pages/CollaborationDemo';
+import CollaborativeDocumentPage from './pages/CollaborativeDocumentPage';
 import { AppProviders } from './providers/AppProviders';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="/project/:projectId/wireframe" element={<AdvancedWireframeGeneratorPage />} />
           <Route path="/variant-logic" element={<ComponentVariantLogicDemo />} />
           <Route path="/collaboration" element={<CollaborationDemo />} />
+          <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
           <Route path="/" element={<ComponentVariantLogicDemo />} />
         </Routes>
       </Router>
