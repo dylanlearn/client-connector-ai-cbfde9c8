@@ -5650,6 +5650,51 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_performance_metrics: {
+        Row: {
+          browser_info: Json | null
+          created_at: string
+          custom_metrics: Json | null
+          device_info: Json | null
+          fps: number | null
+          id: string
+          interaction_delay_ms: number | null
+          memory_usage_kb: number | null
+          render_time_ms: number | null
+          resource_usage: Json | null
+          test_name: string
+          wireframe_id: string
+        }
+        Insert: {
+          browser_info?: Json | null
+          created_at?: string
+          custom_metrics?: Json | null
+          device_info?: Json | null
+          fps?: number | null
+          id?: string
+          interaction_delay_ms?: number | null
+          memory_usage_kb?: number | null
+          render_time_ms?: number | null
+          resource_usage?: Json | null
+          test_name: string
+          wireframe_id: string
+        }
+        Update: {
+          browser_info?: Json | null
+          created_at?: string
+          custom_metrics?: Json | null
+          device_info?: Json | null
+          fps?: number | null
+          id?: string
+          interaction_delay_ms?: number | null
+          memory_usage_kb?: number | null
+          render_time_ms?: number | null
+          resource_usage?: Json | null
+          test_name?: string
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
       wireframe_platform_outputs: {
         Row: {
           created_at: string
@@ -5950,6 +5995,204 @@ export type Database = {
           prompt_template?: string
           tags?: string[] | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      wireframe_test_results: {
+        Row: {
+          created_at: string
+          diff_url: string | null
+          error_message: string | null
+          execution_time: number | null
+          id: string
+          metadata: Json | null
+          screenshot_url: string | null
+          stack_trace: string | null
+          status: string
+          test_id: string
+          wireframe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          diff_url?: string | null
+          error_message?: string | null
+          execution_time?: number | null
+          id?: string
+          metadata?: Json | null
+          screenshot_url?: string | null
+          stack_trace?: string | null
+          status: string
+          test_id: string
+          wireframe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          diff_url?: string | null
+          error_message?: string | null
+          execution_time?: number | null
+          id?: string
+          metadata?: Json | null
+          screenshot_url?: string | null
+          stack_trace?: string | null
+          status?: string
+          test_id?: string
+          wireframe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_test_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_test_suites: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          test_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          test_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          test_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wireframe_tests: {
+        Row: {
+          component_path: string | null
+          created_at: string
+          description: string | null
+          expected_result: Json | null
+          id: string
+          name: string
+          suite_id: string
+          test_function: string
+          updated_at: string
+        }
+        Insert: {
+          component_path?: string | null
+          created_at?: string
+          description?: string | null
+          expected_result?: Json | null
+          id?: string
+          name: string
+          suite_id: string
+          test_function: string
+          updated_at?: string
+        }
+        Update: {
+          component_path?: string | null
+          created_at?: string
+          description?: string | null
+          expected_result?: Json | null
+          id?: string
+          name?: string
+          suite_id?: string
+          test_function?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_tests_suite_id_fkey"
+            columns: ["suite_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_test_suites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_validation_results: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          location_path: string | null
+          message: string | null
+          rule_id: string
+          status: string
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          location_path?: string | null
+          message?: string | null
+          rule_id: string
+          status: string
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          location_path?: string | null
+          message?: string | null
+          rule_id?: string
+          status?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_validation_results_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_validation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_validation_rules: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          rule_type: string
+          severity: string
+          updated_at: string
+          validation_function: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          rule_type: string
+          severity: string
+          updated_at?: string
+          validation_function: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          rule_type?: string
+          severity?: string
+          updated_at?: string
+          validation_function?: string
         }
         Relationships: []
       }

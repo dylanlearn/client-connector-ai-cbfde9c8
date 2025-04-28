@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import { AppProviders } from './providers/AppProviders';
 import DesignHandoffPage from './pages/DesignHandoffPage';
 import DesignAutomationPage from "./pages/DesignAutomationPage";
+import QualityDashboard from './pages/QualityDashboard';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/wireframe/:wireframeId/handoff" element={<DesignHandoffPage />} />
           <Route path="/design-automation/:projectId" element={<DesignAutomationPage />} />
           <Route path="/design-automation/:projectId/:wireframeId" element={<DesignAutomationPage />} />
+          <Route path="/quality-dashboard" element={<QualityDashboard />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </BrowserRouter>
