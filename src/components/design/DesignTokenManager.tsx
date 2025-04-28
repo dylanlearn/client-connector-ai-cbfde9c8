@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { PaintBucket, Type, ArrowsUpDown, Ruler } from 'lucide-react';
+import { PaintBucket, Type, ArrowUpDown, Ruler } from 'lucide-react';
 import { DesignSystemService, DesignToken } from '@/services/design-system/design-system-service';
 
 interface DesignTokenManagerProps {
@@ -43,7 +43,7 @@ export function DesignTokenManager({ projectId }: DesignTokenManagerProps) {
       case 'typography':
         return <Type className="h-4 w-4" />;
       case 'spacing':
-        return <ArrowsUpDown className="h-4 w-4" />;
+        return <ArrowUpDown className="h-4 w-4" />;
       case 'sizing':
         return <Ruler className="h-4 w-4" />;
       default:
@@ -107,7 +107,7 @@ export function DesignTokenManager({ projectId }: DesignTokenManagerProps) {
               Typography
             </TabsTrigger>
             <TabsTrigger value="spacing" className="flex items-center">
-              <ArrowsUpDown className="h-4 w-4 mr-2" />
+              <ArrowUpDown className="h-4 w-4 mr-2" />
               Spacing
             </TabsTrigger>
             <TabsTrigger value="sizing" className="flex items-center">
