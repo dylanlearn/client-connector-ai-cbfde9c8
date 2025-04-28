@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Layout } from '@/components/layout/Layout';
+import Layout from '@/components/layout/Layout';
 import { TestSuitesList } from '@/components/quality-assurance/TestSuitesList';
 import { ValidationRulesList } from '@/components/quality-assurance/ValidationRulesList';
 import { PerformanceMetrics } from '@/components/quality-assurance/PerformanceMetrics';

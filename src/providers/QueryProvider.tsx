@@ -9,21 +9,12 @@ interface QueryProviderProps {
   children: React.ReactNode;
 }
 
-// Create a client - this is now duplicate and should use the one in AppProviders instead
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: 'always',
-      gcTime: 5 * 60 * 1000,
-    },
-  },
-});
+// Reusing the queryClient from AppProviders to avoid creating multiple instances
+import { queryClient } from '@/lib/react-query';
 
 export const QueryProvider: React.FC<QueryProviderProps> = ({ children }) => {
   console.warn('QueryProvider is deprecated. AppProviders now includes the QueryClientProvider');
+  
   return (
     <QueryClientProvider client={queryClient}>
       {children}

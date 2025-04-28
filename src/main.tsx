@@ -6,7 +6,6 @@ import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-// Render the app directly with AppProviders (already included in App.tsx)
 root.render(
   <React.StrictMode>
     <App />
@@ -17,7 +16,7 @@ root.render(
 // This ensures that error monitoring doesn't interfere with the initial render
 setTimeout(() => {
   try {
-    // Use import() instead of require() for better compatibility with Vite
+    // Use dynamic import instead of require for better Vite compatibility
     import("@/utils/monitoring/error-handling").then(module => {
       module.initializeErrorHandling();
     }).catch(error => {
