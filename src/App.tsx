@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import WireframeEditorDemo from './pages/WireframeEditorDemo';
 import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
@@ -20,7 +19,7 @@ function App() {
           <Route path="/collaboration" element={<CollaborationDemo />} />
           <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
           <Route path="/advanced-design-system" element={<AdvancedDesignSystemPage />} />
-          {/* Set Home component as the default landing page */}
+          <Route path="/wireframe/:wireframeId/handoff" element={<DesignHandoffPage />} />
           <Route path="/" element={<Home />} />
         </Routes>
       </Router>

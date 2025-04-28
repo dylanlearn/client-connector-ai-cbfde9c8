@@ -768,6 +768,45 @@ export type Database = {
           },
         ]
       }
+      code_generation_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          framework: string
+          id: string
+          is_active: boolean
+          language: string
+          name: string
+          template_code: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          framework: string
+          id?: string
+          is_active?: boolean
+          language: string
+          name: string
+          template_code: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          framework?: string
+          id?: string
+          is_active?: boolean
+          language?: string
+          name?: string
+          template_code?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       collaborative_documents: {
         Row: {
           content: string | null
@@ -1651,6 +1690,59 @@ export type Database = {
         }
         Relationships: []
       }
+      design_specifications: {
+        Row: {
+          annotations: Json
+          assets: Json
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          measurements: Json
+          specifications: Json
+          status: string
+          title: string
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          annotations?: Json
+          assets?: Json
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          measurements?: Json
+          specifications?: Json
+          status?: string
+          title: string
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          annotations?: Json
+          assets?: Json
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          measurements?: Json
+          specifications?: Json
+          status?: string
+          title?: string
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_specifications_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_suggestion_history: {
         Row: {
           context: Json | null
@@ -2076,6 +2168,76 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      generated_code: {
+        Row: {
+          accessibility_score: number | null
+          code_files: Json
+          created_at: string
+          creator_id: string
+          framework: string
+          id: string
+          language: string
+          performance_metrics: Json | null
+          specification_id: string | null
+          status: string
+          template_id: string | null
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          accessibility_score?: number | null
+          code_files?: Json
+          created_at?: string
+          creator_id: string
+          framework: string
+          id?: string
+          language: string
+          performance_metrics?: Json | null
+          specification_id?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          accessibility_score?: number | null
+          code_files?: Json
+          created_at?: string
+          creator_id?: string
+          framework?: string
+          id?: string
+          language?: string
+          performance_metrics?: Json | null
+          specification_id?: string | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_code_specification_id_fkey"
+            columns: ["specification_id"]
+            isOneToOne: false
+            referencedRelation: "design_specifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_code_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "code_generation_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_code_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       generated_content: {
         Row: {
@@ -3213,6 +3375,66 @@ export type Database = {
           value?: number | null
         }
         Relationships: []
+      }
+      technical_documentation: {
+        Row: {
+          acceptance_criteria: Json
+          created_at: string
+          creator_id: string
+          id: string
+          implementation_notes: string | null
+          specification_id: string | null
+          status: string
+          technical_requirements: Json
+          title: string
+          updated_at: string
+          version: string
+          wireframe_id: string
+        }
+        Insert: {
+          acceptance_criteria?: Json
+          created_at?: string
+          creator_id: string
+          id?: string
+          implementation_notes?: string | null
+          specification_id?: string | null
+          status?: string
+          technical_requirements?: Json
+          title: string
+          updated_at?: string
+          version?: string
+          wireframe_id: string
+        }
+        Update: {
+          acceptance_criteria?: Json
+          created_at?: string
+          creator_id?: string
+          id?: string
+          implementation_notes?: string | null
+          specification_id?: string | null
+          status?: string
+          technical_requirements?: Json
+          title?: string
+          updated_at?: string
+          version?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technical_documentation_specification_id_fkey"
+            columns: ["specification_id"]
+            isOneToOne: false
+            referencedRelation: "design_specifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technical_documentation_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       template_purchases: {
         Row: {
@@ -4699,6 +4921,25 @@ export type Database = {
           version_number: number
           wireframe_id: string
         }
+      }
+      generate_code: {
+        Args: {
+          p_wireframe_id: string
+          p_creator_id: string
+          p_framework: string
+          p_language: string
+          p_specification_id?: string
+          p_template_id?: string
+        }
+        Returns: string
+      }
+      generate_technical_documentation: {
+        Args: {
+          p_wireframe_id: string
+          p_creator_id: string
+          p_specification_id?: string
+        }
+        Returns: string
       }
       get_context_component_recommendations: {
         Args: { p_context: string; p_limit?: number }
