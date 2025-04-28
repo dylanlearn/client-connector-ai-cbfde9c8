@@ -2876,6 +2876,80 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_budgets: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
+      performance_metrics: {
+        Row: {
+          budget_id: string
+          created_at: string
+          current_value: number | null
+          id: string
+          importance: string | null
+          metric_name: string
+          metric_type: string
+          target_value: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          budget_id: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          importance?: string | null
+          metric_name: string
+          metric_type: string
+          target_value: number
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          budget_id?: string
+          created_at?: string
+          current_value?: number | null
+          id?: string
+          importance?: string | null
+          metric_name?: string
+          metric_type?: string
+          target_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_metrics_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "performance_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           created_at: string | null
@@ -3392,6 +3466,65 @@ export type Database = {
           name?: string
           rules?: Json
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      risk_assessment_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          risk_categories_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          risk_categories_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          risk_categories_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_risk_categories"
+            columns: ["risk_categories_id"]
+            isOneToOne: false
+            referencedRelation: "risk_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4864,6 +4997,50 @@ export type Database = {
           visual_tone?: string | null
         }
         Relationships: []
+      }
+      wireframe_risk_assessments: {
+        Row: {
+          created_at: string
+          id: string
+          mitigation_plan: Json | null
+          risk_assessment_template_id: string | null
+          risk_factors: Json
+          risk_level: string
+          status: string
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mitigation_plan?: Json | null
+          risk_assessment_template_id?: string | null
+          risk_factors?: Json
+          risk_level: string
+          status: string
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mitigation_plan?: Json | null
+          risk_assessment_template_id?: string | null
+          risk_factors?: Json
+          risk_level?: string
+          status?: string
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_risk_assessments_risk_assessment_template_id_fkey"
+            columns: ["risk_assessment_template_id"]
+            isOneToOne: false
+            referencedRelation: "risk_assessment_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wireframe_sections: {
         Row: {

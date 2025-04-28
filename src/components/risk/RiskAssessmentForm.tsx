@@ -1,244 +1,133 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface RiskAssessmentFormProps {
   wireframeId: string;
 }
 
-interface RiskTemplate {
-  id: string;
-  name: string;
-  description: string;
+interface RiskAssessmentFormData {
+  risk_level: 'low' | 'medium' | 'high' | 'critical';
   risk_factors: {
-    factors: Array<{
-      name: string;
-      weight: number;
-      criteria: string[];
-    }>;
+    description: string;
+    impact: string;
   };
-  mitigation_strategies: {
-    strategies: Array<{
-      factor: string;
-      suggestions: string[];
-    }>;
+  mitigation_plan: {
+    steps: string;
+    resources: string;
   };
-  category_id: string;
 }
 
-interface RiskCategory {
-  id: string;
-  name: string;
-  description: string;
-}
+export const RiskAssessmentForm = ({ wireframeId }: RiskAssessmentFormProps) => {
+  const form = useForm<RiskAssessmentFormData>();
 
-export const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ wireframeId }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [templates, setTemplates] = useState<RiskTemplate[]>([]);
-  const [categories, setCategories] = useState<RiskCategory[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [riskLevel, setRiskLevel] = useState<string>('medium');
-  const [mitigationPlan, setMitigationPlan] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [selectedTemplate, setSelectedTemplate] = useState<RiskTemplate | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch risk categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('risk_categories')
-          .select('*')
-          .order('name');
-
-        if (categoriesError) throw categoriesError;
-        setCategories(categoriesData || []);
-
-        // Fetch risk templates
-        const { data: templatesData, error: templatesError } = await supabase
-          .from('risk_assessment_templates')
-          .select('*')
-          .order('name');
-
-        if (templatesError) throw templatesError;
-        setTemplates(templatesData || []);
-
-        if (templatesData && templatesData.length > 0) {
-          const categoryId = templatesData[0].category_id;
-          setSelectedCategoryId(categoryId || '');
-        }
-      } catch (error) {
-        console.error('Error fetching risk data:', error);
-        toast.error('Failed to load risk assessment data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCategoryId) {
-      const categoryTemplates = templates.filter(t => t.category_id === selectedCategoryId);
-      if (categoryTemplates.length > 0) {
-        setSelectedTemplateId(categoryTemplates[0].id);
-      }
-    }
-  }, [selectedCategoryId, templates]);
-
-  useEffect(() => {
-    if (selectedTemplateId) {
-      const template = templates.find(t => t.id === selectedTemplateId);
-      setSelectedTemplate(template || null);
-    } else {
-      setSelectedTemplate(null);
-    }
-  }, [selectedTemplateId, templates]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedTemplateId || !riskLevel) {
-      toast.error('Please select a template and risk level');
-      return;
-    }
-
-    setIsSubmitting(true);
-    
+  const onSubmit = async (data: RiskAssessmentFormData) => {
     try {
-      const template = templates.find(t => t.id === selectedTemplateId);
-      if (!template) throw new Error('Selected template not found');
-
       const { error } = await supabase
         .from('wireframe_risk_assessments')
         .insert({
           wireframe_id: wireframeId,
-          template_id: selectedTemplateId,
-          risk_level: riskLevel,
-          risk_factors: template.risk_factors,
-          mitigation_plan: {
-            plan: mitigationPlan,
-            recommended_strategies: template.mitigation_strategies
-          },
-          status: 'open',
+          risk_level: data.risk_level,
+          risk_factors: data.risk_factors,
+          mitigation_plan: data.mitigation_plan,
+          status: 'identified'
         });
 
       if (error) throw error;
 
       toast.success('Risk assessment created successfully');
-      setMitigationPlan('');
+      form.reset();
     } catch (error) {
-      console.error('Error creating risk assessment:', error);
       toast.error('Failed to create risk assessment');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error creating risk assessment:', error);
     }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center p-6">Loading risk assessment data...</div>;
-  }
-
   return (
-    <Card className="mb-6">
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="category">Risk Category</Label>
-            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select risk category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="template">Risk Template</Label>
-            <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select risk template" />
-              </SelectTrigger>
-              <SelectContent>
-                {templates
-                  .filter(template => !selectedCategoryId || template.category_id === selectedCategoryId)
-                  .map(template => (
-                    <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {selectedTemplate && (
-            <div className="space-y-4 border rounded-md p-4 bg-muted/30">
-              <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-2">Risk Factors:</h4>
-                <ul className="list-disc pl-5 space-y-2 text-sm">
-                  {selectedTemplate.risk_factors?.factors?.map((factor, index) => (
-                    <li key={index}>
-                      <span className="font-medium">{factor.name}</span> (Weight: {factor.weight})
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label>Risk Level Assessment</Label>
-            <RadioGroup value={riskLevel} onValueChange={setRiskLevel} className="flex space-x-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="low" id="low" />
-                <Label htmlFor="low" className="text-green-600 font-medium">Low</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="medium" id="medium" />
-                <Label htmlFor="medium" className="text-yellow-600 font-medium">Medium</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="high" id="high" />
-                <Label htmlFor="high" className="text-orange-600 font-medium">High</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="critical" id="critical" />
-                <Label htmlFor="critical" className="text-red-600 font-medium">Critical</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="mitigationPlan">Mitigation Plan</Label>
-            <Textarea
-              id="mitigationPlan"
-              placeholder="Describe how you plan to mitigate these risks"
-              value={mitigationPlan}
-              onChange={(e) => setMitigationPlan(e.target.value)}
-              rows={4}
-            />
-          </div>
-          
-          <div className="pt-2">
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Creating...' : 'Create Risk Assessment'}
-            </Button>
-          </div>
+    <Card className="p-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="risk_level"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Risk Level</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select risk level" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="risk_factors.description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Risk Description</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Describe the potential risks..."
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="mitigation_plan.steps"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Mitigation Steps</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Describe the steps to mitigate the risks..."
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit">Create Risk Assessment</Button>
         </form>
-      </CardContent>
+      </Form>
     </Card>
   );
 };

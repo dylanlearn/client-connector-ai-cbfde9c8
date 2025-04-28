@@ -1,176 +1,135 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 interface BudgetFormProps {
   wireframeId: string;
 }
 
-export const BudgetForm: React.FC<BudgetFormProps> = ({ wireframeId }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [budgetName, setBudgetName] = useState('');
-  const [budgetDescription, setBudgetDescription] = useState('');
-  const [metricType, setMetricType] = useState<string>('load_time');
-  const [metricName, setMetricName] = useState('');
-  const [targetValue, setTargetValue] = useState('');
-  const [unit, setUnit] = useState('ms');
+interface BudgetFormData {
+  name: string;
+  description?: string;
+  metric_name: string;
+  target_value: number;
+  unit: string;
+  metric_type: 'load_time' | 'interaction' | 'resource_usage';
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!budgetName || !metricName || !targetValue) {
-      toast.error('Please fill all required fields');
-      return;
-    }
+export const BudgetForm = ({ wireframeId }: BudgetFormProps) => {
+  const form = useForm<BudgetFormData>();
 
-    setIsSubmitting(true);
-    
+  const onSubmit = async (data: BudgetFormData) => {
     try {
-      // Create the performance budget
-      const { data: budgetData, error: budgetError } = await supabase
+      // First create the budget
+      const { data: budget, error: budgetError } = await supabase
         .from('performance_budgets')
         .insert({
           wireframe_id: wireframeId,
-          name: budgetName,
-          description: budgetDescription,
+          name: data.name,
+          description: data.description
         })
         .select()
         .single();
 
       if (budgetError) throw budgetError;
 
-      // Create the performance metric
-      const targetValueNum = parseFloat(targetValue);
+      // Then create the associated metric
       const { error: metricError } = await supabase
         .from('performance_metrics')
         .insert({
-          budget_id: budgetData.id,
-          metric_type: metricType,
-          metric_name: metricName,
-          target_value: targetValueNum,
-          warning_threshold: targetValueNum * 1.2, // 20% over target
-          critical_threshold: targetValueNum * 1.5, // 50% over target
-          unit: unit,
+          budget_id: budget.id,
+          metric_name: data.metric_name,
+          metric_type: data.metric_type,
+          target_value: data.target_value,
+          unit: data.unit
         });
 
       if (metricError) throw metricError;
 
       toast.success('Performance budget created successfully');
-      
-      // Reset form
-      setBudgetName('');
-      setBudgetDescription('');
-      setMetricName('');
-      setTargetValue('');
-      setMetricType('load_time');
-      setUnit('ms');
+      form.reset();
     } catch (error) {
-      console.error('Error creating performance budget:', error);
       toast.error('Failed to create performance budget');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error creating budget:', error);
     }
   };
 
   return (
-    <Card className="mb-6">
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="budgetName">Budget Name *</Label>
-            <Input
-              id="budgetName"
-              placeholder="e.g., Homepage Performance"
-              value={budgetName}
-              onChange={(e) => setBudgetName(e.target.value)}
-              required
-            />
-          </div>
+    <Card className="p-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Budget Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Main page load time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="budgetDescription">Description</Label>
-            <Textarea
-              id="budgetDescription"
-              placeholder="Describe this performance budget"
-              value={budgetDescription}
-              onChange={(e) => setBudgetDescription(e.target.value)}
-              rows={2}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="metric_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Metric Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Time to First Byte" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="metricType">Metric Type *</Label>
-              <Select value={metricType} onValueChange={setMetricType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select metric type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="load_time">Load Time</SelectItem>
-                  <SelectItem value="interaction">Interaction</SelectItem>
-                  <SelectItem value="resource">Resource Usage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="metricName">Metric Name *</Label>
-              <Input
-                id="metricName"
-                placeholder="e.g., First Contentful Paint"
-                value={metricName}
-                onChange={(e) => setMetricName(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+          <FormField
+            control={form.control}
+            name="target_value"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Target Value</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="targetValue">Target Value *</Label>
-              <Input
-                id="targetValue"
-                type="number"
-                placeholder="Target value"
-                value={targetValue}
-                onChange={(e) => setTargetValue(e.target.value)}
-                required
-                min="0"
-                step="0.01"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unit *</Label>
-              <Select value={unit} onValueChange={setUnit}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ms">Milliseconds (ms)</SelectItem>
-                  <SelectItem value="s">Seconds (s)</SelectItem>
-                  <SelectItem value="kb">Kilobytes (KB)</SelectItem>
-                  <SelectItem value="mb">Megabytes (MB)</SelectItem>
-                  <SelectItem value="score">Score</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="pt-2">
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Creating...' : 'Create Performance Budget'}
-            </Button>
-          </div>
+          <FormField
+            control={form.control}
+            name="unit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unit</FormLabel>
+                <FormControl>
+                  <Input placeholder="ms" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit">Create Budget</Button>
         </form>
-      </CardContent>
+      </Form>
     </Card>
   );
 };
