@@ -100,4 +100,3 @@ export const InteractiveSpecViewer: React.FC<InteractiveSpecViewerProps> = ({
     </Card>
   );
 };
-

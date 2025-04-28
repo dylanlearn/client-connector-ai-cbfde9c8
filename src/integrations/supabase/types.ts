@@ -1026,6 +1026,36 @@ export type Database = {
           },
         ]
       }
+      component_library_mappings: {
+        Row: {
+          created_at: string | null
+          id: string
+          library_component_name: string
+          notes: string | null
+          property_mappings: Json | null
+          updated_at: string | null
+          wireframe_component_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          library_component_name: string
+          notes?: string | null
+          property_mappings?: Json | null
+          updated_at?: string | null
+          wireframe_component_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          library_component_name?: string
+          notes?: string | null
+          property_mappings?: Json | null
+          updated_at?: string | null
+          wireframe_component_id?: string
+        }
+        Relationships: []
+      }
       component_recommendations: {
         Row: {
           component_type: string
@@ -1053,6 +1083,39 @@ export type Database = {
           metadata?: Json | null
           reasoning?: string | null
           recommendation_strength?: number | null
+        }
+        Relationships: []
+      }
+      component_specifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          properties: Json | null
+          states: Json | null
+          updated_at: string | null
+          variations: Json | null
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          properties?: Json | null
+          states?: Json | null
+          updated_at?: string | null
+          variations?: Json | null
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          properties?: Json | null
+          states?: Json | null
+          updated_at?: string | null
+          variations?: Json | null
+          wireframe_id?: string
         }
         Relationships: []
       }
@@ -3436,6 +3499,36 @@ export type Database = {
           },
         ]
       }
+      technical_feasibility_analysis: {
+        Row: {
+          browser_compatibility: Json | null
+          created_at: string | null
+          id: string
+          implementation_challenges: Json | null
+          performance_metrics: Json | null
+          updated_at: string | null
+          wireframe_id: string
+        }
+        Insert: {
+          browser_compatibility?: Json | null
+          created_at?: string | null
+          id?: string
+          implementation_challenges?: Json | null
+          performance_metrics?: Json | null
+          updated_at?: string | null
+          wireframe_id: string
+        }
+        Update: {
+          browser_compatibility?: Json | null
+          created_at?: string | null
+          id?: string
+          implementation_challenges?: Json | null
+          performance_metrics?: Json | null
+          updated_at?: string | null
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
       template_purchases: {
         Row: {
           id: string
@@ -4851,6 +4944,10 @@ export type Database = {
       }
       analyze_profile_queries: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      analyze_technical_feasibility: {
+        Args: { p_wireframe_id: string }
         Returns: Json
       }
       analyze_wireframe_sections: {
