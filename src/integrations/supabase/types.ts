@@ -1050,6 +1050,51 @@ export type Database = {
         }
         Relationships: []
       }
+      design_decisions: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          element_links: Json | null
+          id: string
+          impact: string
+          rationale: string
+          ref_links: Json | null
+          title: string
+          tradeoffs: Json | null
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          element_links?: Json | null
+          id?: string
+          impact: string
+          rationale: string
+          ref_links?: Json | null
+          title: string
+          tradeoffs?: Json | null
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          element_links?: Json | null
+          id?: string
+          impact?: string
+          rationale?: string
+          ref_links?: Json | null
+          title?: string
+          tradeoffs?: Json | null
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
       design_feedback: {
         Row: {
           context: Json | null
@@ -2474,6 +2519,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wireframe_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          user_id: string
+          wireframe_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+          wireframe_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+          wireframe_id?: string
+        }
+        Relationships: []
       }
       wireframe_background_tasks: {
         Row: {
