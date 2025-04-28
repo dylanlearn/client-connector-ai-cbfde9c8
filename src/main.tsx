@@ -6,7 +6,7 @@ import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-// Render the app directly without wrapping in AppProviders since that's already in App.tsx
+// Render the app directly with AppProviders (already included in App.tsx)
 root.render(
   <React.StrictMode>
     <App />
@@ -17,8 +17,12 @@ root.render(
 // This ensures that error monitoring doesn't interfere with the initial render
 setTimeout(() => {
   try {
-    const { initializeErrorHandling } = require("@/utils/monitoring/error-handling");
-    initializeErrorHandling();
+    // Use import() instead of require() for better compatibility with Vite
+    import("@/utils/monitoring/error-handling").then(module => {
+      module.initializeErrorHandling();
+    }).catch(error => {
+      console.error("Failed to initialize error handling:", error);
+    });
   } catch (error) {
     console.error("Failed to initialize error handling:", error);
   }
