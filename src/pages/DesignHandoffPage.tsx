@@ -1,13 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { DesignSpecificationEditor } from '@/components/design-handoff/DesignSpecificationEditor';
 import { CodeGenerator } from '@/components/design-handoff/CodeGenerator';
 import { DocumentationGenerator } from '@/components/design-handoff/DocumentationGenerator';
+import { TechnicalFeasibilityAnalyzer } from '@/components/design-handoff/TechnicalFeasibilityAnalyzer';
+import { ComponentLibraryMapper } from '@/components/design-handoff/ComponentLibraryMapper';
+import { InteractiveSpecViewer } from '@/components/design-handoff/InteractiveSpecViewer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const DesignHandoffPage = () => {
   const { wireframeId } = useParams();
+  const [selectedSpecificationId, setSelectedSpecificationId] = useState<string | undefined>(undefined);
 
   if (!wireframeId) {
     return <div>No wireframe ID provided</div>;
@@ -18,11 +23,58 @@ const DesignHandoffPage = () => {
       <div className="container mx-auto p-6 space-y-8">
         <h1 className="text-3xl font-bold mb-8">Design Handoff</h1>
         
-        <div className="grid gap-8">
-          <DesignSpecificationEditor wireframeId={wireframeId} />
-          <CodeGenerator wireframeId={wireframeId} />
-          <DocumentationGenerator wireframeId={wireframeId} />
-        </div>
+        <Tabs defaultValue="specifications">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
+            <TabsTrigger value="specifications">Specifications</TabsTrigger>
+            <TabsTrigger value="code">Code Generation</TabsTrigger>
+            <TabsTrigger value="documentation">Documentation</TabsTrigger>
+            <TabsTrigger value="feasibility">Feasibility Analysis</TabsTrigger>
+            <TabsTrigger value="component-mapping">Component Mapping</TabsTrigger>
+            <TabsTrigger value="interactive-specs">Interactive Specs</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="specifications">
+            <DesignSpecificationEditor 
+              wireframeId={wireframeId} 
+              onSpecificationSelected={setSelectedSpecificationId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="code">
+            <CodeGenerator 
+              wireframeId={wireframeId} 
+              specificationId={selectedSpecificationId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="documentation">
+            <DocumentationGenerator 
+              wireframeId={wireframeId} 
+              specificationId={selectedSpecificationId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="feasibility">
+            <TechnicalFeasibilityAnalyzer 
+              wireframeId={wireframeId} 
+              specificationId={selectedSpecificationId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="component-mapping">
+            <ComponentLibraryMapper 
+              wireframeId={wireframeId} 
+              specificationId={selectedSpecificationId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="interactive-specs">
+            <InteractiveSpecViewer 
+              wireframeId={wireframeId} 
+              specificationId={selectedSpecificationId}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
