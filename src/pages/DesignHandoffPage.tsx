@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -9,6 +8,8 @@ import { TechnicalFeasibilityAnalyzer } from '@/components/design-handoff/Techni
 import { ComponentLibraryMapper } from '@/components/design-handoff/ComponentLibraryMapper';
 import { InteractiveSpecViewer } from '@/components/design-handoff/InteractiveSpecViewer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { APIModelingSystem } from '@/components/api-integration/APIModelingSystem';
+import { AccessibilityImplementation } from '@/components/accessibility/AccessibilityImplementation';
 
 const DesignHandoffPage = () => {
   const { wireframeId } = useParams();
@@ -24,13 +25,15 @@ const DesignHandoffPage = () => {
         <h1 className="text-3xl font-bold mb-8">Design Handoff</h1>
         
         <Tabs defaultValue="specifications">
-          <TabsList className="grid w-full grid-cols-6 mb-8">
+          <TabsList className="grid w-full grid-cols-8 mb-8">
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
             <TabsTrigger value="code">Code Generation</TabsTrigger>
             <TabsTrigger value="documentation">Documentation</TabsTrigger>
             <TabsTrigger value="feasibility">Feasibility Analysis</TabsTrigger>
             <TabsTrigger value="component-mapping">Component Mapping</TabsTrigger>
             <TabsTrigger value="interactive-specs">Interactive Specs</TabsTrigger>
+            <TabsTrigger value="api-modeling">API Modeling</TabsTrigger>
+            <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
           </TabsList>
           
           <TabsContent value="specifications">
@@ -72,6 +75,17 @@ const DesignHandoffPage = () => {
             <InteractiveSpecViewer 
               wireframeId={wireframeId} 
               specificationId={selectedSpecificationId}
+            />
+          </TabsContent>
+          
+          <TabsContent value="api-modeling">
+            <APIModelingSystem wireframeId={wireframeId} />
+          </TabsContent>
+          
+          <TabsContent value="accessibility">
+            <AccessibilityImplementation 
+              wireframeId={wireframeId}
+              elementId={selectedSpecificationId}
             />
           </TabsContent>
         </Tabs>

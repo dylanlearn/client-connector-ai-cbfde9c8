@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accessibility_guidelines: {
+        Row: {
+          aria_attributes: Json | null
+          color_contrast_requirements: Json | null
+          component_type: string
+          created_at: string | null
+          focus_management: Json | null
+          id: string
+          keyboard_interactions: Json | null
+          reference_url: string | null
+          screen_reader_requirements: Json | null
+          updated_at: string | null
+          wcag_criteria: Json | null
+        }
+        Insert: {
+          aria_attributes?: Json | null
+          color_contrast_requirements?: Json | null
+          component_type: string
+          created_at?: string | null
+          focus_management?: Json | null
+          id?: string
+          keyboard_interactions?: Json | null
+          reference_url?: string | null
+          screen_reader_requirements?: Json | null
+          updated_at?: string | null
+          wcag_criteria?: Json | null
+        }
+        Update: {
+          aria_attributes?: Json | null
+          color_contrast_requirements?: Json | null
+          component_type?: string
+          created_at?: string | null
+          focus_management?: Json | null
+          id?: string
+          keyboard_interactions?: Json | null
+          reference_url?: string | null
+          screen_reader_requirements?: Json | null
+          updated_at?: string | null
+          wcag_criteria?: Json | null
+        }
+        Relationships: []
+      }
       ai_cleanup_metrics: {
         Row: {
           created_at: string
@@ -472,6 +514,87 @@ export type Database = {
         }
         Relationships: []
       }
+      api_endpoints: {
+        Row: {
+          authentication_type: string | null
+          created_at: string | null
+          description: string | null
+          headers: Json | null
+          id: string
+          method: string
+          name: string
+          query_params: Json | null
+          request_body_schema: Json | null
+          response_schema: Json | null
+          updated_at: string | null
+          url: string
+          wireframe_id: string
+        }
+        Insert: {
+          authentication_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          headers?: Json | null
+          id?: string
+          method: string
+          name: string
+          query_params?: Json | null
+          request_body_schema?: Json | null
+          response_schema?: Json | null
+          updated_at?: string | null
+          url: string
+          wireframe_id: string
+        }
+        Update: {
+          authentication_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          headers?: Json | null
+          id?: string
+          method?: string
+          name?: string
+          query_params?: Json | null
+          request_body_schema?: Json | null
+          response_schema?: Json | null
+          updated_at?: string | null
+          url?: string
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
+      api_state_models: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          initial_state: Json | null
+          name: string
+          state_schema: Json | null
+          updated_at: string | null
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          initial_state?: Json | null
+          name: string
+          state_schema?: Json | null
+          updated_at?: string | null
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          initial_state?: Json | null
+          name?: string
+          state_schema?: Json | null
+          updated_at?: string | null
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
       api_usage_metrics: {
         Row: {
           endpoint: string
@@ -510,6 +633,53 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      api_wireframe_mappings: {
+        Row: {
+          created_at: string | null
+          data_mapping: Json | null
+          element_id: string
+          endpoint_id: string
+          id: string
+          mapping_type: string
+          state_effects: Json | null
+          trigger_events: Json | null
+          updated_at: string | null
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_mapping?: Json | null
+          element_id: string
+          endpoint_id: string
+          id?: string
+          mapping_type: string
+          state_effects?: Json | null
+          trigger_events?: Json | null
+          updated_at?: string | null
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_mapping?: Json | null
+          element_id?: string
+          endpoint_id?: string
+          id?: string
+          mapping_type?: string
+          state_effects?: Json | null
+          trigger_events?: Json | null
+          updated_at?: string | null
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_wireframe_mappings_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "api_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -3888,6 +4058,45 @@ export type Database = {
           },
         ]
       }
+      wireframe_accessibility_mappings: {
+        Row: {
+          accessibility_notes: string | null
+          component_type: string
+          created_at: string | null
+          custom_aria_attributes: Json | null
+          custom_keyboard_interactions: Json | null
+          element_id: string
+          id: string
+          updated_at: string | null
+          verification_status: string | null
+          wireframe_id: string
+        }
+        Insert: {
+          accessibility_notes?: string | null
+          component_type: string
+          created_at?: string | null
+          custom_aria_attributes?: Json | null
+          custom_keyboard_interactions?: Json | null
+          element_id: string
+          id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+          wireframe_id: string
+        }
+        Update: {
+          accessibility_notes?: string | null
+          component_type?: string
+          created_at?: string | null
+          custom_aria_attributes?: Json | null
+          custom_keyboard_interactions?: Json | null
+          element_id?: string
+          id?: string
+          updated_at?: string | null
+          verification_status?: string | null
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
       wireframe_action_history: {
         Row: {
           action_type: string
@@ -4962,6 +5171,10 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
+      check_color_contrast_compliance: {
+        Args: { p_foreground_color: string; p_background_color: string }
+        Returns: Json
+      }
       check_database_performance: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -5018,6 +5231,10 @@ export type Database = {
           version_number: number
           wireframe_id: string
         }
+      }
+      generate_accessibility_recommendations: {
+        Args: { p_component_type: string }
+        Returns: Json
       }
       generate_code: {
         Args: {
