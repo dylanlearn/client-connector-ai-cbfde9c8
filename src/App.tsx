@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import WireframeEditorDemo from './pages/WireframeEditorDemo';
 import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
@@ -7,6 +8,7 @@ import CollaborativeDocumentPage from './pages/CollaborativeDocumentPage';
 import AdvancedDesignSystemPage from './pages/AdvancedDesignSystemPage';
 import Home from './pages/Home';
 import { AppProviders } from './providers/AppProviders';
+import DesignHandoffPage from './pages/DesignHandoffPage';
 
 function App() {
   return (
