@@ -5660,6 +5660,10 @@ export type Database = {
       }
     }
     Functions: {
+      analyze_asset_usage: {
+        Args: { p_project_id: string; p_days_threshold?: number }
+        Returns: Json
+      }
       analyze_competitive_positioning: {
         Args: { p_wireframe_id: string }
         Returns: Json
@@ -5691,6 +5695,22 @@ export type Database = {
       }
       analyze_wireframe_sections: {
         Args: { p_start_date: string }
+        Returns: Json
+      }
+      apply_design_system_to_wireframe: {
+        Args: {
+          p_wireframe_id: string
+          p_project_id: string
+          p_override_conflicts?: boolean
+        }
+        Returns: Json
+      }
+      apply_wireframe_to_design_system: {
+        Args: {
+          p_wireframe_id: string
+          p_project_id: string
+          p_override_conflicts?: boolean
+        }
         Returns: Json
       }
       batch_insert_interaction_events: {
@@ -5761,6 +5781,10 @@ export type Database = {
           version_number: number
           wireframe_id: string
         }
+      }
+      detect_design_system_conflicts: {
+        Args: { p_project_id: string; p_wireframe_id: string; p_changes: Json }
+        Returns: Json
       }
       generate_accessibility_recommendations: {
         Args: { p_component_type: string }
@@ -5997,6 +6021,21 @@ export type Database = {
         Args: { p_action: string; p_user_id: string; p_data?: Json }
         Returns: Json
       }
+      propagate_token_changes: {
+        Args: { p_project_id: string; p_token_id: string }
+        Returns: {
+          component_type: string
+          created_at: string | null
+          design_tokens: Json | null
+          id: string
+          name: string
+          project_id: string
+          properties: Json | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          version: string
+        }[]
+      }
       query_interaction_events: {
         Args: { query_text: string }
         Returns: {
@@ -6192,6 +6231,10 @@ export type Database = {
           p_metadata?: Json
         }
         Returns: undefined
+      }
+      transform_data_through_mapping: {
+        Args: { p_mapping_id: string; p_input_data?: Json }
+        Returns: Json
       }
       update_background_task_status: {
         Args: {

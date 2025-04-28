@@ -14,9 +14,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BudgetFormTokens } from './BudgetFormTokens';
 
 interface BudgetFormProps {
   wireframeId: string;
+  projectId: string;
 }
 
 interface BudgetFormData {
@@ -26,9 +30,10 @@ interface BudgetFormData {
   target_value: number;
   unit: string;
   metric_type: 'load_time' | 'interaction' | 'resource_usage';
+  color_token?: string; // New field for design token integration
 }
 
-export const BudgetForm = ({ wireframeId }: BudgetFormProps) => {
+export const BudgetForm = ({ wireframeId, projectId }: BudgetFormProps) => {
   const form = useForm<BudgetFormData>();
 
   const onSubmit = async (data: BudgetFormData) => {
@@ -39,7 +44,8 @@ export const BudgetForm = ({ wireframeId }: BudgetFormProps) => {
         .insert({
           wireframe_id: wireframeId,
           name: data.name,
-          description: data.description
+          description: data.description,
+          color_token: data.color_token // Store token reference
         })
         .select()
         .single();
@@ -87,45 +93,92 @@ export const BudgetForm = ({ wireframeId }: BudgetFormProps) => {
           
           <FormField
             control={form.control}
-            name="metric_name"
+            name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Metric Name</FormLabel>
+                <FormLabel>Description (Optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Time to First Byte" {...field} />
+                  <Textarea 
+                    placeholder="Details about this performance budget" 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           
-          <FormField
-            control={form.control}
-            name="target_value"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Target Value</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="metric_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Metric Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Time to First Byte" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="metric_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Metric Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select metric type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="load_time">Load Time</SelectItem>
+                      <SelectItem value="interaction">Interaction</SelectItem>
+                      <SelectItem value="resource_usage">Resource Usage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           
-          <FormField
-            control={form.control}
-            name="unit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit</FormLabel>
-                <FormControl>
-                  <Input placeholder="ms" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="target_value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Value</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ms" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          {/* Design Token Integration */}
+          <BudgetFormTokens projectId={projectId} form={form} />
 
           <Button type="submit">Create Budget</Button>
         </form>

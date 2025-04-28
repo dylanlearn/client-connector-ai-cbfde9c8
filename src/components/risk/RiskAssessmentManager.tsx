@@ -5,12 +5,15 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { RiskList } from './RiskList';
 import { RiskAssessmentForm } from './RiskAssessmentForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DesignSystemIntegrationPanel } from '../design/DesignSystemIntegrationPanel';
 
 interface RiskAssessmentManagerProps {
   wireframeId: string;
+  projectId: string;
 }
 
-export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ wireframeId }) => {
+export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ wireframeId, projectId }) => {
   const { data: assessments, isLoading } = useQuery({
     queryKey: ['risk-assessments', wireframeId],
     queryFn: async () => {
@@ -36,10 +39,21 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ wi
         <CardTitle>Implementation Risk Assessment</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
-          <RiskAssessmentForm wireframeId={wireframeId} />
-          <RiskList assessments={assessments} isLoading={isLoading} />
-        </div>
+        <Tabs defaultValue="risks" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="risks">Risk Assessment</TabsTrigger>
+            <TabsTrigger value="design-system">Design System</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="risks" className="space-y-6">
+            <RiskAssessmentForm wireframeId={wireframeId} projectId={projectId} />
+            <RiskList assessments={assessments} isLoading={isLoading} />
+          </TabsContent>
+          
+          <TabsContent value="design-system">
+            <DesignSystemIntegrationPanel wireframeId={wireframeId} projectId={projectId} />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
