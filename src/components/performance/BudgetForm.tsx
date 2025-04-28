@@ -1,114 +1,116 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { BudgetFormTokens } from './BudgetFormTokens';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface BudgetFormData {
+  name: string;
+  metric_name: string;
+  target_value: string;
+  unit: string;
+  metric_type: string;
+  importance: string;
+  color_token?: string;
+}
 
 interface BudgetFormProps {
   wireframeId: string;
   projectId: string;
 }
 
-interface BudgetFormData {
-  name: string;
-  description?: string;
-  metric_name: string;
-  target_value: number;
-  unit: string;
-  metric_type: 'load_time' | 'interaction' | 'resource_usage';
-  color_token?: string; // New field for design token integration
-}
-
-export const BudgetForm = ({ wireframeId, projectId }: BudgetFormProps) => {
-  const form = useForm<BudgetFormData>();
-
+export const BudgetForm: React.FC<BudgetFormProps> = ({ wireframeId, projectId }) => {
+  const { toast } = useToast();
+  
+  const form = useForm<BudgetFormData>({
+    defaultValues: {
+      name: '',
+      metric_name: '',
+      target_value: '',
+      unit: 'ms',
+      metric_type: 'load_time',
+      importance: 'high',
+    }
+  });
+  
   const onSubmit = async (data: BudgetFormData) => {
     try {
       // First create the budget
-      const { data: budget, error: budgetError } = await supabase
+      const { data: budgetData, error: budgetError } = await supabase
         .from('performance_budgets')
-        .insert({
-          wireframe_id: wireframeId,
-          name: data.name,
-          description: data.description,
-          color_token: data.color_token // Store token reference
-        })
-        .select()
-        .single();
-
+        .insert([
+          { 
+            name: data.name, 
+            wireframe_id: wireframeId,
+            description: `Performance budget for ${data.metric_name}`
+          }
+        ])
+        .select();
+      
       if (budgetError) throw budgetError;
-
-      // Then create the associated metric
-      const { error: metricError } = await supabase
-        .from('performance_metrics')
-        .insert({
-          budget_id: budget.id,
-          metric_name: data.metric_name,
-          metric_type: data.metric_type,
-          target_value: data.target_value,
-          unit: data.unit
+      
+      if (budgetData && budgetData.length > 0) {
+        // Then create the metric
+        const { error: metricError } = await supabase
+          .from('performance_metrics')
+          .insert([
+            { 
+              budget_id: budgetData[0].id,
+              metric_name: data.metric_name,
+              target_value: parseFloat(data.target_value),
+              unit: data.unit,
+              metric_type: data.metric_type,
+              importance: data.importance
+            }
+          ]);
+        
+        if (metricError) throw metricError;
+        
+        toast({
+          title: "Success",
+          description: "Performance budget created successfully"
         });
-
-      if (metricError) throw metricError;
-
-      toast.success('Performance budget created successfully');
-      form.reset();
+        
+        form.reset();
+      }
     } catch (error) {
-      toast.error('Failed to create performance budget');
-      console.error('Error creating budget:', error);
+      console.error('Error creating performance budget:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create performance budget",
+        variant: "destructive"
+      });
     }
   };
-
+  
   return (
-    <Card className="p-4">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Budget Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Main page load time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Details about this performance budget" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Card>
+      <CardHeader>
+        <h3 className="font-medium text-lg">Add Performance Budget</h3>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Budget Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="E.g., Homepage load time" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={form.control}
               name="metric_name"
@@ -116,12 +118,55 @@ export const BudgetForm = ({ wireframeId, projectId }: BudgetFormProps) => {
                 <FormItem>
                   <FormLabel>Metric Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Time to First Byte" {...field} />
+                    <Input placeholder="E.g., First Contentful Paint" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="target_value"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Value</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="E.g., 1000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="unit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unit</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ms">Milliseconds (ms)</SelectItem>
+                        <SelectItem value="s">Seconds (s)</SelectItem>
+                        <SelectItem value="kb">Kilobytes (KB)</SelectItem>
+                        <SelectItem value="mb">Megabytes (MB)</SelectItem>
+                        <SelectItem value="count">Count</SelectItem>
+                        <SelectItem value="score">Score</SelectItem>
+                        <SelectItem value="percent">Percentage (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             <FormField
               control={form.control}
@@ -137,26 +182,12 @@ export const BudgetForm = ({ wireframeId, projectId }: BudgetFormProps) => {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="load_time">Load Time</SelectItem>
-                      <SelectItem value="interaction">Interaction</SelectItem>
-                      <SelectItem value="resource_usage">Resource Usage</SelectItem>
+                      <SelectItem value="resource_size">Resource Size</SelectItem>
+                      <SelectItem value="request_count">Request Count</SelectItem>
+                      <SelectItem value="performance_score">Performance Score</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="target_value"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target Value</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -164,25 +195,33 @@ export const BudgetForm = ({ wireframeId, projectId }: BudgetFormProps) => {
             
             <FormField
               control={form.control}
-              name="unit"
+              name="importance"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Unit</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ms" {...field} />
-                  </FormControl>
+                  <FormLabel>Importance</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select importance" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
-          
-          {/* Design Token Integration */}
-          <BudgetFormTokens projectId={projectId} form={form} />
-
-          <Button type="submit">Create Budget</Button>
-        </form>
-      </Form>
+            
+            <BudgetFormTokens projectId={projectId} form={form} />
+            
+            <Button type="submit" className="w-full">Add Performance Budget</Button>
+          </form>
+        </Form>
+      </CardContent>
     </Card>
   );
 };

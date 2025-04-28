@@ -1,286 +1,310 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { BarChart, Image as ImageIcon, Info, FileText, AlertCircle, Clock } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DesignSystemService, Asset, AssetAnalysis } from '@/services/design-system/design-system-service';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageIcon, FileIcon, UploadCloud, RefreshCw, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DesignSystemService, DesignAsset } from '@/services/design-system/design-system-service';
+import { Badge } from '@/components/ui/badge';
 
 interface AssetManagerProps {
   projectId: string;
-  wireframeId?: string;
+  wireframeId: string;
 }
 
 export function AssetManager({ projectId, wireframeId }: AssetManagerProps) {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [assetAnalysis, setAssetAnalysis] = useState<AssetAnalysis | null>(null);
-  const [assetFilter, setAssetFilter] = useState<string>('all');
-  
+  const [assets, setAssets] = useState<DesignAsset[]>([]);
+  const [assetUsage, setAssetUsage] = useState<Record<string, any>>({});
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('images');
+  const { toast } = useToast();
+
   useEffect(() => {
-    if (projectId) {
-      loadAssets();
-    }
+    loadAssets();
   }, [projectId]);
-  
+
   const loadAssets = async () => {
-    setIsLoading(true);
     try {
-      const data = await DesignSystemService.getAssets(projectId);
+      setIsLoading(true);
+      const data = await DesignSystemService.getDesignAssets(projectId);
       setAssets(data);
     } catch (error) {
-      toast.error("Failed to load assets");
-      console.error("Error loading assets:", error);
+      console.error('Error loading design assets:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load design assets",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const handleAssetUsage = async (assetId: string) => {
-    if (!wireframeId) return;
-    
+
+  const handleAssetAnalysis = async () => {
     try {
-      await DesignSystemService.trackAssetUsage(assetId, wireframeId);
-      toast.success("Asset usage recorded");
+      setIsAnalyzing(true);
+      const results = await DesignSystemService.analyzeAssetUsage(projectId);
+      setAnalysisResults(results);
+      toast({
+        title: "Analysis Complete",
+        description: "Asset usage analysis has been completed"
+      });
     } catch (error) {
-      // Silently fail, already logged in the service
-    }
-  };
-  
-  const analyzeAssets = async () => {
-    setIsAnalyzing(true);
-    try {
-      const analysis = await DesignSystemService.analyzeAssetUsage(projectId);
-      setAssetAnalysis(analysis);
-    } catch (error) {
-      toast.error("Failed to analyze assets");
-      console.error("Error analyzing assets:", error);
+      console.error('Error analyzing assets:', error);
+      toast({
+        title: "Error",
+        description: "Failed to analyze assets",
+        variant: "destructive"
+      });
     } finally {
       setIsAnalyzing(false);
     }
   };
-  
-  const getAssetIcon = (type: string) => {
-    switch (type) {
-      case 'image':
-        return <ImageIcon className="h-4 w-4" />;
-      case 'icon':
-        return <Info className="h-4 w-4" />;
-      case 'font':
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
+
+  const loadAssetUsage = async (assetId: string) => {
+    if (assetUsage[assetId]) return; // Already loaded
+    
+    try {
+      const usage = await DesignSystemService.getAssetUsage(assetId);
+      setAssetUsage(prev => ({
+        ...prev,
+        [assetId]: usage
+      }));
+    } catch (error) {
+      console.error('Error loading asset usage:', error);
     }
   };
-  
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const filterAssetsByType = (assetType: string) => {
+    return assets.filter(asset => asset.asset_type === assetType);
+  };
+
+  const imageAssets = filterAssetsByType('image');
+  const fontAssets = filterAssetsByType('font');
+  const iconAssets = filterAssetsByType('icon');
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Asset Manager</CardTitle>
-        <CardDescription>
-          Manage and optimize design assets across your project
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center">
+          <ImageIcon className="h-5 w-5 mr-2" />
+          Asset Manager
+        </CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAssetAnalysis}
+          disabled={isAnalyzing}
+        >
+          {isAnalyzing ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Analyze Usage
+            </>
+          )}
+        </Button>
       </CardHeader>
-      
       <CardContent>
-        <Tabs defaultValue="assets" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="assets">Assets Library</TabsTrigger>
-            <TabsTrigger value="analysis">Optimization</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="assets" className="space-y-4 py-2">
-            <div className="flex items-center justify-between mb-4">
-              <Select 
-                value={assetFilter} 
-                onValueChange={setAssetFilter}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter assets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Assets</SelectItem>
-                  <SelectItem value="image">Images</SelectItem>
-                  <SelectItem value="icon">Icons</SelectItem>
-                  <SelectItem value="illustration">Illustrations</SelectItem>
-                  <SelectItem value="animation">Animations</SelectItem>
-                  <SelectItem value="font">Fonts</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={loadAssets} 
-                disabled={isLoading}
-              >
-                Refresh
-              </Button>
-            </div>
-            
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <p>Loading assets...</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {assets
-                  .filter(asset => assetFilter === 'all' || asset.asset_type === assetFilter)
-                  .map((asset) => (
-                    <Card key={asset.id} className="overflow-hidden">
-                      {asset.asset_type === 'image' && (
-                        <div className="h-32 bg-muted flex items-center justify-center overflow-hidden">
-                          <img 
-                            src={asset.file_path} 
-                            alt={asset.name} 
-                            className="w-full h-full object-cover" 
-                          />
-                        </div>
-                      )}
-                      
-                      {asset.asset_type !== 'image' && (
-                        <div className="h-32 bg-muted flex items-center justify-center">
-                          {getAssetIcon(asset.asset_type)}
-                          <span className="ml-2">{asset.format}</span>
-                        </div>
-                      )}
-                      
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium text-sm truncate">{asset.name}</h3>
-                          <Badge variant="outline">
-                            {getAssetIcon(asset.asset_type)}
-                            <span className="ml-1">{asset.asset_type}</span>
-                          </Badge>
-                        </div>
-                        
-                        <div className="text-xs text-muted-foreground">
-                          <p>{(asset.file_size / 1024).toFixed(2)} KB</p>
-                          <p className="truncate">Tags: {asset.tags.join(', ') || 'None'}</p>
-                        </div>
-                      </CardContent>
-                      
-                      <CardFooter className="p-4 pt-0 flex justify-end">
-                        {wireframeId && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleAssetUsage(asset.id)}
-                          >
-                            Use Asset
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  ))}
-                
-                {assets.filter(asset => assetFilter === 'all' || asset.asset_type === assetFilter).length === 0 && (
-                  <div className="col-span-full text-center py-8 text-muted-foreground">
-                    No assets found in this category
-                  </div>
-                )}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="analysis">
-            <div className="py-4 space-y-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium">Asset Optimization Analysis</h3>
-                <Button 
-                  onClick={analyzeAssets} 
-                  disabled={isAnalyzing}
-                  size="sm"
-                >
-                  <BarChart className="h-4 w-4 mr-2" />
-                  {isAnalyzing ? 'Analyzing...' : 'Analyze Assets'}
-                </Button>
-              </div>
-              
-              {assetAnalysis ? (
-                <div className="space-y-6">
-                  {assetAnalysis.optimizationSuggestions.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-2" />
-                          Optimization Suggestions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Asset</TableHead>
-                              <TableHead>Current Size</TableHead>
-                              <TableHead>Suggestion</TableHead>
-                              <TableHead>Potential Savings</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {assetAnalysis.optimizationSuggestions.map((suggestion) => (
-                              <TableRow key={suggestion.id}>
-                                <TableCell className="font-medium">{suggestion.name}</TableCell>
-                                <TableCell>{(suggestion.currentSize / 1024).toFixed(2)} KB</TableCell>
-                                <TableCell>{suggestion.suggestion}</TableCell>
-                                <TableCell>
-                                  {suggestion.potentialSavings > 0 ? 
-                                    `${(suggestion.potentialSavings / 1024).toFixed(2)} KB (${Math.round((suggestion.potentialSavings / suggestion.currentSize) * 100)}%)` :
-                                    '-'
-                                  }
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  )}
-                  
-                  {assetAnalysis.unusedAssets && assetAnalysis.unusedAssets.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center">
-                          <Clock className="h-4 w-4 mr-2" />
-                          Unused Assets
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Asset</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Size</TableHead>
-                              <TableHead>Last Updated</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {assetAnalysis.unusedAssets.map((asset) => (
-                              <TableRow key={asset.id}>
-                                <TableCell className="font-medium">{asset.name}</TableCell>
-                                <TableCell>{asset.type}</TableCell>
-                                <TableCell>{(asset.size / 1024).toFixed(2)} KB</TableCell>
-                                <TableCell>{new Date(asset.lastUpdated).toLocaleDateString()}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  )}
+        {analysisResults && (
+          <Card className="mb-6 bg-amber-50 border-amber-200">
+            <CardContent className="p-4">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-amber-800">Asset Optimization Suggestions</h3>
+                  <ul className="mt-2 space-y-2 text-sm">
+                    {analysisResults.unusedAssets?.length > 0 && (
+                      <li className="flex items-center">
+                        <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full mr-2">
+                          {analysisResults.unusedAssets.length} unused
+                        </span>
+                        <span>Assets not used in any wireframes</span>
+                      </li>
+                    )}
+                    {analysisResults.duplicateAssets?.length > 0 && (
+                      <li className="flex items-center">
+                        <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full mr-2">
+                          {analysisResults.duplicateAssets.length} duplicates
+                        </span>
+                        <span>Potentially duplicate assets detected</span>
+                      </li>
+                    )}
+                    {analysisResults.optimizationSuggestions?.length > 0 && (
+                      <li className="flex items-center">
+                        <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full mr-2">
+                          {analysisResults.optimizationSuggestions.length} suggestions
+                        </span>
+                        <span>Optimization opportunities found</span>
+                      </li>
+                    )}
+                  </ul>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Click "Analyze Assets" to get optimization recommendations
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="images">
+              <ImageIcon className="h-4 w-4 mr-2" /> Images
+            </TabsTrigger>
+            <TabsTrigger value="icons">
+              <FileIcon className="h-4 w-4 mr-2" /> Icons
+            </TabsTrigger>
+            <TabsTrigger value="fonts">
+              <FileIcon className="h-4 w-4 mr-2" /> Fonts
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="images" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {imageAssets.length > 0 ? imageAssets.map(asset => (
+                <Card key={asset.id} className="overflow-hidden">
+                  <div 
+                    className="h-32 bg-gray-100 bg-center bg-cover bg-no-repeat" 
+                    style={{ backgroundImage: `url(${asset.file_path})` }}
+                  />
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className="font-medium truncate">{asset.name}</h3>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{formatFileSize(asset.file_size)}</span>
+                      <span>{asset.format.toUpperCase()}</span>
+                    </div>
+                    
+                    {asset.tags && asset.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {asset.tags.map((tag, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => loadAssetUsage(asset.id)}
+                    >
+                      View Usage
+                    </Button>
+                    
+                    {assetUsage[asset.id] && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Used in {assetUsage[asset.id].length} wireframe(s)
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )) : (
+                <div className="col-span-3 text-center py-10">
+                  <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <h3 className="mt-4 font-medium">No Images Found</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload images to use in your wireframes
+                  </p>
+                  <Button className="mt-4">
+                    <UploadCloud className="h-4 w-4 mr-2" />
+                    Upload Image
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="icons" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {iconAssets.length > 0 ? iconAssets.map(asset => (
+                <Card key={asset.id} className="p-4">
+                  <div className="flex flex-col items-center">
+                    <div className="h-16 w-16 flex items-center justify-center">
+                      <img 
+                        src={asset.file_path} 
+                        alt={asset.name} 
+                        className="max-h-full max-w-full" 
+                      />
+                    </div>
+                    <div className="mt-2 text-center">
+                      <h3 className="text-sm font-medium truncate max-w-full">
+                        {asset.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {asset.format.toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )) : (
+                <div className="col-span-4 text-center py-10">
+                  <FileIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <h3 className="mt-4 font-medium">No Icons Found</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload icons to use in your wireframes
+                  </p>
+                  <Button className="mt-4">
+                    <UploadCloud className="h-4 w-4 mr-2" />
+                    Upload Icon
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="fonts" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 gap-4">
+              {fontAssets.length > 0 ? fontAssets.map(asset => (
+                <Card key={asset.id} className="p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">{asset.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {formatFileSize(asset.file_size)} • {asset.format.toUpperCase()}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm">View Details</Button>
+                  </div>
+                </Card>
+              )) : (
+                <div className="text-center py-10">
+                  <FileIcon className="h-12 w-12 mx-auto text-muted-foreground" />
+                  <h3 className="mt-4 font-medium">No Fonts Found</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload custom fonts to use in your wireframes
+                  </p>
+                  <Button className="mt-4">
+                    <UploadCloud className="h-4 w-4 mr-2" />
+                    Upload Font
+                  </Button>
                 </div>
               )}
             </div>

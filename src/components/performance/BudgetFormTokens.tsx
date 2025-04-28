@@ -4,11 +4,12 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PaintBucket } from "lucide-react";
 import { DesignSystemService, DesignToken } from '@/services/design-system/design-system-service';
-import { useForm } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
+import { BudgetFormData } from './BudgetForm';
 
 interface BudgetFormTokensProps {
   projectId: string;
-  form: ReturnType<typeof useForm>;
+  form: UseFormReturn<BudgetFormData>;
 }
 
 export function BudgetFormTokens({ projectId, form }: BudgetFormTokensProps) {

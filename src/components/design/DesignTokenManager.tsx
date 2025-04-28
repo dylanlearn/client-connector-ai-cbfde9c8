@@ -1,341 +1,209 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Palette, Type, Maximize, Box, Clock, Square, Layers, Sigma } from "lucide-react";
+import { PaintBucket, Type, ArrowsHorizontal, Plus, Edit2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DesignSystemService, DesignToken } from '@/services/design-system/design-system-service';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DesignTokenManagerProps {
   projectId: string;
-  onTokensUpdate?: () => void;
 }
 
-const TOKEN_CATEGORIES = [
-  { value: 'color', label: 'Color', icon: <Palette className="h-4 w-4" /> },
-  { value: 'typography', label: 'Typography', icon: <Type className="h-4 w-4" /> },
-  { value: 'spacing', label: 'Spacing', icon: <Maximize className="h-4 w-4" /> },
-  { value: 'sizing', label: 'Sizing', icon: <Box className="h-4 w-4" /> },
-  { value: 'shadow', label: 'Shadow', icon: <Square className="h-4 w-4" /> },
-  { value: 'motion', label: 'Motion', icon: <Clock className="h-4 w-4" /> },
-  { value: 'border', label: 'Border', icon: <Square className="h-4 w-4" /> },
-  { value: 'opacity', label: 'Opacity', icon: <Layers className="h-4 w-4" /> },
-  { value: 'z-index', label: 'Z-Index', icon: <Layers className="h-4 w-4" /> },
-  { value: 'other', label: 'Other', icon: <Sigma className="h-4 w-4" /> }
-];
-
-export function DesignTokenManager({ projectId, onTokensUpdate }: DesignTokenManagerProps) {
+export function DesignTokenManager({ projectId }: DesignTokenManagerProps) {
+  const [isLoading, setIsLoading] = useState(true);
   const [tokens, setTokens] = useState<DesignToken[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('color');
-  const [newToken, setNewToken] = useState({
-    name: '',
-    category: 'color',
-    value: '',
-    description: ''
-  });
-  const [currentTab, setCurrentTab] = useState<string>('browse');
-  
+  const [activeCategory, setActiveCategory] = useState('color');
+  const { toast } = useToast();
+
   useEffect(() => {
     if (projectId) {
       loadTokens();
     }
   }, [projectId]);
-  
+
   const loadTokens = async () => {
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const data = await DesignSystemService.getDesignTokens(projectId);
       setTokens(data);
     } catch (error) {
-      toast.error("Failed to load design tokens");
-      console.error("Error loading tokens:", error);
+      console.error('Error loading design tokens:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load design tokens",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const handleCreateToken = async () => {
-    if (!newToken.name || !newToken.value) {
-      toast.error("Name and value are required");
-      return;
-    }
-    
+
+  const handleAddToken = async (token: Partial<DesignToken>) => {
     try {
-      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('design_tokens')
+        .insert([
+          {
+            project_id: projectId,
+            name: token.name,
+            category: token.category,
+            value: token.value,
+            description: token.description || ''
+          }
+        ])
+        .select();
       
-      let parsedValue = newToken.value;
-      // Try to parse if it looks like JSON
-      if (newToken.value.startsWith('{') || newToken.value.startsWith('[')) {
-        try {
-          parsedValue = JSON.parse(newToken.value);
-        } catch (e) {
-          // If it fails, use as string
-        }
-      }
+      if (error) throw error;
       
-      await DesignSystemService.createDesignToken({
-        project_id: projectId,
-        name: newToken.name,
-        category: newToken.category as any,
-        value: parsedValue,
-        description: newToken.description
+      setTokens([...tokens, data[0]]);
+      
+      toast({
+        title: "Success",
+        description: "Design token added successfully"
       });
-      
-      toast.success("Design token created successfully");
-      setNewToken({
-        name: '',
-        category: 'color',
-        value: '',
-        description: ''
-      });
-      loadTokens();
-      if (onTokensUpdate) onTokensUpdate();
-      setCurrentTab('browse');
     } catch (error) {
-      toast.error("Failed to create design token");
-      console.error("Error creating token:", error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error adding design token:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add design token",
+        variant: "destructive"
+      });
     }
   };
   
-  const handleDeleteToken = async (tokenId: string) => {
-    if (confirm("Are you sure you want to delete this token?")) {
-      setIsLoading(true);
-      try {
-        await DesignSystemService.deleteDesignToken(tokenId);
-        toast.success("Design token deleted successfully");
-        loadTokens();
-        if (onTokensUpdate) onTokensUpdate();
-      } catch (error) {
-        toast.error("Failed to delete design token");
-        console.error("Error deleting token:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const filterTokensByCategory = (category: string) => {
+    return tokens.filter(token => token.category === category);
   };
-  
-  const renderTokenValue = (token: DesignToken) => {
-    if (token.category === 'color') {
-      return (
-        <div className="flex items-center space-x-2">
-          <div 
-            className="w-6 h-6 rounded-full border border-gray-200" 
-            style={{ backgroundColor: typeof token.value === 'string' ? token.value : JSON.stringify(token.value) }}
-          />
-          <span className="text-xs">{typeof token.value === 'string' ? token.value : JSON.stringify(token.value)}</span>
-        </div>
-      );
-    }
-    
-    if (typeof token.value === 'object') {
-      return <span className="text-xs">{JSON.stringify(token.value)}</span>;
-    }
-    
-    return <span>{token.value}</span>;
-  };
-  
+
+  const colorTokens = filterTokensByCategory('color');
+  const typographyTokens = filterTokensByCategory('typography');
+  const spacingTokens = filterTokensByCategory('spacing');
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Design Token Manager</CardTitle>
-        <CardDescription>
-          Manage design tokens for colors, typography, spacing, and more
-        </CardDescription>
+        <CardTitle className="flex items-center">
+          <PaintBucket className="h-5 w-5 mr-2" />
+          Design Token Manager
+        </CardTitle>
       </CardHeader>
-      
       <CardContent>
-        <Tabs 
-          defaultValue="browse" 
-          value={currentTab} 
-          onValueChange={setCurrentTab}
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="browse">Browse Tokens</TabsTrigger>
-            <TabsTrigger value="create">Create Token</TabsTrigger>
+        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="color">
+              <PaintBucket className="h-4 w-4 mr-2" /> Colors
+            </TabsTrigger>
+            <TabsTrigger value="typography">
+              <Type className="h-4 w-4 mr-2" /> Typography
+            </TabsTrigger>
+            <TabsTrigger value="spacing">
+              <ArrowsHorizontal className="h-4 w-4 mr-2" /> Spacing
+            </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="browse" className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <Select 
-                value={selectedCategory} 
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {TOKEN_CATEGORIES.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      <div className="flex items-center">
-                        {category.icon}
-                        <span className="ml-2">{category.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+          <TabsContent value="color" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {colorTokens.map(token => (
+                <div key={token.id} className="p-4 border rounded-md">
+                  <div 
+                    className="h-16 rounded-md mb-2" 
+                    style={{ backgroundColor: token.value as string }}
+                  />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{token.name}</span>
+                    <Button variant="ghost" size="sm">
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <code className="text-xs">{token.value}</code>
+                </div>
+              ))}
               
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={loadTokens} 
-                disabled={isLoading}
-              >
-                Refresh
+              <Button variant="outline" className="h-auto flex flex-col items-center justify-center p-4 border border-dashed">
+                <Plus className="h-8 w-8 mb-2 text-muted-foreground" />
+                <span className="text-sm">Add Color Token</span>
               </Button>
             </div>
-            
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <p>Loading tokens...</p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tokens
-                      .filter(token => selectedCategory === 'all' || token.category === selectedCategory)
-                      .map((token) => (
-                        <TableRow key={token.id}>
-                          <TableCell className="font-medium">{token.name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {TOKEN_CATEGORIES.find(cat => cat.value === token.category)?.icon}
-                              <span className="ml-1">{token.category}</span>
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{renderTokenValue(token)}</TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteToken(token.id)}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    
-                    {tokens.filter(token => selectedCategory === 'all' || token.category === selectedCategory).length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4">
-                          No tokens found in this category
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
           </TabsContent>
-          
-          <TabsContent value="create" className="space-y-4 py-2">
-            <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Token Name</Label>
-                  <Input 
-                    id="name" 
-                    value={newToken.name}
-                    onChange={(e) => setNewToken({...newToken, name: e.target.value})}
-                    placeholder="e.g., primary-color"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select 
-                    value={newToken.category} 
-                    onValueChange={(value) => setNewToken({...newToken, category: value})}
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TOKEN_CATEGORIES.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          <div className="flex items-center">
-                            {category.icon}
-                            <span className="ml-2">{category.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="value">Value</Label>
-                {newToken.category === 'color' ? (
-                  <div className="flex space-x-2">
-                    <Input 
-                      type="color"
-                      className="w-12" 
-                      value={newToken.value} 
-                      onChange={(e) => setNewToken({...newToken, value: e.target.value})}
-                    />
-                    <Input 
-                      className="flex-1"
-                      value={newToken.value}
-                      onChange={(e) => setNewToken({...newToken, value: e.target.value})}
-                      placeholder="#FFFFFF or rgb(255, 255, 255)"
-                    />
+
+          <TabsContent value="typography" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              {typographyTokens.map(token => (
+                <div key={token.id} className="p-4 border rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">{token.name}</span>
+                    <Button variant="ghost" size="sm">
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                ) : (
-                  <Input 
-                    id="value" 
-                    value={newToken.value}
-                    onChange={(e) => setNewToken({...newToken, value: e.target.value})}
-                    placeholder="Value or JSON for complex tokens"
-                  />
-                )}
-                <p className="text-xs text-muted-foreground">
-                  For simple tokens, enter a single value. For complex tokens, enter a valid JSON object.
-                </p>
-              </div>
+                  <div className="mb-2" style={{ 
+                    fontFamily: (token.value as any)?.fontFamily,
+                    fontSize: (token.value as any)?.fontSize,
+                    fontWeight: (token.value as any)?.fontWeight,
+                    lineHeight: (token.value as any)?.lineHeight
+                  }}>
+                    Typography Example
+                  </div>
+                  <div className="bg-muted p-2 rounded-md overflow-x-auto">
+                    <code className="text-xs block">
+                      {typeof token.value === 'object' 
+                        ? JSON.stringify(token.value, null, 2) 
+                        : token.value
+                      }
+                    </code>
+                  </div>
+                </div>
+              ))}
               
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Input 
-                  id="description" 
-                  value={newToken.description}
-                  onChange={(e) => setNewToken({...newToken, description: e.target.value})}
-                  placeholder="Optional description of the token"
-                />
-              </div>
+              <Button variant="outline" className="w-full flex items-center justify-center py-6">
+                <Plus className="h-4 w-4 mr-2" />
+                <span>Add Typography Token</span>
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="spacing" className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {spacingTokens.map(token => (
+                <div key={token.id} className="p-4 border rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">{token.name}</span>
+                    <Button variant="ghost" size="sm">
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <div className="border border-primary bg-primary/10 rounded-md" style={{ 
+                    height: typeof token.value === 'string' ? token.value : '16px'
+                  }}></div>
+                  <div className="mt-2">
+                    <code className="text-xs">{token.value}</code>
+                  </div>
+                </div>
+              ))}
+              
+              <Button variant="outline" className="h-auto flex flex-col items-center justify-center p-4 border border-dashed">
+                <Plus className="h-8 w-8 mb-2 text-muted-foreground" />
+                <span className="text-sm">Add Spacing Token</span>
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
       </CardContent>
-      
-      <CardFooter className="flex justify-end">
-        {currentTab === 'create' && (
-          <Button onClick={handleCreateToken} disabled={isLoading || !newToken.name || !newToken.value}>
-            {isLoading ? 'Creating...' : 'Create Token'}
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 }

@@ -1,188 +1,230 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeftRight, AlertTriangle, Check, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { DesignSystemService, SyncResult } from '@/services/design-system/design-system-service';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Refresh, CheckCircle2, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DesignSystemService } from '@/services/design-system/design-system-service';
 
 interface DesignSystemSyncProps {
-  wireframeId: string;
   projectId: string;
+  wireframeId: string;
 }
 
-export function DesignSystemSync({ wireframeId, projectId }: DesignSystemSyncProps) {
-  const [syncDirection, setSyncDirection] = useState<'to_wireframe' | 'from_wireframe'>('to_wireframe');
-  const [conflicts, setConflicts] = useState<any[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSyncResult, setLastSyncResult] = useState<SyncResult | null>(null);
-  
-  const handleSync = async (overrideConflicts = false) => {
-    setIsLoading(true);
+interface SyncLog {
+  id: string;
+  project_id: string;
+  wireframe_id: string;
+  sync_direction: 'to_wireframe' | 'from_wireframe';
+  status: 'pending' | 'completed' | 'conflict' | 'failed';
+  changes: any;
+  conflicts: any[];
+  resolved_conflicts: any[];
+  created_at: string;
+  completed_at?: string;
+}
+
+export function DesignSystemSync({ projectId, wireframeId }: DesignSystemSyncProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+  const [overrideConflicts, setOverrideConflicts] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadSyncHistory();
+  }, [projectId, wireframeId]);
+
+  const loadSyncHistory = async () => {
     try {
-      let result: SyncResult;
-      
-      if (syncDirection === 'to_wireframe') {
-        result = await DesignSystemService.syncDesignSystemToWireframe(
-          wireframeId, 
-          projectId, 
-          overrideConflicts
-        );
-      } else {
-        result = await DesignSystemService.syncWireframeToDesignSystem(
-          wireframeId,
-          projectId,
-          overrideConflicts
-        );
-      }
-      
-      setLastSyncResult(result);
-      
-      if (!result.success && result.conflicts && result.conflicts.length > 0) {
-        setConflicts(result.conflicts);
-        toast.warning("Sync conflicts detected", {
-          description: "Please review and resolve conflicts"
-        });
-      } else if (result.success) {
-        setConflicts(null);
-        toast.success("Sync completed successfully", {
-          description: syncDirection === 'to_wireframe' 
-            ? "Design system applied to wireframe" 
-            : "Wireframe changes applied to design system"
-        });
-      }
+      setIsLoading(true);
+      const logs = await DesignSystemService.getSyncHistory(projectId, wireframeId);
+      setSyncLogs(logs as SyncLog[]);
     } catch (error) {
-      toast.error("Sync failed", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred"
+      console.error('Error loading sync history:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load sync history",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const resolveConflicts = async () => {
-    await handleSync(true);
-    setConflicts(null);
+
+  const handleSyncToWireframe = async () => {
+    try {
+      setIsSyncing(true);
+      const result = await DesignSystemService.syncDesignSystemToWireframe(
+        projectId, 
+        wireframeId, 
+        overrideConflicts
+      );
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Design system synced to wireframe"
+        });
+        loadSyncHistory();
+      } else {
+        toast({
+          title: "Sync Incomplete",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing design system:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sync design system",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncing(false);
+    }
   };
-  
+
+  const handleSyncFromWireframe = async () => {
+    try {
+      setIsSyncing(true);
+      const result = await DesignSystemService.syncWireframeToDesignSystem(
+        projectId, 
+        wireframeId, 
+        overrideConflicts
+      );
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Wireframe changes synced to design system"
+        });
+        loadSyncHistory();
+      } else {
+        toast({
+          title: "Sync Incomplete",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing wireframe changes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sync wireframe changes",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleString();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Design System Synchronization</span>
-          {lastSyncResult?.success && (
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              <CheckCircle2 className="w-3 h-3 mr-1" /> Synced
-            </Badge>
-          )}
+        <CardTitle className="flex items-center">
+          <Refresh className="h-5 w-5 mr-2" />
+          Design System Sync
         </CardTitle>
-        <CardDescription>
-          Synchronize design tokens and components between wireframes and design system
-        </CardDescription>
       </CardHeader>
-      
-      <CardContent>
-        <Tabs defaultValue="direction" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="direction">Sync Direction</TabsTrigger>
-            <TabsTrigger value="status">Sync Status</TabsTrigger>
-          </TabsList>
+      <CardContent className="space-y-6">
+        <div className="flex items-center space-x-2 mb-4">
+          <Checkbox 
+            id="override" 
+            checked={overrideConflicts} 
+            onCheckedChange={(checked) => setOverrideConflicts(checked === true)}
+          />
+          <Label htmlFor="override">Override conflicts</Label>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button 
+            onClick={handleSyncToWireframe} 
+            disabled={isSyncing}
+            className="w-full flex items-center justify-center"
+          >
+            <Refresh className="h-4 w-4 mr-2" /> Apply Design System
+          </Button>
           
-          <TabsContent value="direction" className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Button 
-                variant={syncDirection === 'to_wireframe' ? 'default' : 'outline'}
-                className="h-24 flex flex-col items-center justify-center space-y-2"
-                onClick={() => setSyncDirection('to_wireframe')}
-              >
-                <ArrowLeftRight className="rotate-180" />
-                <span>Design System → Wireframe</span>
-              </Button>
-              
-              <Button 
-                variant={syncDirection === 'from_wireframe' ? 'default' : 'outline'}
-                className="h-24 flex flex-col items-center justify-center space-y-2"
-                onClick={() => setSyncDirection('from_wireframe')}
-              >
-                <ArrowLeftRight />
-                <span>Wireframe → Design System</span>
-              </Button>
-            </div>
-            
-            {conflicts && conflicts.length > 0 && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Conflicts Detected</AlertTitle>
-                <AlertDescription>
-                  {conflicts.length} conflicts were found. You can override them or cancel.
-                </AlertDescription>
-              </Alert>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="status">
-            <div className="space-y-4 py-4">
-              {lastSyncResult ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+          <Button 
+            onClick={handleSyncFromWireframe} 
+            disabled={isSyncing}
+            variant="outline"
+            className="w-full flex items-center justify-center"
+          >
+            <Refresh className="h-4 w-4 mr-2" /> Extract from Wireframe
+          </Button>
+        </div>
+        
+        <div className="mt-6">
+          <h3 className="text-lg font-medium mb-4">Sync History</h3>
+          {syncLogs.length > 0 ? (
+            <div className="space-y-3">
+              {syncLogs.slice(0, 5).map((log) => (
+                <Card key={log.id} className="p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-medium">Status</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {lastSyncResult.success ? (
-                          <span className="text-green-600 flex items-center">
-                            <Check className="w-4 h-4 mr-1" /> Success
-                          </span>
+                      <div className="flex items-center">
+                        {log.status === 'completed' ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                        ) : log.status === 'conflict' ? (
+                          <AlertCircle className="h-4 w-4 text-amber-500 mr-2" />
                         ) : (
-                          <span className="text-amber-600 flex items-center">
-                            <AlertTriangle className="w-4 h-4 mr-1" /> Conflicts
-                          </span>
+                          <Refresh className="h-4 w-4 mr-2" />
                         )}
-                      </p>
+                        <span className="font-medium">
+                          {log.sync_direction === 'to_wireframe' ? 'Design System → Wireframe' : 'Wireframe → Design System'}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Created: {formatDate(log.created_at)}
+                        {log.completed_at && ` • Completed: ${formatDate(log.completed_at)}`}
+                      </div>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium">Direction</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {syncDirection === 'to_wireframe' ? 'Design System → Wireframe' : 'Wireframe → Design System'}
-                      </p>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        log.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                        log.status === 'conflict' ? 'bg-amber-100 text-amber-800' : 
+                        log.status === 'failed' ? 'bg-red-100 text-red-800' : 
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                      </span>
                     </div>
                   </div>
-                  <Separator />
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Message</h4>
-                    <p className="text-sm">{lastSyncResult.message}</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-8">No sync operations performed yet</p>
-              )}
+                  {log.conflicts && log.conflicts.length > 0 && (
+                    <div className="mt-2 text-sm">
+                      <p className="font-medium text-amber-600">{log.conflicts.length} conflict(s) detected</p>
+                    </div>
+                  )}
+                </Card>
+              ))}
             </div>
-          </TabsContent>
-        </Tabs>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No sync history found
+            </div>
+          )}
+        </div>
       </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        {conflicts && conflicts.length > 0 ? (
-          <>
-            <Button variant="outline" onClick={() => setConflicts(null)}>
-              Cancel
-            </Button>
-            <Button onClick={resolveConflicts} variant="destructive" disabled={isLoading}>
-              Override Conflicts
-            </Button>
-          </>
-        ) : (
-          <>
-            <div></div>
-            <Button onClick={() => handleSync(false)} disabled={isLoading}>
-              {isLoading ? 'Syncing...' : 'Sync Now'}
-            </Button>
-          </>
-        )}
-      </CardFooter>
     </Card>
   );
 }

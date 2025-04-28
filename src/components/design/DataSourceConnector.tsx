@@ -1,477 +1,445 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Database, Globe, Server, FileJson, FileText, Plus, Trash2, ListPlus } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { DesignSystemService, DataSource, DataMapping } from '@/services/design-system/design-system-service';
+import { Database, Link, Table2, Code } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataSourceConnectorProps {
   projectId: string;
-  wireframeId?: string;
+  wireframeId: string;
+}
+
+interface DataSource {
+  id: string;
+  name: string;
+  source_type: string;
+  connection_details: any;
+  schema_definition: any;
+  is_active: boolean;
+}
+
+interface DataSourceMapping {
+  id: string;
+  data_source_id: string;
+  wireframe_id: string;
+  element_id: string;
+  field_mappings: Record<string, string>;
+  transformation_rules: Record<string, any>;
+  is_active: boolean;
+}
+
+interface DataSourceState {
+  id: string;
+  state_name: string;
+  state_data: any;
+  is_default: boolean;
 }
 
 export function DataSourceConnector({ projectId, wireframeId }: DataSourceConnectorProps) {
+  const [isLoading, setIsLoading] = useState(true);
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [mappings, setMappings] = useState<DataSourceMapping[]>([]);
+  const [states, setStates] = useState<DataSourceState[]>([]);
+  const [activeTab, setActiveTab] = useState('sources');
   const [selectedDataSource, setSelectedDataSource] = useState<DataSource | null>(null);
-  const [transformedData, setTransformedData] = useState<Record<string, any> | null>(null);
-  
-  const [newDataSource, setNewDataSource] = useState({
-    name: '',
-    source_type: 'mock' as const,
-    connection_details: {},
-    schema_definition: {}
-  });
-  
-  const [newMapping, setNewMapping] = useState({
-    data_source_id: '',
-    wireframe_id: wireframeId || '',
-    element_id: '',
-    field_mappings: {}
-  });
-  
+  const { toast } = useToast();
+
+  // Load data sources
   useEffect(() => {
-    if (projectId) {
-      loadDataSources();
-    }
-  }, [projectId]);
-  
-  useEffect(() => {
-    if (wireframeId) {
-      setNewMapping(prev => ({...prev, wireframe_id}));
-    }
-  }, [wireframeId]);
-  
-  const loadDataSources = async () => {
-    setIsLoading(true);
-    try {
-      const data = await DesignSystemService.getDataSources(projectId);
-      setDataSources(data);
-    } catch (error) {
-      toast.error("Failed to load data sources");
-      console.error("Error loading data sources:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleCreateDataSource = async () => {
-    if (!newDataSource.name) {
-      toast.error("Data source name is required");
-      return;
-    }
-    
+    fetchDataSources();
+    fetchMappings();
+  }, [projectId, wireframeId]);
+
+  const fetchDataSources = async () => {
     try {
       setIsLoading(true);
-      
-      // Parse JSON strings if they're provided
-      let connectionDetails = newDataSource.connection_details;
-      let schemaDefinition = newDataSource.schema_definition;
-      
-      await DesignSystemService.createDataSource({
-        project_id: projectId,
-        name: newDataSource.name,
-        source_type: newDataSource.source_type,
-        connection_details: connectionDetails,
-        schema_definition: schemaDefinition,
-        is_active: true
-      });
-      
-      toast.success("Data source created successfully");
-      setNewDataSource({
-        name: '',
-        source_type: 'mock',
-        connection_details: {},
-        schema_definition: {}
-      });
-      loadDataSources();
+      const { data, error } = await supabase
+        .from('data_sources')
+        .select('*')
+        .eq('project_id', projectId);
+
+      if (error) throw error;
+      setDataSources(data || []);
     } catch (error) {
-      toast.error("Failed to create data source");
-      console.error("Error creating data source:", error);
+      console.error('Error fetching data sources:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load data sources",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const handleCreateMapping = async () => {
-    if (!newMapping.data_source_id || !newMapping.element_id || !wireframeId) {
-      toast.error("Data source, element ID, and wireframe ID are required");
-      return;
-    }
-    
+
+  const fetchMappings = async () => {
     try {
-      setIsLoading(true);
-      
-      await DesignSystemService.createDataMapping({
-        data_source_id: newMapping.data_source_id,
-        wireframe_id: wireframeId,
-        element_id: newMapping.element_id,
-        field_mappings: newMapping.field_mappings,
-        is_active: true
-      });
-      
-      toast.success("Data mapping created successfully");
-      setNewMapping({
-        data_source_id: '',
-        wireframe_id: wireframeId,
-        element_id: '',
-        field_mappings: {}
-      });
+      const { data, error } = await supabase
+        .from('data_source_mappings')
+        .select('*')
+        .eq('wireframe_id', wireframeId);
+
+      if (error) throw error;
+      setMappings(data || []);
     } catch (error) {
-      toast.error("Failed to create data mapping");
-      console.error("Error creating data mapping:", error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching mappings:', error);
     }
   };
-  
-  const handleTransformData = async (mappingId: string) => {
+
+  const fetchStates = async (dataSourceId: string) => {
     try {
-      setIsLoading(true);
-      const data = await DesignSystemService.transformData(mappingId);
-      setTransformedData(data);
-      toast.success("Data transformed successfully");
+      const { data, error } = await supabase
+        .from('data_source_states')
+        .select('*')
+        .eq('data_source_id', dataSourceId);
+
+      if (error) throw error;
+      setStates(data || []);
     } catch (error) {
-      toast.error("Failed to transform data");
-      console.error("Error transforming data:", error);
-      setTransformedData(null);
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching states:', error);
     }
   };
-  
-  const getDataSourceIcon = (type: string) => {
-    switch (type) {
-      case 'api':
-        return <Globe className="h-4 w-4" />;
-      case 'database':
-        return <Database className="h-4 w-4" />;
-      case 'graphql':
-        return <Server className="h-4 w-4" />;
-      case 'mock':
-        return <FileJson className="h-4 w-4" />;
-      case 'file':
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
+
+  const handleDataSourceSelect = (sourceId: string) => {
+    const source = dataSources.find(s => s.id === sourceId);
+    setSelectedDataSource(source || null);
+    if (source) {
+      fetchStates(source.id);
     }
   };
-  
-  const addFieldMapping = () => {
-    const elementField = prompt("Enter element field name:");
-    if (!elementField) return;
-    
-    const sourcePath = prompt("Enter source data path (e.g., 'user.name'):");
-    if (!sourcePath) return;
-    
-    setNewMapping({
-      ...newMapping,
-      field_mappings: {
-        ...newMapping.field_mappings,
-        [elementField]: sourcePath
-      }
-    });
+
+  const handleAddDataSource = async (newSource: Partial<DataSource>) => {
+    try {
+      const { data, error } = await supabase
+        .from('data_sources')
+        .insert([
+          {
+            name: newSource.name,
+            source_type: newSource.source_type,
+            connection_details: newSource.connection_details || {},
+            schema_definition: newSource.schema_definition || {},
+            project_id: projectId,
+            is_active: true
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      setDataSources([...dataSources, data[0]]);
+      toast({
+        title: "Success",
+        description: "Data source added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding data source:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add data source",
+        variant: "destructive"
+      });
+    }
   };
-  
-  const removeFieldMapping = (field: string) => {
-    const { [field]: removed, ...rest } = newMapping.field_mappings;
-    setNewMapping({
-      ...newMapping,
-      field_mappings: rest
-    });
+
+  const handleAddMapping = async (mapping: Partial<DataSourceMapping>) => {
+    if (!selectedDataSource) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('data_source_mappings')
+        .insert([
+          {
+            data_source_id: selectedDataSource.id,
+            wireframe_id: wireframeId,
+            element_id: mapping.element_id,
+            field_mappings: mapping.field_mappings || {},
+            transformation_rules: mapping.transformation_rules || {},
+            is_active: true
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      setMappings([...mappings, data[0]]);
+      toast({
+        title: "Success",
+        description: "Mapping added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding mapping:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add mapping",
+        variant: "destructive"
+      });
+    }
   };
-  
+
+  const handleAddState = async (state: Partial<DataSourceState>) => {
+    if (!selectedDataSource) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('data_source_states')
+        .insert([
+          {
+            data_source_id: selectedDataSource.id,
+            state_name: state.state_name,
+            state_data: state.state_data || {},
+            is_default: state.is_default || false
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      setStates([...states, data[0]]);
+      toast({
+        title: "Success",
+        description: "State added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding state:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add state",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Data Source Connector</CardTitle>
-        <CardDescription>
-          Connect wireframes to real data sources and visualize dynamic content
-        </CardDescription>
+        <CardTitle className="flex items-center">
+          <Database className="h-5 w-5 mr-2" />
+          Data Source Connector
+        </CardTitle>
       </CardHeader>
-      
       <CardContent>
-        <Tabs defaultValue="sources" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="sources">Data Sources</TabsTrigger>
-            <TabsTrigger value="mappings">Mappings</TabsTrigger>
-            <TabsTrigger value="preview">Preview Data</TabsTrigger>
+            <TabsTrigger value="sources">
+              <Database className="h-4 w-4 mr-2" /> Data Sources
+            </TabsTrigger>
+            <TabsTrigger value="mappings">
+              <Link className="h-4 w-4 mr-2" /> Mappings
+            </TabsTrigger>
+            <TabsTrigger value="states">
+              <Table2 className="h-4 w-4 mr-2" /> Data States
+            </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="sources" className="space-y-4 py-2">
-            <div className="space-y-6">
-              <div className="rounded-md border">
-                <div className="p-4 border-b">
-                  <h3 className="font-medium">Available Data Sources</h3>
-                </div>
-                
-                {isLoading ? (
-                  <div className="p-8 text-center">Loading data sources...</div>
-                ) : (
-                  <div className="divide-y">
-                    {dataSources.length === 0 ? (
-                      <div className="p-8 text-center text-muted-foreground">
-                        No data sources available. Create one below.
+
+          <TabsContent value="sources" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {dataSources.map(source => (
+                <Card 
+                  key={source.id} 
+                  className={`cursor-pointer ${selectedDataSource?.id === source.id ? 'border-primary' : ''}`}
+                  onClick={() => handleDataSourceSelect(source.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{source.name}</h3>
+                        <p className="text-sm text-muted-foreground">{source.source_type}</p>
                       </div>
-                    ) : (
-                      dataSources.map((source) => (
-                        <div key={source.id} className="p-4 hover:bg-muted/40">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center">
-                                <h4 className="font-medium">{source.name}</h4>
-                                <Badge variant="outline" className="ml-2">
-                                  {getDataSourceIcon(source.source_type)}
-                                  <span className="ml-1">{source.source_type}</span>
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {source.is_active ? 'Active' : 'Inactive'}
-                              </p>
-                            </div>
-                            
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setSelectedDataSource(source)}
-                            >
-                              Select
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="create">
-                  <AccordionTrigger>Create New Data Source</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4 p-2">
-                      <div className="grid gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Data Source Name</Label>
-                          <Input 
-                            id="name" 
-                            value={newDataSource.name}
-                            onChange={(e) => setNewDataSource({...newDataSource, name: e.target.value})}
-                            placeholder="e.g., User API"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="source_type">Source Type</Label>
-                          <Select 
-                            value={newDataSource.source_type} 
-                            onValueChange={(value: any) => setNewDataSource({...newDataSource, source_type: value})}
-                          >
-                            <SelectTrigger id="source_type">
-                              <SelectValue placeholder="Select a type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="api">REST API</SelectItem>
-                              <SelectItem value="database">Database</SelectItem>
-                              <SelectItem value="graphql">GraphQL</SelectItem>
-                              <SelectItem value="mock">Mock Data</SelectItem>
-                              <SelectItem value="file">File</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="connection_details">Connection Details</Label>
-                          <Textarea 
-                            id="connection_details" 
-                            value={typeof newDataSource.connection_details === 'string' 
-                              ? newDataSource.connection_details 
-                              : JSON.stringify(newDataSource.connection_details, null, 2)}
-                            onChange={(e) => {
-                              try {
-                                // Try to parse as JSON if it's valid
-                                const parsed = JSON.parse(e.target.value);
-                                setNewDataSource({...newDataSource, connection_details: parsed});
-                              } catch {
-                                // Otherwise store as string
-                                setNewDataSource({...newDataSource, connection_details: e.target.value});
-                              }
-                            }}
-                            placeholder={`{
-  "url": "https://api.example.com",
-  "method": "GET",
-  "headers": {
-    "Content-Type": "application/json"
-  }
-}`}
-                            className="font-mono text-xs h-32"
-                          />
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        onClick={handleCreateDataSource} 
-                        disabled={isLoading || !newDataSource.name}
-                      >
-                        {isLoading ? 'Creating...' : 'Create Data Source'}
-                      </Button>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="mappings" className="space-y-6 py-4">
-            {!wireframeId ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Select a wireframe to create data mappings
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Create Data Mapping</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="data_source">Data Source</Label>
-                          <Select 
-                            value={newMapping.data_source_id} 
-                            onValueChange={(value) => setNewMapping({...newMapping, data_source_id: value})}
-                          >
-                            <SelectTrigger id="data_source">
-                              <SelectValue placeholder="Select data source" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {dataSources.map((source) => (
-                                <SelectItem key={source.id} value={source.id}>
-                                  {source.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="element_id">Element ID</Label>
-                          <Input 
-                            id="element_id" 
-                            value={newMapping.element_id}
-                            onChange={(e) => setNewMapping({...newMapping, element_id: e.target.value})}
-                            placeholder="e.g., user-profile"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label>Field Mappings</Label>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={addFieldMapping}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Field
-                          </Button>
-                        </div>
-                        
-                        <div className="rounded-md border">
-                          {Object.keys(newMapping.field_mappings).length === 0 ? (
-                            <div className="p-4 text-center text-muted-foreground">
-                              No field mappings defined. Click "Add Field" to create one.
-                            </div>
-                          ) : (
-                            <div className="divide-y">
-                              {Object.entries(newMapping.field_mappings).map(([field, path]) => (
-                                <div key={field} className="p-3 flex items-center justify-between">
-                                  <div>
-                                    <span className="font-medium">{field}</span>
-                                    <span className="text-muted-foreground mx-2">←</span>
-                                    <code className="text-xs bg-muted p-1 rounded">{path}</code>
-                                  </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost"
-                                    onClick={() => removeFieldMapping(field)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        onClick={handleCreateMapping}
-                        disabled={
-                          isLoading || 
-                          !newMapping.data_source_id || 
-                          !newMapping.element_id || 
-                          Object.keys(newMapping.field_mappings).length === 0
-                        }
-                      >
-                        {isLoading ? 'Creating...' : 'Create Mapping'}
-                      </Button>
+                      {source.is_active ? (
+                        <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Active</div>
+                      ) : (
+                        <div className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Inactive</div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="preview" className="space-y-4 py-2">
-            <div className="space-y-6">
+              ))}
+            </div>
+            
+            <div className="pt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Data Preview</CardTitle>
-                  <CardDescription>
-                    Preview transformed data from your data sources
-                  </CardDescription>
+                  <CardTitle className="text-lg">Add New Data Source</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {selectedDataSource ? (
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4">
                     <div>
-                      <div className="mb-4">
-                        <h3 className="font-medium">{selectedDataSource.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Type: {selectedDataSource.source_type}
-                        </p>
-                      </div>
-                      
-                      {transformedData ? (
-                        <div className="rounded-md bg-muted p-4">
-                          <pre className="text-xs overflow-auto whitespace-pre-wrap">
-                            {JSON.stringify(transformedData, null, 2)}
-                          </pre>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          Select a mapping to preview transformed data
-                        </div>
-                      )}
+                      <Label htmlFor="name">Name</Label>
+                      <Input id="name" placeholder="Enter source name" />
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Select a data source to preview
+                    <div>
+                      <Label htmlFor="type">Type</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select source type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rest_api">REST API</SelectItem>
+                          <SelectItem value="graphql">GraphQL</SelectItem>
+                          <SelectItem value="database">Database</SelectItem>
+                          <SelectItem value="mock">Mock Data</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
+                  </div>
+                  <Button className="w-full">Add Data Source</Button>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="mappings" className="space-y-4 mt-4">
+            {mappings.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {mappings.map(mapping => (
+                  <Card key={mapping.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium">Element ID: {mapping.element_id}</h3>
+                        {mapping.is_active ? (
+                          <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Active</div>
+                        ) : (
+                          <div className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Inactive</div>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <p>Data Source: {
+                          dataSources.find(s => s.id === mapping.data_source_id)?.name || 'Unknown'
+                        }</p>
+                        <p className="mt-1">Field Mappings: {Object.keys(mapping.field_mappings || {}).length}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <Link className="h-16 w-16 mx-auto text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No Mappings</h3>
+                <p className="text-muted-foreground mt-2">
+                  Create mappings to connect wireframe elements with data sources.
+                </p>
+              </div>
+            )}
+            
+            <div className="pt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Add New Mapping</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4">
+                    <div>
+                      <Label htmlFor="data-source">Data Source</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select data source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dataSources.map(source => (
+                            <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="element-id">Element ID</Label>
+                      <Input id="element-id" placeholder="Enter wireframe element ID" />
+                    </div>
+                  </div>
+                  <Button className="w-full">Add Mapping</Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="states" className="space-y-4 mt-4">
+            {selectedDataSource ? (
+              <>
+                {states.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {states.map(state => (
+                      <Card key={state.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-medium">{state.state_name}</h3>
+                            {state.is_default && (
+                              <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Default</div>
+                            )}
+                          </div>
+                          <div className="mt-2">
+                            <Label className="text-xs text-muted-foreground">Data Preview</Label>
+                            <div className="mt-1 bg-muted p-2 rounded-md overflow-x-auto">
+                              <pre className="text-xs">
+                                {JSON.stringify(state.state_data, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <Table2 className="h-16 w-16 mx-auto text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">No States</h3>
+                    <p className="text-muted-foreground mt-2">
+                      Create data states to visualize different data scenarios.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="pt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Add New State</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4">
+                        <div>
+                          <Label htmlFor="state-name">State Name</Label>
+                          <Input id="state-name" placeholder="Enter state name" />
+                        </div>
+                        <div>
+                          <Label htmlFor="state-data">State Data (JSON)</Label>
+                          <textarea
+                            id="state-data"
+                            className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                            placeholder='{"example": "data"}'
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input type="checkbox" id="is-default" className="rounded border-gray-300 text-primary focus:ring-primary" />
+                          <Label htmlFor="is-default">Set as default state</Label>
+                        </div>
+                      </div>
+                      <Button className="w-full">Add State</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10">
+                <Database className="h-16 w-16 mx-auto text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No Data Source Selected</h3>
+                <p className="text-muted-foreground mt-2">
+                  Select a data source to manage its states.
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>
