@@ -2,7 +2,6 @@
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,30 +30,6 @@ export const DocumentationGenerator: React.FC<DocumentationGeneratorProps> = ({
       return data;
     }
   });
-
-  const handleGenerateDocumentation = async () => {
-    try {
-      const { data, error } = await supabase.rpc('generate_technical_documentation', {
-        p_wireframe_id: wireframeId,
-        p_creator_id: (await supabase.auth.getUser()).data.user?.id,
-        p_specification_id: specificationId
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Documentation generated successfully",
-        description: "Technical documentation has been generated and is ready for review."
-      });
-    } catch (error) {
-      console.error('Error generating documentation:', error);
-      toast({
-        title: "Error generating documentation",
-        description: "There was a problem generating the documentation. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
 
   return (
     <Card>
@@ -102,12 +77,6 @@ export const DocumentationGenerator: React.FC<DocumentationGeneratorProps> = ({
             </div>
           </TabsContent>
         </Tabs>
-
-        <div className="mt-4">
-          <Button onClick={handleGenerateDocumentation}>
-            Generate Documentation
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
