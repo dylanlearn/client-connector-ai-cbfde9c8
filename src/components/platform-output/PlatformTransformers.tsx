@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Component } from 'lucide-react';
-import type { PlatformTransformer } from '@/types/platform-output';
 import { PlatformOutputService } from '@/services/platform-output/platform-output-service';
+import type { PlatformTransformer } from '@/types/platform-output';
+import { Component, RefreshCw } from 'lucide-react';
 
 interface PlatformTransformersProps {
   platformId: string | null;
@@ -17,23 +18,23 @@ interface PlatformTransformersProps {
 export function PlatformTransformers({ platformId, isPlatformSelected }: PlatformTransformersProps) {
   const [transformers, setTransformers] = useState<PlatformTransformer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [componentType, setComponentType] = useState('');
-  const [transformationRules, setTransformationRules] = useState('');
-  const [platformSpecificProps, setPlatformSpecificProps] = useState('');
+  const [newTransformer, setNewTransformer] = useState({
+    componentType: '',
+    transformationRules: '',
+    properties: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     if (platformId) {
-      loadTransformers();
+      loadTransformers(platformId);
     }
   }, [platformId]);
 
-  const loadTransformers = async () => {
-    if (!platformId) return;
-    
+  const loadTransformers = async (platformId: string) => {
     setIsLoading(true);
     try {
-      const data = await PlatformOutputService.getPlatformTransformers(platformId);
+      const data = await PlatformOutputService.getTransformers(platformId);
       setTransformers(data);
     } catch (error) {
       console.error("Error loading transformers:", error);
@@ -48,62 +49,70 @@ export function PlatformTransformers({ platformId, isPlatformSelected }: Platfor
   };
 
   const handleCreateTransformer = async () => {
-    if (!platformId) return;
-    
+    if (!platformId) {
+      toast({
+        title: "No platform selected",
+        description: "Please select a platform to create a transformer.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newTransformer.componentType || !newTransformer.transformationRules) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Validate inputs
-      if (!componentType.trim()) {
+      let transformationRules;
+      let properties;
+      
+      try {
+        transformationRules = JSON.parse(newTransformer.transformationRules);
+      } catch (e) {
         toast({
-          title: "Missing component type",
-          description: "Please specify a component type.",
+          title: "Invalid JSON",
+          description: "Transformation rules must be valid JSON.",
           variant: "destructive",
         });
         return;
       }
 
-      // Parse JSON inputs
-      let parsedRules = {};
-      let parsedProps = null;
-      
-      try {
-        parsedRules = transformationRules ? JSON.parse(transformationRules) : {};
-      } catch (e) {
-        toast({
-          title: "Invalid transformation rules",
-          description: "Please provide valid JSON for transformation rules.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      try {
-        parsedProps = platformSpecificProps ? JSON.parse(platformSpecificProps) : null;
-      } catch (e) {
-        toast({
-          title: "Invalid platform properties",
-          description: "Please provide valid JSON for platform specific properties.",
-          variant: "destructive",
-        });
-        return;
+      if (newTransformer.properties) {
+        try {
+          properties = JSON.parse(newTransformer.properties);
+        } catch (e) {
+          toast({
+            title: "Invalid JSON",
+            description: "Platform properties must be valid JSON.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
-      const transformer = await PlatformOutputService.createPlatformTransformer(
+      const transformer = await PlatformOutputService.createTransformer(
         platformId,
-        componentType,
-        parsedRules,
-        parsedProps
+        newTransformer.componentType,
+        transformationRules,
+        properties
       );
-      
-      setTransformers(prev => [transformer, ...prev]);
-      
-      // Reset form
-      setComponentType('');
-      setTransformationRules('');
-      setPlatformSpecificProps('');
-      
+
+      setTransformers([transformer, ...transformers]);
       toast({
         title: "Transformer created",
         description: "Platform transformer has been created successfully.",
+      });
+
+      // Clear form
+      setNewTransformer({
+        componentType: '',
+        transformationRules: '',
+        properties: ''
       });
     } catch (error) {
       console.error("Error creating transformer:", error);
@@ -117,119 +126,121 @@ export function PlatformTransformers({ platformId, isPlatformSelected }: Platfor
 
   if (!isPlatformSelected) {
     return (
-      <Card className="w-full">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center h-40">
-            <Component className="h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-gray-500">Please select a platform to manage transformers</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-gray-500 italic">
+        Please select a platform to view and manage transformers.
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Create Transformer</CardTitle>
-          <CardDescription>
-            Define how design components are transformed to platform-specific code
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Platform Transformers</h3>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => platformId && loadTransformers(platformId)}
+          disabled={isLoading || !platformId}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+        </Button>
+      </div>
+      
+      <Card>
+        <CardContent className="p-4">
+          <h4 className="font-medium mb-4">Create New Transformer</h4>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="componentType">Component Type</Label>
-              <Input
-                id="componentType"
-                placeholder="e.g., Button, Card, TextField"
-                value={componentType}
-                onChange={(e) => setComponentType(e.target.value)}
-              />
+              <label className="block text-sm font-medium mb-1">Component Type</label>
+              <Select 
+                value={newTransformer.componentType}
+                onValueChange={(value) => setNewTransformer({...newTransformer, componentType: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select component type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="button">Button</SelectItem>
+                  <SelectItem value="input">Input</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="navigation">Navigation</SelectItem>
+                  <SelectItem value="layout">Layout</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="image">Image</SelectItem>
+                  <SelectItem value="container">Container</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
-              <Label htmlFor="transformationRules">Transformation Rules (JSON)</Label>
-              <Textarea
-                id="transformationRules"
-                placeholder='{"props": {"mapping": {"text": "label", "onClick": "onPress"}}}'
-                value={transformationRules}
-                onChange={(e) => setTransformationRules(e.target.value)}
+              <label className="block text-sm font-medium mb-1">Transformation Rules (JSON)</label>
+              <Textarea 
+                placeholder="{ ... }" 
+                value={newTransformer.transformationRules}
+                onChange={(e) => setNewTransformer({...newTransformer, transformationRules: e.target.value})}
                 rows={5}
               />
             </div>
             
             <div>
-              <Label htmlFor="platformProps">Platform-Specific Properties (JSON)</Label>
-              <Textarea
-                id="platformProps"
-                placeholder='{"androidRippleEffect": true, "iosAccessibilityRole": "button"}'
-                value={platformSpecificProps}
-                onChange={(e) => setPlatformSpecificProps(e.target.value)}
+              <label className="block text-sm font-medium mb-1">Platform-Specific Properties (JSON, optional)</label>
+              <Textarea 
+                placeholder="{ ... }" 
+                value={newTransformer.properties}
+                onChange={(e) => setNewTransformer({...newTransformer, properties: e.target.value})}
                 rows={3}
               />
             </div>
             
-            <Button onClick={handleCreateTransformer}>
-              Create Transformer
-            </Button>
+            <Button onClick={handleCreateTransformer}>Create Transformer</Button>
           </div>
         </CardContent>
       </Card>
       
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Platform Transformers</CardTitle>
-          <CardDescription>
-            Manage existing component transformers
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <p>Loading transformers...</p>
-            </div>
-          ) : transformers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40">
-              <Component className="h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500">No transformers defined yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {transformers.map((transformer) => (
-                <Card key={transformer.id} className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{transformer.component_type}</h3>
-                      <p className="text-sm text-gray-500">
-                        Created: {new Date(transformer.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => {}}>
-                      Edit
-                    </Button>
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-sm font-medium">Transformation Rules:</p>
-                    <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">
-                      {JSON.stringify(transformer.transformation_rules, null, 2)}
+      {isLoading ? (
+        <div className="flex justify-center p-6">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      ) : transformers.length === 0 ? (
+        <div className="text-center p-6 border rounded-md bg-muted/50">
+          <Component className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+          <p className="text-muted-foreground mt-2">No transformers found for this platform.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Create your first transformer to start mapping wireframe components to platform-specific code.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {transformers.map((transformer) => (
+            <Card key={transformer.id}>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium">{transformer.component_type}</h4>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(transformer.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                
+                <div className="mt-4 border-t pt-4">
+                  <h5 className="font-medium text-sm mb-2">Transformation Rules:</h5>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                    {JSON.stringify(transformer.transformation_rules, null, 2)}
+                  </pre>
+                </div>
+                
+                {transformer.platform_specific_properties && (
+                  <div className="mt-4 border-t pt-4">
+                    <h5 className="font-medium text-sm mb-2">Platform-Specific Properties:</h5>
+                    <pre className="text-xs bg-muted p-2 rounded overflow-x-auto">
+                      {JSON.stringify(transformer.platform_specific_properties, null, 2)}
                     </pre>
                   </div>
-                  {transformer.platform_specific_properties && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium">Platform-Specific Properties:</p>
-                      <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-x-auto">
-                        {JSON.stringify(transformer.platform_specific_properties, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
