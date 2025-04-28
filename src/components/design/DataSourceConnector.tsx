@@ -1,443 +1,279 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Database, Link, Table2, Code } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Database, RefreshCw, PlayCircle, Plus, Code } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DataSourceConnectorProps {
   projectId: string;
   wireframeId: string;
 }
 
-interface DataSource {
-  id: string;
-  name: string;
-  source_type: string;
-  connection_details: any;
-  schema_definition: any;
-  is_active: boolean;
-}
-
-interface DataSourceMapping {
-  id: string;
-  data_source_id: string;
-  wireframe_id: string;
-  element_id: string;
-  field_mappings: Record<string, string>;
-  transformation_rules: Record<string, any>;
-  is_active: boolean;
-}
-
-interface DataSourceState {
-  id: string;
-  state_name: string;
-  state_data: any;
-  is_default: boolean;
-}
-
 export function DataSourceConnector({ projectId, wireframeId }: DataSourceConnectorProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [dataSources, setDataSources] = useState<DataSource[]>([]);
-  const [mappings, setMappings] = useState<DataSourceMapping[]>([]);
-  const [states, setStates] = useState<DataSourceState[]>([]);
+  const [dataSources, setDataSources] = useState<any[]>([]);
+  const [mappings, setMappings] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('sources');
-  const [selectedDataSource, setSelectedDataSource] = useState<DataSource | null>(null);
-  const { toast } = useToast();
-
-  // Load data sources
+  const [isLoading, setIsLoading] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  
   useEffect(() => {
-    fetchDataSources();
-    fetchMappings();
+    if (projectId && wireframeId) {
+      loadDataSources();
+      loadMappings();
+    }
   }, [projectId, wireframeId]);
-
-  const fetchDataSources = async () => {
+  
+  const loadDataSources = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('data_sources')
         .select('*')
         .eq('project_id', projectId);
-
+        
       if (error) throw error;
       setDataSources(data || []);
     } catch (error) {
-      console.error('Error fetching data sources:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load data sources",
-        variant: "destructive"
-      });
+      console.error('Error loading data sources:', error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const fetchMappings = async () => {
+  
+  const loadMappings = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('data_source_mappings')
-        .select('*')
+        .select(`
+          *,
+          data_source:data_source_id(*)
+        `)
         .eq('wireframe_id', wireframeId);
-
+        
       if (error) throw error;
       setMappings(data || []);
     } catch (error) {
-      console.error('Error fetching mappings:', error);
+      console.error('Error loading data mappings:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const fetchStates = async (dataSourceId: string) => {
+  
+  const handlePreviewMapping = async (mappingId: string) => {
+    setIsLoading(true);
+    setShowPreview(false);
     try {
       const { data, error } = await supabase
-        .from('data_source_states')
-        .select('*')
-        .eq('data_source_id', dataSourceId);
-
+        .rpc('transform_data_through_mapping', {
+          p_mapping_id: mappingId
+        });
+        
       if (error) throw error;
-      setStates(data || []);
+      
+      setPreviewData({
+        mappingId,
+        data
+      });
+      setShowPreview(true);
     } catch (error) {
-      console.error('Error fetching states:', error);
+      console.error('Error previewing data mapping:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const handleDataSourceSelect = (sourceId: string) => {
-    const source = dataSources.find(s => s.id === sourceId);
-    setSelectedDataSource(source || null);
-    if (source) {
-      fetchStates(source.id);
-    }
-  };
-
-  const handleAddDataSource = async (newSource: Partial<DataSource>) => {
-    try {
-      const { data, error } = await supabase
-        .from('data_sources')
-        .insert([
-          {
-            name: newSource.name,
-            source_type: newSource.source_type,
-            connection_details: newSource.connection_details || {},
-            schema_definition: newSource.schema_definition || {},
-            project_id: projectId,
-            is_active: true
-          }
-        ])
-        .select();
-
-      if (error) throw error;
-      setDataSources([...dataSources, data[0]]);
-      toast({
-        title: "Success",
-        description: "Data source added successfully"
-      });
-    } catch (error) {
-      console.error('Error adding data source:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add data source",
-        variant: "destructive"
+  
+  const renderDataSourceDetails = (source: any) => {
+    const connectionDetails: Record<string, React.ReactNode> = {};
+    
+    if (typeof source.connection_details === 'object') {
+      Object.entries(source.connection_details).forEach(([key, value]) => {
+        // Mask sensitive information
+        if (key.toLowerCase().includes('password') || 
+            key.toLowerCase().includes('key') || 
+            key.toLowerCase().includes('token')) {
+          connectionDetails[key] = '••••••••';
+        } else {
+          connectionDetails[key] = String(value);
+        }
       });
     }
-  };
-
-  const handleAddMapping = async (mapping: Partial<DataSourceMapping>) => {
-    if (!selectedDataSource) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('data_source_mappings')
-        .insert([
-          {
-            data_source_id: selectedDataSource.id,
-            wireframe_id: wireframeId,
-            element_id: mapping.element_id,
-            field_mappings: mapping.field_mappings || {},
-            transformation_rules: mapping.transformation_rules || {},
-            is_active: true
-          }
-        ])
-        .select();
-
-      if (error) throw error;
-      setMappings([...mappings, data[0]]);
-      toast({
-        title: "Success",
-        description: "Mapping added successfully"
-      });
-    } catch (error) {
-      console.error('Error adding mapping:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add mapping",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAddState = async (state: Partial<DataSourceState>) => {
-    if (!selectedDataSource) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('data_source_states')
-        .insert([
-          {
-            data_source_id: selectedDataSource.id,
-            state_name: state.state_name,
-            state_data: state.state_data || {},
-            is_default: state.is_default || false
-          }
-        ])
-        .select();
-
-      if (error) throw error;
-      setStates([...states, data[0]]);
-      toast({
-        title: "Success",
-        description: "State added successfully"
-      });
-    } catch (error) {
-      console.error('Error adding state:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add state",
-        variant: "destructive"
-      });
-    }
-  };
-
-  if (isLoading) {
+    
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div className="text-sm">
+        <div className="grid grid-cols-2 gap-2">
+          {Object.entries(connectionDetails).map(([key, value]) => (
+            <div key={key}>
+              <span className="font-medium mr-2">{key}:</span>
+              <span className="text-gray-600">{value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
-  }
-
+  };
+  
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Database className="h-5 w-5 mr-2" />
-          Data Source Connector
+        <CardTitle className="flex items-center justify-between">
+          Data Source Connection Framework
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                loadDataSources();
+                loadMappings();
+              }}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </CardTitle>
+        <CardDescription>
+          Connect your wireframes to data sources and visualize dynamic content
+        </CardDescription>
       </CardHeader>
+      
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="sources">
-              <Database className="h-4 w-4 mr-2" /> Data Sources
-            </TabsTrigger>
-            <TabsTrigger value="mappings">
-              <Link className="h-4 w-4 mr-2" /> Mappings
-            </TabsTrigger>
-            <TabsTrigger value="states">
-              <Table2 className="h-4 w-4 mr-2" /> Data States
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="sources">Data Sources</TabsTrigger>
+            <TabsTrigger value="mappings">Data Mappings</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="sources" className="space-y-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dataSources.map(source => (
-                <Card 
-                  key={source.id} 
-                  className={`cursor-pointer ${selectedDataSource?.id === source.id ? 'border-primary' : ''}`}
-                  onClick={() => handleDataSourceSelect(source.id)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{source.name}</h3>
-                        <p className="text-sm text-muted-foreground">{source.source_type}</p>
-                      </div>
-                      {source.is_active ? (
-                        <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Active</div>
-                      ) : (
-                        <div className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Inactive</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            <div className="pt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Add New Data Source</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4">
-                    <div>
-                      <Label htmlFor="name">Name</Label>
-                      <Input id="name" placeholder="Enter source name" />
-                    </div>
-                    <div>
-                      <Label htmlFor="type">Type</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select source type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rest_api">REST API</SelectItem>
-                          <SelectItem value="graphql">GraphQL</SelectItem>
-                          <SelectItem value="database">Database</SelectItem>
-                          <SelectItem value="mock">Mock Data</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Button className="w-full">Add Data Source</Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mappings" className="space-y-4 mt-4">
-            {mappings.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {mappings.map(mapping => (
-                  <Card key={mapping.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium">Element ID: {mapping.element_id}</h3>
-                        {mapping.is_active ? (
-                          <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Active</div>
-                        ) : (
-                          <div className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Inactive</div>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        <p>Data Source: {
-                          dataSources.find(s => s.id === mapping.data_source_id)?.name || 'Unknown'
-                        }</p>
-                        <p className="mt-1">Field Mappings: {Object.keys(mapping.field_mappings || {}).length}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+          
+          <TabsContent value="sources" className="pt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
               </div>
+            ) : dataSources.length > 0 ? (
+              <Table>
+                <TableCaption>Available data sources for this project</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Connection Details</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dataSources.map(source => (
+                    <TableRow key={source.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center">
+                          <Database className="h-4 w-4 mr-2" />
+                          {source.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{source.source_type}</TableCell>
+                      <TableCell>
+                        {renderDataSourceDetails(source)}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(source.updated_at).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
-              <div className="text-center py-10">
-                <Link className="h-16 w-16 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Mappings</h3>
-                <p className="text-muted-foreground mt-2">
-                  Create mappings to connect wireframe elements with data sources.
-                </p>
+              <div className="text-center py-8 text-gray-500">
+                <p className="mb-4">No data sources available</p>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Data Source
+                </Button>
               </div>
             )}
-            
-            <div className="pt-6">
-              <Card>
+          </TabsContent>
+          
+          <TabsContent value="mappings" className="pt-4">
+            {showPreview && previewData && (
+              <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle className="text-lg">Add New Mapping</CardTitle>
+                  <CardTitle className="text-lg">Data Preview</CardTitle>
+                  <CardDescription>
+                    Transformed data from mapping
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4">
-                    <div>
-                      <Label htmlFor="data-source">Data Source</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select data source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dataSources.map(source => (
-                            <SelectItem key={source.id} value={source.id}>{source.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="element-id">Element ID</Label>
-                      <Input id="element-id" placeholder="Enter wireframe element ID" />
-                    </div>
+                <CardContent>
+                  <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-64">
+                    <pre className="text-xs">{JSON.stringify(previewData.data, null, 2)}</pre>
                   </div>
-                  <Button className="w-full">Add Mapping</Button>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="states" className="space-y-4 mt-4">
-            {selectedDataSource ? (
-              <>
-                {states.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-4">
-                    {states.map(state => (
-                      <Card key={state.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-medium">{state.state_name}</h3>
-                            {state.is_default && (
-                              <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Default</div>
-                            )}
+            )}
+            
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+              </div>
+            ) : mappings.length > 0 ? (
+              <Table>
+                <TableCaption>Data mappings for this wireframe</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Target Component</TableHead>
+                    <TableHead>Data Source</TableHead>
+                    <TableHead>Fields</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mappings.map(mapping => (
+                    <TableRow key={mapping.id}>
+                      <TableCell className="font-medium">
+                        {mapping.target_component || 'Entire wireframe'}
+                      </TableCell>
+                      <TableCell>
+                        {mapping.data_source?.name || 'Unknown source'}
+                      </TableCell>
+                      <TableCell>
+                        {mapping.field_mappings && typeof mapping.field_mappings === 'object' && (
+                          <div className="text-xs">
+                            {Object.keys(mapping.field_mappings).length} field mappings
                           </div>
-                          <div className="mt-2">
-                            <Label className="text-xs text-muted-foreground">Data Preview</Label>
-                            <div className="mt-1 bg-muted p-2 rounded-md overflow-x-auto">
-                              <pre className="text-xs">
-                                {JSON.stringify(state.state_data, null, 2)}
-                              </pre>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-10">
-                    <Table2 className="h-16 w-16 mx-auto text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-medium">No States</h3>
-                    <p className="text-muted-foreground mt-2">
-                      Create data states to visualize different data scenarios.
-                    </p>
-                  </div>
-                )}
-                
-                <div className="pt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Add New State</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid gap-4">
-                        <div>
-                          <Label htmlFor="state-name">State Name</Label>
-                          <Input id="state-name" placeholder="Enter state name" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handlePreviewMapping(mapping.id)}
+                            disabled={isLoading}
+                          >
+                            <PlayCircle className="h-4 w-4" />
+                            <span className="sr-only">Preview</span>
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Code className="h-4 w-4" />
+                            <span className="sr-only">Edit Mapping</span>
+                          </Button>
                         </div>
-                        <div>
-                          <Label htmlFor="state-data">State Data (JSON)</Label>
-                          <textarea
-                            id="state-data"
-                            className="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                            placeholder='{"example": "data"}'
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input type="checkbox" id="is-default" className="rounded border-gray-300 text-primary focus:ring-primary" />
-                          <Label htmlFor="is-default">Set as default state</Label>
-                        </div>
-                      </div>
-                      <Button className="w-full">Add State</Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             ) : (
-              <div className="text-center py-10">
-                <Database className="h-16 w-16 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No Data Source Selected</h3>
-                <p className="text-muted-foreground mt-2">
-                  Select a data source to manage its states.
-                </p>
+              <div className="text-center py-8 text-gray-500">
+                <p className="mb-4">No data mappings configured for this wireframe</p>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Data Mapping
+                </Button>
               </div>
             )}
           </TabsContent>
