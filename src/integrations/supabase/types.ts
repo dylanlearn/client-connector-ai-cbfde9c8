@@ -828,6 +828,83 @@ export type Database = {
         }
         Relationships: []
       }
+      competitive_elements: {
+        Row: {
+          competitor_id: string
+          created_at: string
+          element_type: string
+          id: string
+          notes: string | null
+          screenshot_url: string | null
+          strengths: string | null
+          updated_at: string
+          weaknesses: string | null
+        }
+        Insert: {
+          competitor_id: string
+          created_at?: string
+          element_type: string
+          id?: string
+          notes?: string | null
+          screenshot_url?: string | null
+          strengths?: string | null
+          updated_at?: string
+          weaknesses?: string | null
+        }
+        Update: {
+          competitor_id?: string
+          created_at?: string
+          element_type?: string
+          id?: string
+          notes?: string | null
+          screenshot_url?: string | null
+          strengths?: string | null
+          updated_at?: string
+          weaknesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitive_elements_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          industry: string | null
+          name: string
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       component_fields: {
         Row: {
           component_type_id: string
@@ -1810,6 +1887,66 @@ export type Database = {
           },
         ]
       }
+      key_performance_indicators: {
+        Row: {
+          created_at: string
+          current_value: number | null
+          description: string | null
+          goal_id: string | null
+          id: string
+          metric_type: string
+          name: string
+          project_id: string
+          status: Database["public"]["Enums"]["kpi_status"] | null
+          target_value: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          goal_id?: string | null
+          id?: string
+          metric_type: string
+          name: string
+          project_id: string
+          status?: Database["public"]["Enums"]["kpi_status"] | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number | null
+          description?: string | null
+          goal_id?: string | null
+          id?: string
+          metric_type?: string
+          name?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["kpi_status"] | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_performance_indicators_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "project_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "key_performance_indicators_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_presets: {
         Row: {
           created_at: string | null
@@ -2197,6 +2334,50 @@ export type Database = {
           },
         ]
       }
+      project_goals: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          priority: number | null
+          project_id: string
+          status: string | null
+          target_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          priority?: number | null
+          project_id: string
+          status?: string | null
+          target_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: number | null
+          project_id?: string
+          status?: string | null
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_goals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_history: {
         Row: {
           changed_at: string
@@ -2429,6 +2610,53 @@ export type Database = {
         }
         Relationships: []
       }
+      simulation_results: {
+        Row: {
+          average_completion_time: number | null
+          behavioral_insights: string[] | null
+          completion_rate: number | null
+          created_by: string
+          error_points: Json | null
+          id: string
+          scenario_id: string
+          simulation_date: string
+          status: Database["public"]["Enums"]["test_status"]
+          user_paths: Json | null
+        }
+        Insert: {
+          average_completion_time?: number | null
+          behavioral_insights?: string[] | null
+          completion_rate?: number | null
+          created_by: string
+          error_points?: Json | null
+          id?: string
+          scenario_id: string
+          simulation_date?: string
+          status?: Database["public"]["Enums"]["test_status"]
+          user_paths?: Json | null
+        }
+        Update: {
+          average_completion_time?: number | null
+          behavioral_insights?: string[] | null
+          completion_rate?: number | null
+          created_by?: string
+          error_points?: Json | null
+          id?: string
+          scenario_id?: string
+          simulation_date?: string
+          status?: Database["public"]["Enums"]["test_status"]
+          user_paths?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_results_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "user_test_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -2643,6 +2871,53 @@ export type Database = {
         }
         Relationships: []
       }
+      test_task_flows: {
+        Row: {
+          created_at: string
+          description: string | null
+          expected_path: Json | null
+          id: string
+          scenario_id: string
+          sequence_order: number
+          start_element_id: string | null
+          target_element_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          expected_path?: Json | null
+          id?: string
+          scenario_id: string
+          sequence_order: number
+          start_element_id?: string | null
+          target_element_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          expected_path?: Json | null
+          id?: string
+          scenario_id?: string
+          sequence_order?: number
+          start_element_id?: string | null
+          target_element_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_task_flows_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "user_test_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_journeys: {
         Row: {
           created_at: string
@@ -2770,6 +3045,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      user_test_scenarios: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string
+          difficulty_level: number | null
+          estimated_completion_time: number | null
+          id: string
+          success_criteria: Json
+          title: string
+          updated_at: string
+          wireframe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description: string
+          difficulty_level?: number | null
+          estimated_completion_time?: number | null
+          id?: string
+          success_criteria: Json
+          title: string
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string
+          difficulty_level?: number | null
+          estimated_completion_time?: number | null
+          id?: string
+          success_criteria?: Json
+          title?: string
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_test_scenarios_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "ai_wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_view_preferences: {
         Row: {
@@ -3122,6 +3444,57 @@ export type Database = {
           },
         ]
       }
+      wireframe_competitor_comparisons: {
+        Row: {
+          comparison_notes: string | null
+          competitive_element_id: string
+          created_at: string
+          differentiation_points: string[] | null
+          element_id: string
+          id: string
+          rating: Database["public"]["Enums"]["competitor_rating"]
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          comparison_notes?: string | null
+          competitive_element_id: string
+          created_at?: string
+          differentiation_points?: string[] | null
+          element_id: string
+          id?: string
+          rating: Database["public"]["Enums"]["competitor_rating"]
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          comparison_notes?: string | null
+          competitive_element_id?: string
+          created_at?: string
+          differentiation_points?: string[] | null
+          element_id?: string
+          id?: string
+          rating?: Database["public"]["Enums"]["competitor_rating"]
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_competitor_comparisons_competitive_element_id_fkey"
+            columns: ["competitive_element_id"]
+            isOneToOne: false
+            referencedRelation: "competitive_elements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wireframe_competitor_comparisons_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "ai_wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wireframe_component_variants: {
         Row: {
           component_type: string
@@ -3402,6 +3775,67 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_goal_connections: {
+        Row: {
+          created_at: string
+          element_id: string
+          goal_id: string | null
+          id: string
+          impact_description: string | null
+          kpi_id: string | null
+          priority: number | null
+          success_criteria: string | null
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          element_id: string
+          goal_id?: string | null
+          id?: string
+          impact_description?: string | null
+          kpi_id?: string | null
+          priority?: number | null
+          success_criteria?: string | null
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          element_id?: string
+          goal_id?: string | null
+          id?: string
+          impact_description?: string | null
+          kpi_id?: string | null
+          priority?: number | null
+          success_criteria?: string | null
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_goal_connections_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "project_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wireframe_goal_connections_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "key_performance_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wireframe_goal_connections_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "ai_wireframes"
             referencedColumns: ["id"]
           },
         ]
@@ -3761,6 +4195,14 @@ export type Database = {
       }
     }
     Functions: {
+      analyze_competitive_positioning: {
+        Args: { p_wireframe_id: string }
+        Returns: Json
+      }
+      analyze_goal_kpi_alignment: {
+        Args: { p_project_id: string }
+        Returns: Json
+      }
       analyze_interaction_patterns: {
         Args: {
           p_user_id: string
@@ -4183,6 +4625,10 @@ export type Database = {
         Args: { p_wireframe_id: string; p_branch_name: string }
         Returns: undefined
       }
+      simulate_user_test: {
+        Args: { p_scenario_id: string; p_iterations?: number }
+        Returns: Json
+      }
       sparsevec_out: {
         Args: { "": unknown }
         Returns: unknown
@@ -4320,10 +4766,12 @@ export type Database = {
         | "MANAGE_USERS"
         | "VIEW_ADMIN_PANEL"
         | "ACCESS_PREMIUM_FEATURES"
+      competitor_rating: "superior" | "equal" | "inferior"
       content_type: "page" | "section" | "component"
       feedback_priority: "low" | "medium" | "high" | "urgent"
       feedback_status: "open" | "in_progress" | "resolved" | "closed"
       fidelity_level: "wireframe" | "low" | "medium" | "high"
+      kpi_status: "exceeding" | "meeting" | "below"
       subscription_status:
         | "free"
         | "basic"
@@ -4332,6 +4780,7 @@ export type Database = {
         | "sync-pro"
         | "trial"
       template_status: "active" | "archived" | "draft"
+      test_status: "pending" | "in_progress" | "completed" | "failed"
       user_role:
         | "free"
         | "pro"
@@ -4479,10 +4928,12 @@ export const Constants = {
         "VIEW_ADMIN_PANEL",
         "ACCESS_PREMIUM_FEATURES",
       ],
+      competitor_rating: ["superior", "equal", "inferior"],
       content_type: ["page", "section", "component"],
       feedback_priority: ["low", "medium", "high", "urgent"],
       feedback_status: ["open", "in_progress", "resolved", "closed"],
       fidelity_level: ["wireframe", "low", "medium", "high"],
+      kpi_status: ["exceeding", "meeting", "below"],
       subscription_status: [
         "free",
         "basic",
@@ -4492,6 +4943,7 @@ export const Constants = {
         "trial",
       ],
       template_status: ["active", "archived", "draft"],
+      test_status: ["pending", "in_progress", "completed", "failed"],
       user_role: [
         "free",
         "pro",
