@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,9 +20,7 @@ export function useCompetitiveElements(competitorId?: string) {
           .from('competitive_elements')
           .select(`
             *,
-            competitors (
-              name as competitor_name
-            )
+            competitors (name)
           `);
           
         // Add filter for specific competitor if provided
@@ -38,7 +35,7 @@ export function useCompetitiveElements(competitorId?: string) {
         // Format the data to simplify access to competitor name
         const formattedData = data.map(item => ({
           ...item,
-          competitor_name: item.competitors?.competitor_name
+          competitor_name: item.competitors?.name
         }));
         
         setElements(formattedData || []);
@@ -65,9 +62,7 @@ export function useCompetitiveElements(competitorId?: string) {
         .insert(element)
         .select(`
           *,
-          competitors (
-            name as competitor_name
-          )
+          competitors (name)
         `)
         .single();
         
@@ -76,7 +71,7 @@ export function useCompetitiveElements(competitorId?: string) {
       // Format the data
       const formattedData = {
         ...data,
-        competitor_name: data.competitors?.competitor_name
+        competitor_name: data.competitors?.name
       };
       
       setElements(prev => [formattedData, ...prev]);

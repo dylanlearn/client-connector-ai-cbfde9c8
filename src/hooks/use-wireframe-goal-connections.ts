@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,12 +20,8 @@ export function useWireframeGoalConnections(wireframeId?: string) {
           .from('wireframe_goal_connections')
           .select(`
             *,
-            project_goals (
-              title as goal_title
-            ),
-            key_performance_indicators (
-              name as kpi_name
-            )
+            project_goals (title),
+            key_performance_indicators (name)
           `)
           .eq('wireframe_id', wireframeId);
           
@@ -35,8 +30,8 @@ export function useWireframeGoalConnections(wireframeId?: string) {
         // Format the data to simplify access
         const formattedData = data.map(conn => ({
           ...conn,
-          goal_title: conn.project_goals?.goal_title || 'Unknown goal',
-          kpi_name: conn.key_performance_indicators?.kpi_name
+          goal_title: conn.project_goals?.title || 'Unknown goal',
+          kpi_name: conn.key_performance_indicators?.name
         }));
         
         setConnections(formattedData || []);
@@ -68,12 +63,8 @@ export function useWireframeGoalConnections(wireframeId?: string) {
         .insert(newConnection)
         .select(`
           *,
-          project_goals (
-            title as goal_title
-          ),
-          key_performance_indicators (
-            name as kpi_name
-          )
+          project_goals (title),
+          key_performance_indicators (name)
         `)
         .single();
         
@@ -82,8 +73,8 @@ export function useWireframeGoalConnections(wireframeId?: string) {
       // Format the data
       const formattedData = {
         ...data,
-        goal_title: data.project_goals?.goal_title || 'Unknown goal',
-        kpi_name: data.key_performance_indicators?.kpi_name
+        goal_title: data.project_goals?.title || 'Unknown goal',
+        kpi_name: data.key_performance_indicators?.name
       };
       
       setConnections(prev => [...prev, formattedData]);

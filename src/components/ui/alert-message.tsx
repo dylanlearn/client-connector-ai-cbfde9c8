@@ -2,6 +2,7 @@
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type AlertType = 'error' | 'success' | 'warning' | 'info';
 
@@ -9,9 +10,10 @@ interface AlertMessageProps {
   type: AlertType;
   title?: string;
   children?: React.ReactNode;
+  className?: string;
 }
 
-export function AlertMessage({ type, title, children }: AlertMessageProps) {
+export function AlertMessage({ type, title, children, className }: AlertMessageProps) {
   const getVariant = () => {
     switch (type) {
       case 'error': return 'destructive';
@@ -45,7 +47,7 @@ export function AlertMessage({ type, title, children }: AlertMessageProps) {
   };
   
   return (
-    <Alert variant={getVariant()}>
+    <Alert variant={getVariant()} className={className}>
       {getIcon()}
       <AlertTitle>{getTitle()}</AlertTitle>
       {children && <AlertDescription>{children}</AlertDescription>}
