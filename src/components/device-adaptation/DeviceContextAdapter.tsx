@@ -1,179 +1,183 @@
 
-import React, { useState, useEffect } from 'react';
-import { useDeviceContextAdaptation, DeviceContext } from '@/hooks/use-device-context-adaptation';
+import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Smartphone, Tablet, Monitor, Tv, Watch } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDeviceContextAdaptation, DeviceContext } from '@/hooks/use-device-context-adaptation';
 import { AlertMessage } from '@/components/ui/alert-message';
-import { Badge } from '@/components/ui/badge';
 
-interface DeviceContextAdapterProps {
-  initialDevice?: string;
-  wireframeId?: string;
-  onDeviceChange?: (deviceContext: DeviceContext) => void;
-  className?: string;
+export interface CulturalContext {
+  id: string;
+  name: string;
+  region: string;
+  language?: string;
+  reading_direction?: string;
+  color_preferences?: Record<string, any>;
+  layout_preferences?: Record<string, any>;
+  typography_adjustments?: Record<string, any>;
 }
 
-const DeviceContextAdapter: React.FC<DeviceContextAdapterProps> = ({ 
-  initialDevice = 'Desktop',
-  wireframeId,
+export interface DeviceContextAdapterProps {
+  className?: string;
+  onDeviceChange?: (deviceContext: DeviceContext) => void;
+  onCultureChange?: (culturalContext: CulturalContext) => void;
+}
+
+export function DeviceContextAdapter({ 
+  className, 
   onDeviceChange,
-  className
-}) => {
-  const { 
-    deviceContexts, 
-    currentDevice, 
-    adaptations,
-    isLoading, 
-    error, 
-    setDevice 
-  } = useDeviceContextAdaptation(initialDevice);
-  
-  const [activeTab, setActiveTab] = useState<string>('device-info');
-  
-  useEffect(() => {
-    if (currentDevice && onDeviceChange) {
+  onCultureChange 
+}: DeviceContextAdapterProps) {
+  const { deviceContexts, currentDevice, setDevice, isLoading, error } = useDeviceContextAdaptation();
+  const [activeTab, setActiveTab] = useState('device');
+  const [culturalContexts] = useState<CulturalContext[]>([
+    {
+      id: '1',
+      name: 'North American',
+      region: 'North America',
+      reading_direction: 'ltr',
+      language: 'en'
+    },
+    {
+      id: '2',
+      name: 'East Asian',
+      region: 'East Asia',
+      reading_direction: 'ttb',
+      language: 'zh'
+    },
+    {
+      id: '3',
+      name: 'Middle Eastern',
+      region: 'Middle East',
+      reading_direction: 'rtl',
+      language: 'ar'
+    },
+    {
+      id: '4',
+      name: 'European',
+      region: 'Europe',
+      reading_direction: 'ltr',
+      language: 'en'
+    },
+    {
+      id: '5',
+      name: 'South Asian',
+      region: 'South Asia',
+      reading_direction: 'ltr',
+      language: 'hi'
+    }
+  ]);
+  const [selectedCulture, setSelectedCulture] = useState<CulturalContext>(culturalContexts[0]);
+
+  const handleDeviceChange = (value: string) => {
+    const success = setDevice(value);
+    if (success && currentDevice && onDeviceChange) {
       onDeviceChange(currentDevice);
     }
-  }, [currentDevice, onDeviceChange]);
-  
-  const handleDeviceChange = (deviceName: string) => {
-    setDevice(deviceName);
   };
-  
-  const getDeviceIcon = (deviceCategory: string) => {
-    switch (deviceCategory.toLowerCase()) {
-      case 'mobile':
-        return <Smartphone className="h-5 w-5" />;
-      case 'tablet':
-        return <Tablet className="h-5 w-5" />;
-      case 'desktop':
-        return <Monitor className="h-5 w-5" />;
-      case 'entertainment':
-        return <Tv className="h-5 w-5" />;
-      case 'wearable':
-        return <Watch className="h-5 w-5" />;
-      default:
-        return <Smartphone className="h-5 w-5" />;
+
+  const handleCultureChange = (value: string) => {
+    const culture = culturalContexts.find(c => c.id === value);
+    if (culture) {
+      setSelectedCulture(culture);
+      if (onCultureChange) {
+        onCultureChange(culture);
+      }
     }
   };
 
   if (error) {
-    return <AlertMessage type="error">Failed to load device contexts: {error.message}</AlertMessage>;
+    return <AlertMessage type="error">Error loading device contexts: {error.message}</AlertMessage>;
   }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Device Context Adaptation</CardTitle>
+    <Card className={cn("w-full", className)}>
+      <CardHeader>
+        <CardTitle>Context Adaptation</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-6">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <>
-            <div className="mb-4">
-              <h3 className="text-base font-medium mb-2">Device Selection</h3>
-              <div className="flex flex-wrap gap-2">
-                {deviceContexts.map(device => (
-                  <Button
-                    key={device.id}
-                    variant={currentDevice?.id === device.id ? "default" : "outline"}
-                    size="sm"
-                    className="flex items-center gap-2"
-                    onClick={() => handleDeviceChange(device.name)}
-                  >
-                    {getDeviceIcon(device.category)}
-                    {device.name}
-                  </Button>
-                ))}
-              </div>
+        <Tabs defaultValue="device" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="device">Device Context</TabsTrigger>
+            <TabsTrigger value="cultural">Cultural Context</TabsTrigger>
+          </TabsList>
+          <TabsContent value="device" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="device-type">Device Type</Label>
+              <Select 
+                disabled={isLoading} 
+                onValueChange={handleDeviceChange}
+                value={currentDevice?.name}
+              >
+                <SelectTrigger id="device-type">
+                  <SelectValue placeholder="Select device type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {deviceContexts.map((device) => (
+                    <SelectItem key={device.id} value={device.name}>
+                      {device.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {currentDevice && (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="device-info">Device Info</TabsTrigger>
-                  <TabsTrigger value="adaptations">Adaptations</TabsTrigger>
-                  <TabsTrigger value="constraints">Constraints</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="device-info" className="pt-4">
-                  <div className="grid gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Screen Size</h4>
-                      <Badge variant="secondary">{currentDevice.screen_size_class || 'Unknown'}</Badge>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Input Methods</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {currentDevice.input_methods?.map(method => (
-                          <Badge key={method} variant="outline">{method}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Orientation</h4>
-                      <p>{currentDevice.orientation || 'Flexible'}</p>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="adaptations" className="pt-4">
-                  {adaptations.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No specific adaptations for this device.
-                    </div>
-                  ) : (
-                    <div className="grid gap-3">
-                      {adaptations.map(adaptation => (
-                        <div key={adaptation.id} className="border rounded p-3">
-                          <h4 className="font-medium">{adaptation.component_type}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Priority: {adaptation.priority}</p>
-                          <div className="bg-gray-50 p-2 rounded text-sm font-mono">
-                            <pre className="whitespace-pre-wrap">
-                              {JSON.stringify(adaptation.adaptation_rules, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="constraints" className="pt-4">
-                  <div className="grid gap-4">
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Capabilities</h4>
-                      <div className="bg-gray-50 p-3 rounded">
-                        <pre className="text-xs whitespace-pre-wrap">
-                          {JSON.stringify(currentDevice.capabilities, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-1">Constraints</h4>
-                      <div className="bg-gray-50 p-3 rounded">
-                        <pre className="text-xs whitespace-pre-wrap">
-                          {JSON.stringify(currentDevice.constraints, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <div className="rounded-md bg-slate-50 p-4 mt-4">
+                <h4 className="text-sm font-medium mb-2">Device Properties</h4>
+                <div className="text-xs text-slate-600">
+                  <p>Category: {currentDevice.category}</p>
+                  {currentDevice.screen_size_class && <p>Screen Size: {currentDevice.screen_size_class}</p>}
+                  {currentDevice.orientation && <p>Orientation: {currentDevice.orientation}</p>}
+                  {currentDevice.input_methods && <p>Input Methods: {currentDevice.input_methods.join(', ')}</p>}
+                </div>
+              </div>
             )}
-          </>
-        )}
+          </TabsContent>
+          
+          <TabsContent value="cultural" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="culture-type">Cultural Region</Label>
+              <Select 
+                onValueChange={handleCultureChange}
+                value={selectedCulture.id}
+              >
+                <SelectTrigger id="culture-type">
+                  <SelectValue placeholder="Select cultural context" />
+                </SelectTrigger>
+                <SelectContent>
+                  {culturalContexts.map((culture) => (
+                    <SelectItem key={culture.id} value={culture.id}>
+                      {culture.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedCulture && (
+              <div className="rounded-md bg-slate-50 p-4 mt-4">
+                <h4 className="text-sm font-medium mb-2">Cultural Properties</h4>
+                <div className="text-xs text-slate-600">
+                  <p>Region: {selectedCulture.region}</p>
+                  {selectedCulture.language && <p>Language: {selectedCulture.language}</p>}
+                  {selectedCulture.reading_direction && (
+                    <p>Reading Direction: {
+                      selectedCulture.reading_direction === 'ltr' 
+                        ? 'Left to Right' 
+                        : selectedCulture.reading_direction === 'rtl' 
+                          ? 'Right to Left' 
+                          : 'Top to Bottom'
+                    }</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
-};
-
-export default DeviceContextAdapter;
+}

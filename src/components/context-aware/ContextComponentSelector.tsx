@@ -1,154 +1,138 @@
 
-import React, { useState } from 'react';
-import { useContextComponentSelection } from '@/hooks/use-context-component-selection';
+import React from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
 import { AlertMessage } from '@/components/ui/alert-message';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Lightbulb, FileBarChart, PanelRight, Check } from 'lucide-react';
+import { ComponentRecommendation, DesignGuideline } from '@/hooks/use-context-component-selection';
 
-interface ContextComponentSelectorProps {
-  context?: string;
-  onSelectComponent?: (componentType: string) => void;
-  className?: string;
+interface ContextOption {
+  value: string;
+  label: string;
 }
 
-const ContextComponentSelector: React.FC<ContextComponentSelectorProps> = ({ 
-  context = 'header', 
-  onSelectComponent,
-  className
-}) => {
-  const [currentContext, setCurrentContext] = useState<string>(context);
-  const { 
-    recommendations, 
-    guidelines, 
-    isLoading, 
-    error, 
-    recordComponentUsage,
-    refreshRecommendations
-  } = useContextComponentSelection(currentContext);
-  
-  const predefinedContexts = [
-    'header', 'footer', 'hero', 'features', 'pricing', 
-    'testimonials', 'contact', 'blog', 'product', 'about'
-  ];
-  
-  const handleSelectComponent = (componentType: string) => {
-    recordComponentUsage(componentType, currentContext);
-    if (onSelectComponent) {
-      onSelectComponent(componentType);
-    }
-  };
-  
-  const handleContextChange = (newContext: string) => {
-    setCurrentContext(newContext);
-  };
-  
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'bg-green-500';
-    if (confidence >= 0.5) return 'bg-yellow-500';
-    return 'bg-gray-300';
-  };
+interface ContextComponentSelectorProps {
+  className?: string;
+  context: string;
+  onContextChange: (context: string) => void;
+  contextOptions: ContextOption[];
+  recommendations: ComponentRecommendation[];
+  guidelines: DesignGuideline[];
+  isLoading: boolean;
+}
 
-  if (error) {
-    return <AlertMessage type="error">Failed to load component recommendations: {error.message}</AlertMessage>;
-  }
-
+export function ContextComponentSelector({ 
+  className, 
+  context, 
+  onContextChange, 
+  contextOptions,
+  recommendations,
+  guidelines,
+  isLoading
+}: ContextComponentSelectorProps) {
   return (
-    <Card className={className}>
+    <Card className={cn("w-full", className)}>
       <CardHeader>
-        <CardTitle className="text-xl flex items-center justify-between">
-          <span>Context-Aware Components</span>
+        <CardTitle>Context-Aware Component Selection</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="context-selector">Select Page Context</Label>
           <Select 
-            value={currentContext} 
-            onValueChange={handleContextChange}
+            value={context} 
+            onValueChange={onContextChange}
           >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Context" />
+            <SelectTrigger id="context-selector">
+              <SelectValue placeholder="Select context" />
             </SelectTrigger>
             <SelectContent>
-              {predefinedContexts.map(ctx => (
-                <SelectItem key={ctx} value={ctx}>{ctx}</SelectItem>
+              {contextOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4">
-          <h3 className="text-base font-medium mb-2">Recommended Components</h3>
-          {isLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : recommendations.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              No recommendations available for this context yet.
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {recommendations.map((rec, index) => (
-                <div 
-                  key={index} 
-                  className="p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleSelectComponent(rec.component_type)}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-medium">{rec.component_type}</h4>
-                    <Badge variant="outline">
-                      {(rec.confidence * 100).toFixed(0)}% Match
-                    </Badge>
-                  </div>
-                  <Progress 
-                    value={rec.confidence * 100} 
-                    className={`h-1 ${getConfidenceColor(rec.confidence)}`} 
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">{rec.reasoning}</p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         
-        <div className="mt-6">
-          <h3 className="text-base font-medium mb-2">Design Guidelines</h3>
-          {guidelines.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              No specific guidelines for this context.
-            </div>
-          ) : (
-            <div className="grid gap-2">
-              {guidelines.map((guideline, index) => (
-                <div key={index} className="p-3 border rounded-md bg-blue-50">
-                  <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-medium">{guideline.guideline_type}</h4>
-                    <Badge variant="secondary">Priority {guideline.priority}</Badge>
-                  </div>
-                  <p className="text-sm">{guideline.recommendation}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {guideline.component_types.map(type => (
-                      <Badge key={type} variant="outline">{type}</Badge>
-                    ))}
-                  </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-40">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-lg font-medium">
+                <Lightbulb className="h-5 w-5 text-amber-500" />
+                <h3>Recommended Components</h3>
+              </div>
+              
+              {recommendations.length === 0 ? (
+                <AlertMessage type="info">No recommendations available for this context</AlertMessage>
+              ) : (
+                <div className="space-y-3">
+                  {recommendations.map((rec, index) => (
+                    <div 
+                      key={index} 
+                      className="border rounded-md p-3 bg-slate-50 flex justify-between items-center"
+                    >
+                      <div>
+                        <div className="font-medium">{rec.component_type}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {rec.reasoning || `Confidence score: ${Math.floor(rec.confidence * 100)}%`}
+                        </div>
+                      </div>
+                      <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center",
+                        rec.confidence > 0.7 ? "bg-green-100" : "bg-amber-100"
+                      )}>
+                        <Check className={cn(
+                          "h-4 w-4",
+                          rec.confidence > 0.7 ? "text-green-600" : "text-amber-600"
+                        )} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-        
-        <Button 
-          variant="outline" 
-          className="mt-4 w-full"
-          onClick={() => refreshRecommendations()}
-        >
-          Refresh Recommendations
-        </Button>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-lg font-medium">
+                <FileBarChart className="h-5 w-5 text-blue-500" />
+                <h3>Design Guidelines</h3>
+              </div>
+              
+              {guidelines.length === 0 ? (
+                <AlertMessage type="info">No design guidelines available for this context</AlertMessage>
+              ) : (
+                <div className="space-y-3">
+                  {guidelines.map((guide, index) => (
+                    <div key={index} className="border rounded-md p-3">
+                      <div className="text-xs uppercase text-muted-foreground tracking-wider mb-1">
+                        {guide.guideline_type}
+                      </div>
+                      <div className="text-sm">{guide.recommendation}</div>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {guide.component_types.map((component, i) => (
+                          <div 
+                            key={i} 
+                            className="text-xs bg-slate-100 px-2 py-1 rounded-md"
+                          >
+                            {component}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
-};
-
-export default ContextComponentSelector;
+}

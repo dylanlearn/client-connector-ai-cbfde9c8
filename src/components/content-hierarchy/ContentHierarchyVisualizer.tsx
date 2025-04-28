@@ -1,224 +1,210 @@
 
-import React, { useState } from 'react';
-import { useContentHierarchy, ContentNode } from '@/hooks/use-content-hierarchy';
+import React from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, ChevronRight, ChevronDown, Trash2 } from 'lucide-react';
-import { AlertMessage } from '@/components/ui/alert-message';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileTree, FolderTree } from 'lucide-react';
 
-interface ContentHierarchyVisualizerProps {
-  projectId: string;
-  className?: string;
+interface Node {
+  id: string;
+  label: string;
+  type: string;
+  parent?: string;
+  priority: number;
 }
 
-const ContentHierarchyVisualizer: React.FC<ContentHierarchyVisualizerProps> = ({ 
-  projectId,
-  className
-}) => {
-  const { nodes, isLoading, error, addNode, deleteNode, analysis } = useContentHierarchy(projectId);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [newNode, setNewNode] = useState<{
-    title: string;
-    node_type: 'page' | 'section' | 'component' | 'text' | 'media';
-    parent_id: string | null;
-  }>({
-    title: '',
-    node_type: 'section',
-    parent_id: null
-  });
+interface Edge {
+  from: string;
+  to: string;
+  label: string;
+}
 
-  const toggleNode = (nodeId: string) => {
-    const newExpandedNodes = new Set(expandedNodes);
-    if (newExpandedNodes.has(nodeId)) {
-      newExpandedNodes.delete(nodeId);
-    } else {
-      newExpandedNodes.add(nodeId);
+interface HierarchyData {
+  nodes: Node[];
+  edges: Edge[];
+}
+
+interface ContentHierarchyVisualizerProps {
+  className?: string;
+  data: HierarchyData;
+}
+
+export function ContentHierarchyVisualizer({ className, data }: ContentHierarchyVisualizerProps) {
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 1: return 'bg-blue-100 text-blue-800';
+      case 2: return 'bg-green-100 text-green-800';
+      case 3: return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-    setExpandedNodes(newExpandedNodes);
   };
 
-  const handleAddNode = async () => {
-    if (!newNode.title.trim()) return;
-    
-    await addNode({
-      title: newNode.title,
-      node_type: newNode.node_type,
-      parent_id: newNode.parent_id,
-      project_id: projectId,
-      priority: 0,
-      position_order: 0
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'page': return '📄';
+      case 'section': return '📑';
+      case 'component': return '🧩';
+      case 'text': return '📝';
+      case 'media': return '🖼️';
+      default: return '📦';
+    }
+  };
+
+  // Build tree structure
+  const buildTree = (nodes: Node[]) => {
+    const nodeMap = new Map<string, Node & { children: any[] }>();
+    const rootNodes: any[] = [];
+
+    // First pass: create node map with empty children arrays
+    nodes.forEach(node => {
+      nodeMap.set(node.id, { ...node, children: [] });
     });
     
-    setNewNode({
-      title: '',
-      node_type: 'section',
-      parent_id: null
+    // Second pass: populate children arrays
+    nodes.forEach(node => {
+      if (node.parent && nodeMap.has(node.parent)) {
+        nodeMap.get(node.parent)!.children.push(nodeMap.get(node.id));
+      } else {
+        rootNodes.push(nodeMap.get(node.id));
+      }
     });
+    
+    return rootNodes;
   };
 
-  const renderNode = (node: ContentNode, level = 0) => {
-    const hasChildren = node.children && node.children.length > 0;
-    const isExpanded = expandedNodes.has(node.id);
-    
-    return (
-      <div key={node.id} className="content-node">
-        <div 
-          className={`flex items-center py-1 px-2 rounded hover:bg-gray-100 ${level > 0 ? 'ml-' + (level * 4) : ''}`}
-          style={{ marginLeft: `${level * 16}px` }}
-        >
-          {hasChildren && (
-            <button 
-              className="mr-1 p-1 rounded-full hover:bg-gray-200"
-              onClick={() => toggleNode(node.id)}
-            >
-              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
-          )}
-          
-          <div className="flex-1 flex items-center">
-            <span className="font-medium mr-2">{node.title}</span>
-            <span className="text-xs text-gray-500 mr-2">{node.node_type}</span>
-            {node.priority > 0 && (
-              <span className="text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-1">
-                P{node.priority}
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setNewNode({
-                title: '',
-                node_type: 'component',
-                parent_id: node.id
-              })}
-            >
-              <Plus size={16} />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => deleteNode(node.id)}
-            >
-              <Trash2 size={16} />
-            </Button>
-          </div>
-        </div>
-        
-        {isExpanded && hasChildren && (
-          <div className="ml-4">
-            {node.children!.map(child => renderNode(child, level + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const tree = buildTree(data.nodes);
 
-  const renderAnalysis = () => {
-    if (!analysis) return null;
-    
+  const renderTreeNode = (node: Node & { children: any[] }, depth = 0) => {
     return (
-      <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Hierarchy Analysis</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Nodes</p>
-            <p className="text-xl font-bold">{analysis.total_nodes}</p>
+      <div key={node.id} className="relative">
+        <div className={cn(
+          "pl-4 border-l border-gray-200 ml-2",
+          depth === 0 ? "ml-0 border-none" : ""
+        )}>
+          <div className="py-2 flex items-center gap-2">
+            <span className="text-lg">{getTypeIcon(node.type)}</span>
+            <span className="font-medium">{node.label}</span>
+            <Badge className={cn("ml-2", getPriorityColor(node.priority))}>
+              P{node.priority}
+            </Badge>
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Max Depth</p>
-            <p className="text-xl font-bold">{analysis.max_depth}</p>
-          </div>
-        </div>
-        
-        <h4 className="text-sm font-medium mt-4 mb-2">By Type</h4>
-        <div className="grid grid-cols-3 gap-2">
-          {Object.entries(analysis.by_type || {}).map(([type, count]) => (
-            <div key={type} className="bg-white p-2 rounded text-center">
-              <p className="text-xs text-muted-foreground">{type}</p>
-              <p className="font-semibold">{count}</p>
+          
+          {node.children.length > 0 && (
+            <div className="ml-4">
+              {node.children.map(child => renderTreeNode(child, depth + 1))}
             </div>
-          ))}
+          )}
         </div>
       </div>
     );
   };
 
-  if (error) {
-    return <AlertMessage type="error">Failed to load content hierarchy: {error.message}</AlertMessage>;
-  }
+  const renderRelationshipView = () => {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="border rounded-md p-4">
+            <h3 className="font-medium mb-2">Structural Relationships</h3>
+            <ul className="space-y-1 text-sm">
+              {data.edges
+                .filter(edge => edge.label === 'contains')
+                .map((edge, index) => {
+                  const fromNode = data.nodes.find(n => n.id === edge.from);
+                  const toNode = data.nodes.find(n => n.id === edge.to);
+                  
+                  return (
+                    <li key={index} className="flex items-center gap-1">
+                      <span className="text-muted-foreground">{fromNode?.label}</span>
+                      <span className="text-xs">→</span>
+                      <span>{toNode?.label}</span>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+          
+          <div className="border rounded-md p-4">
+            <h3 className="font-medium mb-2">Functional Relationships</h3>
+            <ul className="space-y-1 text-sm">
+              {data.edges
+                .filter(edge => edge.label !== 'contains')
+                .map((edge, index) => {
+                  const fromNode = data.nodes.find(n => n.id === edge.from);
+                  const toNode = data.nodes.find(n => n.id === edge.to);
+                  
+                  return (
+                    <li key={index} className="flex items-center gap-1">
+                      <span>{fromNode?.label}</span>
+                      <span className="text-xs px-1 text-muted-foreground">{edge.label}</span>
+                      <span>{toNode?.label}</span>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        </div>
+        
+        <div className="border rounded-md p-4">
+          <h3 className="font-medium mb-2">Priority Distribution</h3>
+          <div className="grid grid-cols-3 gap-4 mt-3">
+            {[1, 2, 3].map(priority => {
+              const count = data.nodes.filter(n => n.priority === priority).length;
+              return (
+                <div key={priority} className="text-center">
+                  <div className={cn(
+                    "rounded-full h-12 w-12 flex items-center justify-center mx-auto",
+                    getPriorityColor(priority)
+                  )}>
+                    {count}
+                  </div>
+                  <div className="text-sm mt-1">Priority {priority}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <Card className={className}>
+    <Card className={cn("w-full", className)}>
       <CardHeader>
-        <CardTitle className="text-xl">Content Hierarchy</CardTitle>
+        <CardTitle>Content Hierarchy Visualization</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex gap-2">
-          <Input
-            placeholder="Node title"
-            value={newNode.title}
-            onChange={(e) => setNewNode({ ...newNode, title: e.target.value })}
-            className="flex-1"
-          />
-          <Select
-            value={newNode.node_type}
-            onValueChange={(value) => setNewNode({ 
-              ...newNode, 
-              node_type: value as 'page' | 'section' | 'component' | 'text' | 'media' 
-            })}
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="page">Page</SelectItem>
-              <SelectItem value="section">Section</SelectItem>
-              <SelectItem value="component">Component</SelectItem>
-              <SelectItem value="text">Text</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={handleAddNode}>Add Node</Button>
-        </div>
-        
-        {newNode.parent_id && (
-          <div className="mb-4 bg-blue-50 p-2 rounded flex items-center justify-between">
-            <p className="text-sm">Adding as child of parent node</p>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setNewNode({ ...newNode, parent_id: null })}
-            >
-              Cancel
-            </Button>
-          </div>
-        )}
-        
-        <div className="max-h-[500px] overflow-y-auto border rounded-md p-2">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Tabs defaultValue="tree" className="space-y-4">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="tree" className="flex items-center gap-2">
+              <FolderTree className="h-4 w-4" /> 
+              Hierarchy Tree
+            </TabsTrigger>
+            <TabsTrigger value="relationships" className="flex items-center gap-2">
+              <FileTree className="h-4 w-4" /> 
+              Relationships
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="tree" className="space-y-4">
+            <div className="border rounded-md p-4">
+              {tree.length > 0 ? (
+                <div className="space-y-2">
+                  {tree.map(node => renderTreeNode(node))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hierarchy data available
+                </div>
+              )}
             </div>
-          ) : nodes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No content nodes yet. Add your first node to start building the hierarchy.
-            </div>
-          ) : (
-            <div>
-              {nodes.map(node => renderNode(node))}
-            </div>
-          )}
-        </div>
-        
-        {renderAnalysis()}
+          </TabsContent>
+          
+          <TabsContent value="relationships">
+            {renderRelationshipView()}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
-};
-
-export default ContentHierarchyVisualizer;
+}
