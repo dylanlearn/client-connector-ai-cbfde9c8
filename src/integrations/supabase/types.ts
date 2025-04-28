@@ -905,6 +905,44 @@ export type Database = {
         }
         Relationships: []
       }
+      component_adaptations: {
+        Row: {
+          adaptation_rules: Json
+          component_type: string
+          created_at: string
+          device_context_id: string | null
+          id: string
+          priority: number | null
+          updated_at: string
+        }
+        Insert: {
+          adaptation_rules: Json
+          component_type: string
+          created_at?: string
+          device_context_id?: string | null
+          id?: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adaptation_rules?: Json
+          component_type?: string
+          created_at?: string
+          device_context_id?: string | null
+          id?: string
+          priority?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_adaptations_device_context_id_fkey"
+            columns: ["device_context_id"]
+            isOneToOne: false
+            referencedRelation: "device_contexts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       component_fields: {
         Row: {
           component_type_id: string
@@ -948,6 +986,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      component_recommendations: {
+        Row: {
+          component_type: string
+          context: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          reasoning: string | null
+          recommendation_strength: number | null
+        }
+        Insert: {
+          component_type: string
+          context: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reasoning?: string | null
+          recommendation_strength?: number | null
+        }
+        Update: {
+          component_type?: string
+          context?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reasoning?: string | null
+          recommendation_strength?: number | null
+        }
+        Relationships: []
       }
       component_styles: {
         Row: {
@@ -1012,6 +1080,39 @@ export type Database = {
         }
         Relationships: []
       }
+      component_usage_patterns: {
+        Row: {
+          component_type: string
+          confidence_score: number | null
+          context_name: string
+          created_at: string
+          id: string
+          last_used: string | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          component_type: string
+          confidence_score?: number | null
+          context_name: string
+          created_at?: string
+          id?: string
+          last_used?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          component_type?: string
+          confidence_score?: number | null
+          context_name?: string
+          created_at?: string
+          id?: string
+          last_used?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       component_variants: {
         Row: {
           component_type_id: string
@@ -1052,6 +1153,107 @@ export type Database = {
             columns: ["component_type_id"]
             isOneToOne: false
             referencedRelation: "component_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_hierarchy: {
+        Row: {
+          created_at: string
+          depth: number | null
+          id: string
+          metadata: Json | null
+          node_type: Database["public"]["Enums"]["content_node_type"]
+          parent_id: string | null
+          path: string | null
+          position_order: number | null
+          priority: number | null
+          project_id: string
+          title: string
+          updated_at: string
+          wireframe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          depth?: number | null
+          id?: string
+          metadata?: Json | null
+          node_type: Database["public"]["Enums"]["content_node_type"]
+          parent_id?: string | null
+          path?: string | null
+          position_order?: number | null
+          priority?: number | null
+          project_id: string
+          title: string
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          depth?: number | null
+          id?: string
+          metadata?: Json | null
+          node_type?: Database["public"]["Enums"]["content_node_type"]
+          parent_id?: string | null
+          path?: string | null
+          position_order?: number | null
+          priority?: number | null
+          project_id?: string
+          title?: string
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_hierarchy_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "content_hierarchy"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_relationships: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          relationship_type: string
+          source_id: string
+          strength: number | null
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          relationship_type: string
+          source_id: string
+          strength?: number | null
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          relationship_type?: string
+          source_id?: string
+          strength?: number | null
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_relationships_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "content_hierarchy"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_relationships_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "content_hierarchy"
             referencedColumns: ["id"]
           },
         ]
@@ -1170,6 +1372,86 @@ export type Database = {
             columns: ["content_id"]
             isOneToOne: false
             referencedRelation: "content_strategy"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cultural_contexts: {
+        Row: {
+          color_preferences: Json | null
+          created_at: string
+          id: string
+          language: string | null
+          layout_preferences: Json | null
+          name: string
+          reading_direction: string | null
+          region: string
+          typography_adjustments: Json | null
+          updated_at: string
+        }
+        Insert: {
+          color_preferences?: Json | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          layout_preferences?: Json | null
+          name: string
+          reading_direction?: string | null
+          region: string
+          typography_adjustments?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          color_preferences?: Json | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          layout_preferences?: Json | null
+          name?: string
+          reading_direction?: string | null
+          region?: string
+          typography_adjustments?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cultural_design_adaptations: {
+        Row: {
+          adaptation_rules: Json
+          component_type: string | null
+          created_at: string
+          cultural_context_id: string | null
+          id: string
+          notes: string | null
+          updated_at: string
+          wireframe_element_type: string | null
+        }
+        Insert: {
+          adaptation_rules: Json
+          component_type?: string | null
+          created_at?: string
+          cultural_context_id?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          wireframe_element_type?: string | null
+        }
+        Update: {
+          adaptation_rules?: Json
+          component_type?: string | null
+          created_at?: string
+          cultural_context_id?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          wireframe_element_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cultural_design_adaptations_cultural_context_id_fkey"
+            columns: ["cultural_context_id"]
+            isOneToOne: false
+            referencedRelation: "cultural_contexts"
             referencedColumns: ["id"]
           },
         ]
@@ -1402,6 +1684,39 @@ export type Database = {
         }
         Relationships: []
       }
+      design_system_guidelines: {
+        Row: {
+          component_types: string[]
+          context: string
+          created_at: string
+          guideline_type: string
+          id: string
+          priority: number | null
+          recommendation: string
+          updated_at: string
+        }
+        Insert: {
+          component_types: string[]
+          context: string
+          created_at?: string
+          guideline_type: string
+          id?: string
+          priority?: number | null
+          recommendation: string
+          updated_at?: string
+        }
+        Update: {
+          component_types?: string[]
+          context?: string
+          created_at?: string
+          guideline_type?: string
+          id?: string
+          priority?: number | null
+          recommendation?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       design_tokens: {
         Row: {
           category: string
@@ -1432,6 +1747,45 @@ export type Database = {
           project_id?: string
           updated_at?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      device_contexts: {
+        Row: {
+          capabilities: Json | null
+          category: string
+          constraints: Json | null
+          created_at: string
+          id: string
+          input_methods: string[] | null
+          name: string
+          orientation: string | null
+          screen_size_class: string | null
+          updated_at: string
+        }
+        Insert: {
+          capabilities?: Json | null
+          category: string
+          constraints?: Json | null
+          created_at?: string
+          id?: string
+          input_methods?: string[] | null
+          name: string
+          orientation?: string | null
+          screen_size_class?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capabilities?: Json | null
+          category?: string
+          constraints?: Json | null
+          created_at?: string
+          id?: string
+          input_methods?: string[] | null
+          name?: string
+          orientation?: string | null
+          screen_size_class?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1532,6 +1886,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      environment_contexts: {
+        Row: {
+          adaptation_guidelines: string | null
+          context_type: string
+          created_at: string
+          id: string
+          name: string
+          parameters: Json
+        }
+        Insert: {
+          adaptation_guidelines?: string | null
+          context_type: string
+          created_at?: string
+          id?: string
+          name: string
+          parameters: Json
+        }
+        Update: {
+          adaptation_guidelines?: string | null
+          context_type?: string
+          created_at?: string
+          id?: string
+          name?: string
+          parameters?: Json
+        }
+        Relationships: []
       }
       error_handling_config: {
         Row: {
@@ -2518,6 +2899,36 @@ export type Database = {
           tokens?: number
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      regional_design_preferences: {
+        Row: {
+          category: string
+          confidence: number | null
+          created_at: string
+          id: string
+          preference_data: Json
+          region: string
+          source: string | null
+        }
+        Insert: {
+          category: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          preference_data: Json
+          region: string
+          source?: string | null
+        }
+        Update: {
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          preference_data?: Json
+          region?: string
+          source?: string | null
         }
         Relationships: []
       }
@@ -4199,6 +4610,10 @@ export type Database = {
         Args: { p_wireframe_id: string }
         Returns: Json
       }
+      analyze_content_hierarchy: {
+        Args: { p_project_id: string }
+        Returns: Json
+      }
       analyze_goal_kpi_alignment: {
         Args: { p_project_id: string }
         Returns: Json
@@ -4284,6 +4699,22 @@ export type Database = {
           version_number: number
           wireframe_id: string
         }
+      }
+      get_context_component_recommendations: {
+        Args: { p_context: string; p_limit?: number }
+        Returns: {
+          component_type: string
+          confidence: number
+          reasoning: string
+        }[]
+      }
+      get_cultural_adaptations: {
+        Args: { p_component_type: string; p_region: string }
+        Returns: Json
+      }
+      get_device_adaptations: {
+        Args: { p_component_type: string; p_device_context: string }
+        Returns: Json
       }
       get_error_handling_config: {
         Args: { p_component: string; p_error_type: string }
@@ -4541,6 +4972,10 @@ export type Database = {
         }
         Returns: string
       }
+      record_component_usage: {
+        Args: { p_component_type: string; p_context_name: string }
+        Returns: undefined
+      }
       record_health_check: {
         Args: {
           p_component: string
@@ -4767,6 +5202,7 @@ export type Database = {
         | "VIEW_ADMIN_PANEL"
         | "ACCESS_PREMIUM_FEATURES"
       competitor_rating: "superior" | "equal" | "inferior"
+      content_node_type: "page" | "section" | "component" | "text" | "media"
       content_type: "page" | "section" | "component"
       feedback_priority: "low" | "medium" | "high" | "urgent"
       feedback_status: "open" | "in_progress" | "resolved" | "closed"
@@ -4929,6 +5365,7 @@ export const Constants = {
         "ACCESS_PREMIUM_FEATURES",
       ],
       competitor_rating: ["superior", "equal", "inferior"],
+      content_node_type: ["page", "section", "component", "text", "media"],
       content_type: ["page", "section", "component"],
       feedback_priority: ["low", "medium", "high", "urgent"],
       feedback_status: ["open", "in_progress", "resolved", "closed"],
