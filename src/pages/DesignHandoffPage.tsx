@@ -13,6 +13,10 @@ import { APIModelingSystem } from '@/components/api-integration/APIModelingSyste
 import { AccessibilityImplementation } from '@/components/accessibility/AccessibilityImplementation';
 import { PerformanceBudgetManager } from '@/components/performance/PerformanceBudgetManager';
 import { RiskAssessmentManager } from '@/components/risk/RiskAssessmentManager';
+import { DesignSystemSync } from '@/components/design-handoff/DesignSystemSync';
+import { DesignTokenManager } from '@/components/design-handoff/DesignTokenManager';
+import { AssetManager } from '@/components/design-handoff/AssetManager';
+import { DataSourceConnector } from '@/components/design-handoff/DataSourceConnector';
 
 const DesignHandoffPage = () => {
   const { wireframeId } = useParams();
@@ -28,7 +32,7 @@ const DesignHandoffPage = () => {
         <h1 className="text-3xl font-bold mb-8">Design Handoff</h1>
         
         <Tabs defaultValue="specifications">
-          <TabsList className="grid w-full grid-cols-10 mb-8">
+          <TabsList className="grid w-full grid-cols-14 mb-8">
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
             <TabsTrigger value="code">Code Generation</TabsTrigger>
             <TabsTrigger value="documentation">Documentation</TabsTrigger>
@@ -39,6 +43,10 @@ const DesignHandoffPage = () => {
             <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
             <TabsTrigger value="risks">Risks</TabsTrigger>
+            <TabsTrigger value="design-system">Design System</TabsTrigger>
+            <TabsTrigger value="design-tokens">Design Tokens</TabsTrigger>
+            <TabsTrigger value="assets">Assets</TabsTrigger>
+            <TabsTrigger value="data-sources">Data Sources</TabsTrigger>
           </TabsList>
           
           <TabsContent value="specifications">
@@ -100,6 +108,22 @@ const DesignHandoffPage = () => {
           
           <TabsContent value="risks">
             <RiskAssessmentManager wireframeId={wireframeId} />
+          </TabsContent>
+
+          <TabsContent value="design-system">
+            <DesignSystemSync wireframeId={wireframeId} />
+          </TabsContent>
+
+          <TabsContent value="design-tokens">
+            <DesignTokenManager wireframeId={wireframeId} />
+          </TabsContent>
+
+          <TabsContent value="assets">
+            <AssetManager wireframeId={wireframeId} />
+          </TabsContent>
+
+          <TabsContent value="data-sources">
+            <DataSourceConnector wireframeId={wireframeId} />
           </TabsContent>
         </Tabs>
       </div>

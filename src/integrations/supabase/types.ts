@@ -1728,6 +1728,124 @@ export type Database = {
           },
         ]
       }
+      data_source_mappings: {
+        Row: {
+          created_at: string | null
+          data_source_id: string | null
+          element_id: string
+          field_mappings: Json
+          id: string
+          is_active: boolean | null
+          transformation_rules: Json | null
+          updated_at: string | null
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_source_id?: string | null
+          element_id: string
+          field_mappings: Json
+          id?: string
+          is_active?: boolean | null
+          transformation_rules?: Json | null
+          updated_at?: string | null
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_source_id?: string | null
+          element_id?: string
+          field_mappings?: Json
+          id?: string
+          is_active?: boolean | null
+          transformation_rules?: Json | null
+          updated_at?: string | null
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_source_mappings_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_source_states: {
+        Row: {
+          created_at: string | null
+          data_source_id: string | null
+          id: string
+          is_default: boolean | null
+          state_data: Json
+          state_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_source_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          state_data: Json
+          state_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_source_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          state_data?: Json
+          state_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_source_states_data_source_id_fkey"
+            columns: ["data_source_id"]
+            isOneToOne: false
+            referencedRelation: "data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_sources: {
+        Row: {
+          connection_details: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          project_id: string
+          schema_definition: Json | null
+          source_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          connection_details: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          project_id: string
+          schema_definition?: Json | null
+          source_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          connection_details?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          project_id?: string
+          schema_definition?: Json | null
+          source_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       design_analytics: {
         Row: {
           average_rank: number
@@ -1755,6 +1873,130 @@ export type Database = {
           selection_count?: number
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      design_asset_usage: {
+        Row: {
+          asset_id: string | null
+          created_at: string | null
+          element_id: string | null
+          id: string
+          usage_context: string | null
+          wireframe_id: string | null
+        }
+        Insert: {
+          asset_id?: string | null
+          created_at?: string | null
+          element_id?: string | null
+          id?: string
+          usage_context?: string | null
+          wireframe_id?: string | null
+        }
+        Update: {
+          asset_id?: string | null
+          created_at?: string | null
+          element_id?: string | null
+          id?: string
+          usage_context?: string | null
+          wireframe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_asset_usage_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "design_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_asset_versions: {
+        Row: {
+          asset_id: string | null
+          change_notes: string | null
+          created_at: string | null
+          created_by: string | null
+          file_path: string
+          file_size: number
+          id: string
+          version: string
+        }
+        Insert: {
+          asset_id?: string | null
+          change_notes?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_path: string
+          file_size: number
+          id?: string
+          version: string
+        }
+        Update: {
+          asset_id?: string | null
+          change_notes?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_path?: string
+          file_size?: number
+          id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_asset_versions_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "design_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_assets: {
+        Row: {
+          asset_type: string
+          created_at: string | null
+          dimensions: Json | null
+          file_path: string
+          file_size: number
+          format: string
+          id: string
+          metadata: Json | null
+          name: string
+          project_id: string
+          tags: string[] | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string | null
+          dimensions?: Json | null
+          file_path: string
+          file_size: number
+          format: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          project_id: string
+          tags?: string[] | null
+          updated_at?: string | null
+          version?: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string | null
+          dimensions?: Json | null
+          file_path?: string
+          file_size?: number
+          format?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          project_id?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          version?: string
         }
         Relationships: []
       }
@@ -2009,6 +2251,45 @@ export type Database = {
         }
         Relationships: []
       }
+      design_system_components: {
+        Row: {
+          component_type: string
+          created_at: string | null
+          design_tokens: Json | null
+          id: string
+          name: string
+          project_id: string
+          properties: Json | null
+          thumbnail_url: string | null
+          updated_at: string | null
+          version: string
+        }
+        Insert: {
+          component_type: string
+          created_at?: string | null
+          design_tokens?: Json | null
+          id?: string
+          name: string
+          project_id: string
+          properties?: Json | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          version?: string
+        }
+        Update: {
+          component_type?: string
+          created_at?: string | null
+          design_tokens?: Json | null
+          id?: string
+          name?: string
+          project_id?: string
+          properties?: Json | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       design_system_guidelines: {
         Row: {
           component_types: string[]
@@ -2039,6 +2320,78 @@ export type Database = {
           priority?: number | null
           recommendation?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      design_system_sync_logs: {
+        Row: {
+          changes: Json | null
+          completed_at: string | null
+          conflicts: Json | null
+          created_at: string | null
+          id: string
+          project_id: string
+          resolved_conflicts: Json | null
+          status: string
+          sync_direction: string
+          wireframe_id: string | null
+        }
+        Insert: {
+          changes?: Json | null
+          completed_at?: string | null
+          conflicts?: Json | null
+          created_at?: string | null
+          id?: string
+          project_id: string
+          resolved_conflicts?: Json | null
+          status: string
+          sync_direction: string
+          wireframe_id?: string | null
+        }
+        Update: {
+          changes?: Json | null
+          completed_at?: string | null
+          conflicts?: Json | null
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          resolved_conflicts?: Json | null
+          status?: string
+          sync_direction?: string
+          wireframe_id?: string | null
+        }
+        Relationships: []
+      }
+      design_system_versions: {
+        Row: {
+          change_description: string | null
+          components_snapshot: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          project_id: string
+          tokens_snapshot: Json | null
+          version_number: string
+        }
+        Insert: {
+          change_description?: string | null
+          components_snapshot?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          project_id: string
+          tokens_snapshot?: Json | null
+          version_number: string
+        }
+        Update: {
+          change_description?: string | null
+          components_snapshot?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          project_id?: string
+          tokens_snapshot?: Json | null
+          version_number?: string
         }
         Relationships: []
       }
