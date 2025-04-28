@@ -10,6 +10,8 @@ import { InteractiveSpecViewer } from '@/components/design-handoff/InteractiveSp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APIModelingSystem } from '@/components/api-integration/APIModelingSystem';
 import { AccessibilityImplementation } from '@/components/accessibility/AccessibilityImplementation';
+import { PerformanceBudgetManager } from '@/components/design-handoff/PerformanceBudgetManager';
+import { RiskAssessmentManager } from '@/components/design-handoff/RiskAssessmentManager';
 
 const DesignHandoffPage = () => {
   const { wireframeId } = useParams();
@@ -25,7 +27,7 @@ const DesignHandoffPage = () => {
         <h1 className="text-3xl font-bold mb-8">Design Handoff</h1>
         
         <Tabs defaultValue="specifications">
-          <TabsList className="grid w-full grid-cols-8 mb-8">
+          <TabsList className="grid w-full grid-cols-10 mb-8">
             <TabsTrigger value="specifications">Specifications</TabsTrigger>
             <TabsTrigger value="code">Code Generation</TabsTrigger>
             <TabsTrigger value="documentation">Documentation</TabsTrigger>
@@ -34,6 +36,8 @@ const DesignHandoffPage = () => {
             <TabsTrigger value="interactive-specs">Interactive Specs</TabsTrigger>
             <TabsTrigger value="api-modeling">API Modeling</TabsTrigger>
             <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="risks">Risks</TabsTrigger>
           </TabsList>
           
           <TabsContent value="specifications">
@@ -87,6 +91,14 @@ const DesignHandoffPage = () => {
               wireframeId={wireframeId}
               elementId={selectedSpecificationId}
             />
+          </TabsContent>
+          
+          <TabsContent value="performance">
+            <PerformanceBudgetManager wireframeId={wireframeId} />
+          </TabsContent>
+          
+          <TabsContent value="risks">
+            <RiskAssessmentManager wireframeId={wireframeId} />
           </TabsContent>
         </Tabs>
       </div>
