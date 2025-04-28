@@ -6,6 +6,7 @@ import ComponentVariantLogicDemo from './pages/ComponentVariantLogicDemo';
 import CollaborationDemo from './pages/CollaborationDemo';
 import CollaborativeDocumentPage from './pages/CollaborativeDocumentPage';
 import AdvancedDesignSystemPage from './pages/AdvancedDesignSystemPage';
+import Home from './pages/Home';
 import { AppProviders } from './providers/AppProviders';
 
 function App() {
@@ -19,7 +20,8 @@ function App() {
           <Route path="/collaboration" element={<CollaborationDemo />} />
           <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
           <Route path="/advanced-design-system" element={<AdvancedDesignSystemPage />} />
-          <Route path="/" element={<ComponentVariantLogicDemo />} />
+          {/* Set Home component as the default landing page */}
+          <Route path="/" element={<Home />} />
         </Routes>
       </Router>
     </AppProviders>
