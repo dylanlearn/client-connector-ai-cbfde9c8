@@ -1,12 +1,14 @@
 
 import React from 'react';
-import ReactFlow, { 
+import {
+  ReactFlow,
   Node, 
   Edge,
   Background, 
   Controls,
   MiniMap
 } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { useUserJourney } from '@/hooks/use-user-journey';
 
 interface UserJourneyFlowProps {
