@@ -1,5 +1,4 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import WireframeEditorDemo from './pages/WireframeEditorDemo';
 import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
 import ComponentVariantLogicDemo from './pages/ComponentVariantLogicDemo';
@@ -9,11 +8,12 @@ import AdvancedDesignSystemPage from './pages/AdvancedDesignSystemPage';
 import Home from './pages/Home';
 import { AppProviders } from './providers/AppProviders';
 import DesignHandoffPage from './pages/DesignHandoffPage';
+import DesignAutomationPage from "./pages/DesignAutomationPage";
 
 function App() {
   return (
     <AppProviders>
-      <Router>
+      <BrowserRouter>
         <Routes>
           <Route path="/wireframe-demo" element={<WireframeEditorDemo />} />
           <Route path="/project/:projectId/wireframe" element={<AdvancedWireframeGeneratorPage />} />
@@ -22,9 +22,11 @@ function App() {
           <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
           <Route path="/advanced-design-system" element={<AdvancedDesignSystemPage />} />
           <Route path="/wireframe/:wireframeId/handoff" element={<DesignHandoffPage />} />
+          <Route path="/design-automation/:projectId" element={<DesignAutomationPage />} />
+          <Route path="/design-automation/:projectId/:wireframeId" element={<DesignAutomationPage />} />
           <Route path="/" element={<Home />} />
         </Routes>
-      </Router>
+      </BrowserRouter>
     </AppProviders>
   );
 }

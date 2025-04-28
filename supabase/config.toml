@@ -69,49 +69,24 @@ double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
 enable_confirmations = false
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
-
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 
-# Use pre-defined map of phone number to OTP for testing.
-[auth.sms.test_otp]
-# 4152127777 = "123456"
-
-# Configure one of the supported SMS providers: twilio, messagebird, textlocal, vonage.
-[auth.sms.twilio]
+[analytics]
 enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
-
-# Configure what happens after a user is authenticated.
-[auth.hooks]
-# Overrides the default auth redirect.
-# Same as setting auth.auth_redirect_url config in the API.
-# For more information, please refer to https://supabase.com/docs/reference/tools/config#auth
-post_confirm_redirect_url = "http://localhost:3000"
+port = 54330
+vector_port = 54331
 
 [functions]
 # Port to use for Functions server.
 port = 54328
 
-# Configure a function for validation.
-[functions.validate-wireframe]
+[functions.sync-design-system]
 verify_jwt = true
 
 [observability]
 # Port to use for OpenTelemetry collector.
 otel_collector_port = 54329
-
-[analytics]
-enabled = false
-port = 54330
-vector_port = 54331

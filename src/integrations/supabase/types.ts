@@ -2000,6 +2000,42 @@ export type Database = {
         }
         Relationships: []
       }
+      design_change_hooks: {
+        Row: {
+          created_at: string
+          event_types: string[]
+          hook_type: string
+          id: string
+          is_active: boolean
+          project_id: string
+          secret_token: string | null
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          event_types: string[]
+          hook_type: string
+          id?: string
+          is_active?: boolean
+          project_id: string
+          secret_token?: string | null
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          event_types?: string[]
+          hook_type?: string
+          id?: string
+          is_active?: boolean
+          project_id?: string
+          secret_token?: string | null
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       design_decisions: {
         Row: {
           created_at: string
@@ -2044,6 +2080,47 @@ export type Database = {
           wireframe_id?: string
         }
         Relationships: []
+      }
+      design_deployments: {
+        Row: {
+          deployed_at: string
+          deployed_by: string | null
+          deployment_logs: string | null
+          deployment_url: string | null
+          design_version_id: string
+          environment: string
+          id: string
+          status: string
+        }
+        Insert: {
+          deployed_at?: string
+          deployed_by?: string | null
+          deployment_logs?: string | null
+          deployment_url?: string | null
+          design_version_id: string
+          environment: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          deployed_at?: string
+          deployed_by?: string | null
+          deployment_logs?: string | null
+          deployment_url?: string | null
+          design_version_id?: string
+          environment?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_deployments_design_version_id_fkey"
+            columns: ["design_version_id"]
+            isOneToOne: false
+            referencedRelation: "design_version_control"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       design_feedback: {
         Row: {
@@ -2428,6 +2505,84 @@ export type Database = {
         }
         Relationships: []
       }
+      design_version_control: {
+        Row: {
+          commit_hash: string | null
+          commit_message: string | null
+          created_at: string
+          created_by: string | null
+          design_id: string
+          id: string
+          pull_request_url: string | null
+          repository_url: string | null
+          status: string
+          version_number: string
+        }
+        Insert: {
+          commit_hash?: string | null
+          commit_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          design_id: string
+          id?: string
+          pull_request_url?: string | null
+          repository_url?: string | null
+          status?: string
+          version_number: string
+        }
+        Update: {
+          commit_hash?: string | null
+          commit_message?: string | null
+          created_at?: string
+          created_by?: string | null
+          design_id?: string
+          id?: string
+          pull_request_url?: string | null
+          repository_url?: string | null
+          status?: string
+          version_number?: string
+        }
+        Relationships: []
+      }
+      design_workflow_tasks: {
+        Row: {
+          artifact_type: string
+          assigned_to: string | null
+          created_at: string
+          design_artifact_id: string
+          id: string
+          priority: string
+          task_description: string | null
+          task_status: string
+          task_title: string
+          updated_at: string
+        }
+        Insert: {
+          artifact_type: string
+          assigned_to?: string | null
+          created_at?: string
+          design_artifact_id: string
+          id?: string
+          priority?: string
+          task_description?: string | null
+          task_status?: string
+          task_title: string
+          updated_at?: string
+        }
+        Update: {
+          artifact_type?: string
+          assigned_to?: string | null
+          created_at?: string
+          design_artifact_id?: string
+          id?: string
+          priority?: string
+          task_description?: string | null
+          task_status?: string
+          task_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       device_contexts: {
         Row: {
           capabilities: Json | null
@@ -2630,6 +2785,139 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      external_service_connections: {
+        Row: {
+          auth_config: Json
+          connection_config: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          project_id: string
+          service_name: string
+          service_type: string
+          sync_frequency: string | null
+          updated_at: string
+        }
+        Insert: {
+          auth_config: Json
+          connection_config: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          project_id: string
+          service_name: string
+          service_type: string
+          sync_frequency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auth_config?: Json
+          connection_config?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          project_id?: string
+          service_name?: string
+          service_type?: string
+          sync_frequency?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      external_service_mappings: {
+        Row: {
+          connection_id: string
+          created_at: string
+          id: string
+          is_required: boolean
+          source_field: string
+          target_field: string
+          transformation_rule: string | null
+          updated_at: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          source_field: string
+          target_field: string
+          transformation_rule?: string | null
+          updated_at?: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          source_field?: string
+          target_field?: string
+          transformation_rule?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_service_mappings_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "external_service_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_service_sync_logs: {
+        Row: {
+          connection_id: string
+          error_details: Json | null
+          id: string
+          records_failed: number | null
+          records_processed: number | null
+          records_succeeded: number | null
+          status: string
+          sync_completed_at: string | null
+          sync_direction: string
+          sync_started_at: string
+        }
+        Insert: {
+          connection_id: string
+          error_details?: Json | null
+          id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_succeeded?: number | null
+          status?: string
+          sync_completed_at?: string | null
+          sync_direction: string
+          sync_started_at?: string
+        }
+        Update: {
+          connection_id?: string
+          error_details?: Json | null
+          id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          records_succeeded?: number | null
+          status?: string
+          sync_completed_at?: string | null
+          sync_direction?: string
+          sync_started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_service_sync_logs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "external_service_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feedback_analysis: {
         Row: {
@@ -3323,6 +3611,77 @@ export type Database = {
           name?: Database["public"]["Enums"]["auth_permission"]
         }
         Relationships: []
+      }
+      platform_configurations: {
+        Row: {
+          configuration_schema: Json
+          created_at: string
+          default_settings: Json
+          id: string
+          is_active: boolean
+          platform_name: string
+          platform_type: string
+          updated_at: string
+        }
+        Insert: {
+          configuration_schema: Json
+          created_at?: string
+          default_settings: Json
+          id?: string
+          is_active?: boolean
+          platform_name: string
+          platform_type: string
+          updated_at?: string
+        }
+        Update: {
+          configuration_schema?: Json
+          created_at?: string
+          default_settings?: Json
+          id?: string
+          is_active?: boolean
+          platform_name?: string
+          platform_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_transformers: {
+        Row: {
+          component_type: string
+          created_at: string
+          id: string
+          platform_id: string
+          platform_specific_properties: Json | null
+          transformation_rules: Json
+          updated_at: string
+        }
+        Insert: {
+          component_type: string
+          created_at?: string
+          id?: string
+          platform_id: string
+          platform_specific_properties?: Json | null
+          transformation_rules: Json
+          updated_at?: string
+        }
+        Update: {
+          component_type?: string
+          created_at?: string
+          id?: string
+          platform_id?: string
+          platform_specific_properties?: Json | null
+          transformation_rules?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_transformers_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platform_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       presentation_feedback: {
         Row: {
@@ -5291,6 +5650,53 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_platform_outputs: {
+        Row: {
+          created_at: string
+          generated_by: string | null
+          id: string
+          output_data: Json | null
+          output_url: string | null
+          platform_id: string
+          status: string
+          updated_at: string
+          validation_result: Json | null
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_by?: string | null
+          id?: string
+          output_data?: Json | null
+          output_url?: string | null
+          platform_id: string
+          status?: string
+          updated_at?: string
+          validation_result?: Json | null
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_by?: string | null
+          id?: string
+          output_data?: Json | null
+          output_url?: string | null
+          platform_id?: string
+          status?: string
+          updated_at?: string
+          validation_result?: Json | null
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_platform_outputs_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platform_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wireframe_projects: {
         Row: {
           created_at: string
@@ -5801,6 +6207,10 @@ export type Database = {
         }
         Returns: string
       }
+      generate_platform_output: {
+        Args: { p_wireframe_id: string; p_platform_id: string }
+        Returns: Json
+      }
       generate_technical_documentation: {
         Args: {
           p_wireframe_id: string
@@ -6218,6 +6628,10 @@ export type Database = {
           p_generation_params: Json
         }
         Returns: undefined
+      }
+      sync_external_service: {
+        Args: { p_connection_id: string }
+        Returns: Json
       }
       track_interaction: {
         Args: {
