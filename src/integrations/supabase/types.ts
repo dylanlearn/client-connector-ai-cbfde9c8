@@ -1020,6 +1020,83 @@ export type Database = {
           },
         ]
       }
+      content_strategy: {
+        Row: {
+          content_type: string
+          created_at: string
+          creator_id: string
+          description: string | null
+          guidelines: string | null
+          id: string
+          metadata: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          guidelines?: string | null
+          id?: string
+          metadata?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          guidelines?: string | null
+          id?: string
+          metadata?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_wireframe_mappings: {
+        Row: {
+          content_id: string
+          created_at: string
+          element_id: string
+          id: string
+          notes: string | null
+          updated_at: string
+          validation_status: string | null
+          wireframe_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          element_id: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          validation_status?: string | null
+          wireframe_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          element_id?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          validation_status?: string | null
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_wireframe_mappings_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategy"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_analytics: {
         Row: {
           average_rank: number
@@ -1683,6 +1760,56 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_steps: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          journey_id: string
+          screen_id: string | null
+          step_order: number
+          title: string
+          transition_metadata: Json | null
+          transition_type: string | null
+          updated_at: string
+          wireframe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          journey_id: string
+          screen_id?: string | null
+          step_order: number
+          title: string
+          transition_metadata?: Json | null
+          transition_type?: string | null
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          journey_id?: string
+          screen_id?: string | null
+          step_order?: number
+          title?: string
+          transition_metadata?: Json | null
+          transition_type?: string | null
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_steps_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "user_journeys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       material_presets: {
         Row: {
           created_at: string | null
@@ -1854,6 +1981,136 @@ export type Database = {
           description?: string | null
           id?: string
           name?: Database["public"]["Enums"]["auth_permission"]
+        }
+        Relationships: []
+      }
+      presentation_feedback: {
+        Row: {
+          content: string | null
+          created_at: string
+          element_id: string | null
+          feedback_type: string | null
+          id: string
+          metadata: Json | null
+          session_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          element_id?: string | null
+          feedback_type?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          element_id?: string | null
+          feedback_type?: string | null
+          id?: string
+          metadata?: Json | null
+          session_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentation_participants: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          joined_at: string | null
+          last_active_at: string | null
+          name: string | null
+          role: string | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          joined_at?: string | null
+          last_active_at?: string | null
+          name?: string | null
+          role?: string | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          joined_at?: string | null
+          last_active_at?: string | null
+          name?: string | null
+          role?: string | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentation_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          presenter_id: string
+          scheduled_at: string | null
+          settings: Json | null
+          started_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          wireframe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          presenter_id: string
+          scheduled_at?: string | null
+          settings?: Json | null
+          started_at?: string | null
+          status: string
+          title: string
+          updated_at?: string
+          wireframe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          presenter_id?: string
+          scheduled_at?: string | null
+          settings?: Json | null
+          started_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          wireframe_id?: string | null
         }
         Relationships: []
       }
@@ -2082,6 +2339,47 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      research_wireframe_connections: {
+        Row: {
+          connection_type: string
+          created_at: string
+          element_id: string | null
+          id: string
+          notes: string | null
+          research_id: string
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          connection_type: string
+          created_at?: string
+          element_id?: string | null
+          id?: string
+          notes?: string | null
+          research_id: string
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          connection_type?: string
+          created_at?: string
+          element_id?: string | null
+          id?: string
+          notes?: string | null
+          research_id?: string
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_wireframe_connections_research_id_fkey"
+            columns: ["research_id"]
+            isOneToOne: false
+            referencedRelation: "user_research"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       responsive_configurations: {
         Row: {
@@ -2345,6 +2643,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_journeys: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          status: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_memories: {
         Row: {
           category: string
@@ -2409,6 +2737,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_research: {
+        Row: {
+          created_at: string
+          creator_id: string
+          data: Json
+          description: string | null
+          id: string
+          research_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          data: Json
+          description?: string | null
+          id?: string
+          research_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          data?: Json
+          description?: string | null
+          id?: string
+          research_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_view_preferences: {
         Row: {
