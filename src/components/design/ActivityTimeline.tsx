@@ -51,6 +51,6 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ wireframeId }) => {
       </CardContent>
     </Card>
   );
-}
+};
 
 export default ActivityTimeline;

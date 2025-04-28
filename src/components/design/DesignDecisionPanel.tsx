@@ -74,6 +74,6 @@ const DesignDecisionPanel: React.FC<DesignDecisionPanelProps> = ({ wireframeId }
       />
     </Card>
   );
-}
+};
 
 export default DesignDecisionPanel;
