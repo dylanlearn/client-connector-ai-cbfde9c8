@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -10,8 +11,8 @@ import { InteractiveSpecViewer } from '@/components/design-handoff/InteractiveSp
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APIModelingSystem } from '@/components/api-integration/APIModelingSystem';
 import { AccessibilityImplementation } from '@/components/accessibility/AccessibilityImplementation';
-import { PerformanceBudgetManager } from '@/components/design-handoff/PerformanceBudgetManager';
-import { RiskAssessmentManager } from '@/components/design-handoff/RiskAssessmentManager';
+import { PerformanceBudgetManager } from '@/components/performance/PerformanceBudgetManager';
+import { RiskAssessmentManager } from '@/components/risk/RiskAssessmentManager';
 
 const DesignHandoffPage = () => {
   const { wireframeId } = useParams();
