@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import {
   CompliancePolicy,
@@ -93,6 +92,27 @@ export class ComplianceService {
       return data as ComplianceStatus;
     } catch (err) {
       console.error("Error fetching compliance status:", err);
+      return null;
+    }
+  }
+  
+  /**
+   * Update a compliance policy
+   */
+  static async updatePolicy(id: string, updates: Partial<CompliancePolicy>): Promise<CompliancePolicy | null> {
+    try {
+      const { data, error } = await supabase
+        .from('compliance_policies')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as CompliancePolicy;
+    } catch (err) {
+      console.error("Error updating compliance policy:", err);
+      toast.error("Failed to update compliance policy");
       return null;
     }
   }

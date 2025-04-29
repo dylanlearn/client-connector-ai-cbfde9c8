@@ -1,18 +1,22 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { 
+  BarChart, LineChart, PieChart, 
+  BarChart3, ArrowUpRight, Users, Clock, 
+  Database, Calendar, ChevronsUpDown 
+} from "lucide-react";
+import { AnalyticsStat } from "./AnalyticsStat";
+import { AnalyticsChart } from "./AnalyticsChart";
+import { ResourceUtilizationChart } from "./ResourceUtilizationChart";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { Dataset, MetricsSummary, ProductivityMetric, ResourceUtilization } from "@/types/analytics";
 import { format } from 'date-fns';
-import { CalendarIcon, CaretSortIcon, User2Icon } from 'lucide-react';
-import { AnalyticsChart } from "@/components/analytics/AnalyticsChart";
-import { AnalyticsStat } from "@/components/analytics/AnalyticsStat";
-import { useAnalyticsAPI } from "@/hooks/analytics/use-analytics-api";
-import { ResourceUtilizationChart } from "@/components/analytics/ResourceUtilizationChart";
 
 const sampleTeamData = [
   { name: 'Design', value: 30, color: '#ee682b' },
@@ -48,14 +52,15 @@ const sampleFinancialData = {
   customerAcquisitionCost: 150,
 };
 
-export function EnterpriseAnalyticsDashboard() {
+export const EnterpriseAnalyticsDashboard = () => {
   const [timePeriod, setTimePeriod] = useState('last_30_days');
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date; }>({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date(),
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    to: new Date()
   });
   const [isCustomDateRange, setIsCustomDateRange] = useState(false);
+  const [selectedWorkspace, setSelectedWorkspace] = useState('all');
   const { isLoading, fetchAnalytics } = useAnalyticsAPI();
   const [dashboardData, setDashboardData] = useState<any>(null);
 
@@ -105,45 +110,44 @@ export function EnterpriseAnalyticsDashboard() {
   const resourceColors = ['#ee682b', '#8439e9', '#6142e7', '#af5cf7'];
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Executive Dashboard</CardTitle>
-          <CardDescription>
-            Comprehensive overview of key performance indicators across the organization.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <AnalyticsStat
-            title="Total Revenue"
-            value={`$${sampleFinancialData.revenue.toLocaleString()}`}
-            change={15}
-            trend="up"
-            icon={<CaretSortIcon />}
+    <div className="container py-8">
+      {/* Dashboard header with filters */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Enterprise Analytics</h1>
+          <p className="text-muted-foreground">
+            Metrics and insights across your organization
+          </p>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <DateRangePicker 
+            initialDateFrom={dateRange.from}
+            initialDateTo={dateRange.to}
+            onUpdate={(range) => {
+              if (range.from && range.to) {
+                setDateRange({ from: range.from, to: range.to });
+              }
+            }}
           />
-          <AnalyticsStat
-            title="Customer Satisfaction"
-            value={samplePerformanceData.customerSatisfaction.toFixed(1)}
-            change={5}
-            trend="up"
-            icon={<User2Icon />}
-          />
-          <AnalyticsStat
-            title="Active Users"
-            value={sampleEngagementData.activeUsers.toLocaleString()}
-            change={8}
-            trend="up"
-            icon={<User2Icon />}
-          />
-          <AnalyticsStat
-            title="Profit Margin"
-            value={`${(sampleFinancialData.profitMargin * 100).toFixed(0)}%`}
-            change={3}
-            trend="up"
-            icon={<CaretSortIcon />}
-          />
-        </CardContent>
-      </Card>
+          
+          <div className="flex items-center">
+            <Select value={selectedWorkspace} onValueChange={setSelectedWorkspace}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select workspace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Workspaces</SelectItem>
+                <SelectItem value="workspace-1">Main Workspace</SelectItem>
+                <SelectItem value="workspace-2">Design Team</SelectItem>
+                <SelectItem value="workspace-3">Development</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" className="ml-2" size="icon">
+              <ChevronsUpDown className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Team Performance</h2>
@@ -328,4 +332,6 @@ export function EnterpriseAnalyticsDashboard() {
       </div>
     </div>
   );
-}
+};
+
+export default EnterpriseAnalyticsDashboard;
