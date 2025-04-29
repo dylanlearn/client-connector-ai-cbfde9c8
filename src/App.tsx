@@ -1,3 +1,4 @@
+
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import WireframeEditorDemo from './pages/WireframeEditorDemo';
 import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
@@ -10,6 +11,7 @@ import { AppProviders } from './providers/AppProviders';
 import DesignHandoffPage from './pages/DesignHandoffPage';
 import DesignAutomationPage from "./pages/DesignAutomationPage";
 import QualityDashboard from './pages/QualityDashboard';
+import WireframeTestingPage from './pages/WireframeTestingPage';
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
           <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
           <Route path="/advanced-design-system" element={<AdvancedDesignSystemPage />} />
           <Route path="/wireframe/:wireframeId/handoff" element={<DesignHandoffPage />} />
+          <Route path="/wireframe/:wireframeId/testing" element={<WireframeTestingPage />} />
           <Route path="/design-automation/:projectId" element={<DesignAutomationPage />} />
           <Route path="/design-automation/:projectId/:wireframeId" element={<DesignAutomationPage />} />
           <Route path="/quality-dashboard" element={<QualityDashboard />} />
