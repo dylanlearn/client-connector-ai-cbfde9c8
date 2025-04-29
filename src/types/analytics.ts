@@ -1,80 +1,64 @@
 
-/**
- * Analytics types for centralized usage across the application
- */
-
-export interface AnalyticsData {
+export interface AnalyticsDashboard {
   id: string;
-  user_id: string;
-  category: string;
-  value: number;
-  timestamp: string;
-  metadata?: Record<string, any>;
+  workspace_id: string;
+  name: string;
+  description?: string;
+  layout: any[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  is_default: boolean;
+  is_template: boolean;
 }
 
-export interface AnalyticsSummary {
-  totalInteractions: number;
-  averageEngagement: number;
-  topCategories: string[];
-  recentActivity: AnalyticsData[];
-}
-
-export interface AnalyticsFilter {
-  startDate?: Date;
-  endDate?: Date;
-  category?: string;
-  userId?: string;
-  limit?: number;
-}
-
-export interface InteractionEvent {
+export interface AnalyticsWidget {
   id: string;
-  user_id: string;
-  event_type: InteractionEventType;
-  page_url: string;
-  element_selector: string;
-  x_position: number;
-  y_position: number;
-  timestamp: string;
-  session_id: string;
-  metadata?: Record<string, any>;
-  device_type?: string;
-  viewport_width?: number;
-  viewport_height?: number;
-  scroll_depth?: number;
-}
-
-export type InteractionEventType = 'click' | 'hover' | 'scroll' | 'view' | 'movement';
-
-// Add missing types that are being imported in other files
-export interface HeatmapDataPoint {
-  x: number;
-  y: number;
-  value: number;
-  element?: string;
-  timestamp?: string;
-}
-
-export interface UserPreference {
-  id: string;
-  user_id: string;
-  design_option_id: string;
+  dashboard_id: string;
+  widget_type: string;
   title: string;
-  category: string;
-  rank?: number;
+  configuration: Record<string, any>;
+  position_data: {
+    x: number;
+    y: number;
+    z?: number;
+  };
+  size_data: {
+    width: number;
+    height: number;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductivityMetric {
+  id: string;
+  user_id?: string;
+  team_id?: string;
+  project_id?: string;
+  metric_type: string;
+  metric_value: number;
+  time_period: string;
+  recorded_at: string;
   notes?: string;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface DesignAnalytics {
+export interface ResourceUtilization {
   id: string;
-  design_option_id: string;
-  title: string;
-  category: string;
-  selection_count: number;
-  average_rank: number;
-  view_count: number;
-  created_at: string;
-  updated_at: string;
+  resource_type: string;
+  resource_id: string;
+  utilization_percentage: number;
+  recorded_at: string;
+  project_id?: string;
+  team_id?: string;
+  workspace_id: string;
+  details?: Record<string, any>;
+}
+
+export interface MetricsSummary {
+  total: number;
+  average: number;
+  change: number;
+  trend: 'up' | 'down' | 'stable';
+  period: string;
 }
