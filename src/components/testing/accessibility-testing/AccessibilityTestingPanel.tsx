@@ -1,196 +1,225 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { AlertMessage } from '@/components/ui/alert-message';
 import { AccessibilityTestingService, AccessibilityTestRun } from '@/services/testing/AccessibilityTestingService';
-import { toast } from 'sonner';
 import AccessibilityIssuesList from './AccessibilityIssuesList';
+import { toast } from 'sonner';
+import { Progress } from '@/components/ui/progress';
 
 interface AccessibilityTestingPanelProps {
   wireframeId: string;
 }
 
 const AccessibilityTestingPanel: React.FC<AccessibilityTestingPanelProps> = ({ wireframeId }) => {
-  const [testRuns, setTestRuns] = useState<AccessibilityTestRun[]>([]);
-  const [selectedRun, setSelectedRun] = useState<string | null>(null);
-  const [wcagLevel, setWcagLevel] = useState<string>('AA');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-
+  const [testRuns, setTestRuns] = useState<AccessibilityTestRun[]>([]);
+  const [activeTestRun, setActiveTestRun] = useState<AccessibilityTestRun | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('run');
+  const [wcagLevel, setWcagLevel] = useState<string>('AA');
+  
+  // Fetch past test runs
   useEffect(() => {
-    const loadData = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
         const runs = await AccessibilityTestingService.getTestRuns(wireframeId);
         setTestRuns(runs);
-        if (runs.length > 0) {
-          setSelectedRun(runs[0].id || null);
-        }
       } catch (error) {
         console.error('Error loading accessibility test runs:', error);
+        toast.error('Failed to load accessibility test data');
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadData();
+    
+    fetchData();
   }, [wireframeId]);
-
+  
   const handleRunTest = async () => {
-    setIsRunning(true);
+    setIsLoading(true);
     try {
-      const result = await AccessibilityTestingService.runAccessibilityTest(wireframeId, wcagLevel);
-      toast.success('Accessibility test completed');
-
-      // Refresh test runs
-      const runs = await AccessibilityTestingService.getTestRuns(wireframeId);
-      setTestRuns(runs);
-      setSelectedRun(result.id || null);
+      const newRun = await AccessibilityTestingService.runAccessibilityTest(wireframeId, wcagLevel);
+      
+      // Add the new run to the list and set it as active
+      setTestRuns(prev => [newRun, ...prev]);
+      setActiveTestRun(newRun);
+      setActiveTab('results');
+      
+      toast.success('Accessibility test completed successfully');
     } catch (error) {
       console.error('Error running accessibility test:', error);
       toast.error('Failed to run accessibility test');
     } finally {
-      setIsRunning(false);
+      setIsLoading(false);
     }
   };
-
-  const getScoreColor = (score: number) => {
+  
+  const handleViewRun = (run: AccessibilityTestRun) => {
+    setActiveTestRun(run);
+    setActiveTab('results');
+  };
+  
+  const getScoreColor = (score?: number) => {
+    if (!score && score !== 0) return 'bg-gray-200';
     if (score >= 90) return 'bg-green-500';
     if (score >= 70) return 'bg-yellow-500';
     return 'bg-red-500';
   };
-
-  const selectedTestRun = testRuns.find(run => run.id === selectedRun);
-
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Accessibility Compliance Testing</span>
-          {selectedTestRun && selectedTestRun.overallScore !== undefined && (
-            <div className="text-2xl font-bold flex items-center gap-2">
-              <span>Score:</span>
-              <span className={`px-2 py-1 rounded ${
-                selectedTestRun.overallScore >= 90 ? 'bg-green-100 text-green-800' :
-                selectedTestRun.overallScore >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {selectedTestRun.overallScore}/100
-              </span>
-            </div>
-          )}
-        </CardTitle>
+    <Card className="border-none shadow-none">
+      <CardHeader className="px-0">
+        <CardTitle>Accessibility Compliance Testing</CardTitle>
         <CardDescription>
-          Test your wireframe for WCAG accessibility compliance
+          Test your wireframe for WCAG compliance, screen reader compatibility, and keyboard navigation.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">WCAG Compliance Level</label>
-              <Select
-                value={wcagLevel}
-                onValueChange={setWcagLevel}
-                disabled={isRunning}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select WCAG level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A">WCAG 2.1 Level A</SelectItem>
-                  <SelectItem value="AA">WCAG 2.1 Level AA (Recommended)</SelectItem>
-                  <SelectItem value="AAA">WCAG 2.1 Level AAA</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">&nbsp;</label>
-              <Button 
-                onClick={handleRunTest} 
-                disabled={isLoading || isRunning}
-              >
-                {isRunning ? 'Running Test...' : 'Run Accessibility Test'}
-              </Button>
-            </div>
-          </div>
-
-          {selectedTestRun && selectedTestRun.overallScore !== undefined && (
-            <div className="mt-6">
-              <div className="flex justify-between mb-2 text-sm">
-                <span>Accessibility Score</span>
-                <span>{selectedTestRun.overallScore}%</span>
+      <CardContent className="px-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="run">Run Test</TabsTrigger>
+            <TabsTrigger value="history">Test History</TabsTrigger>
+            <TabsTrigger value="results">Test Results</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="run">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium mb-2">WCAG Compliance Level</h3>
+                <Select 
+                  value={wcagLevel} 
+                  onValueChange={setWcagLevel}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select compliance level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">Level A (Minimum)</SelectItem>
+                    <SelectItem value="AA">Level AA (Standard)</SelectItem>
+                    <SelectItem value="AAA">Level AAA (Enhanced)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {wcagLevel === 'A' && 'Basic level of accessibility support addressing major barriers.'}
+                  {wcagLevel === 'AA' && 'Standard level required by most regulations and policies.'}
+                  {wcagLevel === 'AAA' && 'Highest level providing enhanced accessibility for all users.'}
+                </p>
               </div>
-              <Progress
-                value={selectedTestRun.overallScore}
-                className={getScoreColor(selectedTestRun.overallScore)}
-              />
               
-              <div className="mt-6">
-                <h3 className="text-lg font-medium mb-3">Issues Found</h3>
-                {selectedRun && <AccessibilityIssuesList testRunId={selectedRun} />}
+              <div className="pt-4">
+                <Button 
+                  onClick={handleRunTest}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Running Test...' : 'Run Accessibility Test'}
+                </Button>
               </div>
             </div>
-          )}
-
-          {testRuns.length > 0 && !selectedTestRun?.overallScore && (
-            <div className="border rounded-md overflow-hidden mt-6">
-              <table className="w-full">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">WCAG Level</th>
-                    <th className="p-2 text-left">Score</th>
-                    <th className="p-2 text-left">Status</th>
-                    <th className="p-2 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+          </TabsContent>
+          
+          <TabsContent value="history">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Previous Test Runs</h3>
+              {testRuns.length === 0 ? (
+                <p className="text-muted-foreground">No previous accessibility test runs found.</p>
+              ) : (
+                <div className="space-y-2">
                   {testRuns.map((run) => (
-                    <tr key={run.id} className="border-t">
-                      <td className="p-2">
-                        {new Date(run.started_at || '').toLocaleString()}
-                      </td>
-                      <td className="p-2">{run.wcagLevel}</td>
-                      <td className="p-2">{run.overallScore || 'N/A'}</td>
-                      <td className="p-2">
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          run.status === 'completed' 
-                            ? 'bg-green-100 text-green-800' 
-                            : run.status === 'failed'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
+                    <div 
+                      key={run.id} 
+                      className="p-4 border rounded-md hover:bg-accent cursor-pointer"
+                      onClick={() => handleViewRun(run)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">
+                            WCAG {run.wcagLevel} Test
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {run.startedAt && new Date(run.startedAt).toLocaleString()}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 flex justify-between items-center">
+                        <div className={`text-sm px-2 py-0.5 rounded-full ${
+                          run.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                          run.status === 'failed' ? 'bg-red-100 text-red-800' : 
+                          'bg-yellow-100 text-yellow-800'
                         }`}>
                           {run.status}
-                        </span>
-                      </td>
-                      <td className="p-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => setSelectedRun(run.id || null)}
-                        >
-                          View
-                        </Button>
-                      </td>
-                    </tr>
+                        </div>
+                        
+                        {typeof run.overallScore === 'number' && (
+                          <div className="text-sm">
+                            Score: {run.overallScore}/100
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="results">
+            {activeTestRun ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">
+                    WCAG {activeTestRun.wcagLevel} Compliance Test
+                  </h3>
+                  <div className="text-sm text-muted-foreground">
+                    {activeTestRun.startedAt && new Date(activeTestRun.startedAt).toLocaleString()}
+                  </div>
+                </div>
+                
+                {typeof activeTestRun.overallScore === 'number' && (
+                  <div className="mt-4">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Overall Score</span>
+                      <span className="text-sm font-medium">{activeTestRun.overallScore}/100</span>
+                    </div>
+                    <Progress 
+                      value={activeTestRun.overallScore} 
+                      max={100}
+                      className={getScoreColor(activeTestRun.overallScore)} 
+                    />
+                    
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {activeTestRun.overallScore >= 90 ? (
+                        'Excellent! Your wireframe meets most accessibility requirements.'
+                      ) : activeTestRun.overallScore >= 70 ? (
+                        'Good. Some accessibility improvements are recommended.'
+                      ) : (
+                        'Attention needed. Significant accessibility issues were found.'
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                <Separator className="my-4" />
+                
+                <h4 className="font-medium">Accessibility Issues</h4>
+                <AccessibilityIssuesList testRunId={activeTestRun.id} />
+              </div>
+            ) : (
+              <AlertMessage
+                type="info"
+                title="No test results selected"
+              >
+                Run a new accessibility test or select a previous test run to view results.
+              </AlertMessage>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="text-sm text-muted-foreground">
-          {testRuns.length} accessibility tests run for this wireframe
-        </div>
-        <Button variant="outline" size="sm" onClick={() => window.open('https://www.w3.org/WAI/standards-guidelines/wcag/', '_blank')}>
-          WCAG Guidelines
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

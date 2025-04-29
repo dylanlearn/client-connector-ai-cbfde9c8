@@ -1,309 +1,223 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface AccessibilityTestRun {
-  id?: string;
+  id: string;
   wireframeId: string;
   wcagLevel: string;
-  overallScore?: number;
   status: string;
-  resultsSummary?: any;
+  startedAt: string;
+  completedAt?: string;
+  overallScore?: number;
+  resultsSummary?: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+  };
 }
 
 export interface AccessibilityIssue {
-  id?: string;
+  id: string;
   testRunId: string;
   elementId?: string;
   elementSelector?: string;
   wcagCriterion?: string;
   issueType: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  severity: 'critical' | 'high' | 'medium' | 'low';
   description: string;
   impactDescription?: string;
   recommendation?: string;
-  status: 'passed' | 'failed' | 'warning' | 'not_applicable' | 'not_tested';
+  status: 'failed' | 'fixed' | 'ignored';
 }
 
-export interface AccessibilityGuideline {
-  componentType: string;
-  ariaAttributes?: any[];
-  keyboardInteractions?: any[];
-  screenReaderRequirements?: string[];
-  focusManagement?: string[];
-  wcagCriteria?: any[];
-}
-
-export const AccessibilityTestingService = {
-  // Test Runs
-  async createTestRun(testRun: AccessibilityTestRun): Promise<AccessibilityTestRun> {
-    const { data, error } = await supabase
-      .from('accessibility_test_runs')
-      .insert([{
-        wireframe_id: testRun.wireframeId,
-        wcag_level: testRun.wcagLevel,
-        status: testRun.status
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      toast.error(`Error creating accessibility test run: ${error.message}`);
-      throw error;
+export class AccessibilityTestingService {
+  static async getTestRuns(wireframeId: string): Promise<AccessibilityTestRun[]> {
+    try {
+      const { data, error } = await supabase
+        .from('accessibility_test_runs')
+        .select('*')
+        .eq('wireframe_id', wireframeId)
+        .order('started_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data.map((run: any) => ({
+        id: run.id,
+        wireframeId: run.wireframe_id,
+        wcagLevel: run.wcag_level,
+        status: run.status,
+        startedAt: run.started_at,
+        completedAt: run.completed_at,
+        overallScore: run.overall_score,
+        resultsSummary: run.results_summary
+      }));
+    } catch (error) {
+      console.error("Error fetching accessibility test runs:", error);
+      
+      // Return empty array if there's an error
+      return [];
     }
-
-    return {
-      id: data.id,
-      wireframeId: data.wireframe_id,
-      wcagLevel: data.wcag_level,
-      status: data.status,
-      resultsSummary: data.results_summary
-    };
-  },
-
-  async getTestRuns(wireframeId: string): Promise<AccessibilityTestRun[]> {
-    const { data, error } = await supabase
-      .from('accessibility_test_runs')
-      .select('*')
-      .eq('wireframe_id', wireframeId)
-      .order('started_at', { ascending: false });
-
-    if (error) {
-      toast.error(`Error fetching accessibility test runs: ${error.message}`);
-      throw error;
-    }
-
-    return data.map(item => ({
-      id: item.id,
-      wireframeId: item.wireframe_id,
-      wcagLevel: item.wcag_level,
-      overallScore: item.overall_score,
-      status: item.status,
-      resultsSummary: item.results_summary
-    }));
-  },
-
-  async updateTestRunStatus(
-    testRunId: string, 
-    status: string, 
-    overallScore?: number, 
-    resultsSummary?: any
-  ): Promise<void> {
-    const updateData: any = { 
-      status, 
-      completed_at: new Date().toISOString() 
-    };
-
-    if (overallScore !== undefined) {
-      updateData.overall_score = overallScore;
-    }
-
-    if (resultsSummary) {
-      updateData.results_summary = resultsSummary;
-    }
-
-    const { error } = await supabase
-      .from('accessibility_test_runs')
-      .update(updateData)
-      .eq('id', testRunId);
-
-    if (error) {
-      toast.error(`Error updating accessibility test run: ${error.message}`);
-      throw error;
-    }
-  },
-
-  // Issues
-  async saveIssue(issue: AccessibilityIssue): Promise<AccessibilityIssue> {
-    const { data, error } = await supabase
-      .from('accessibility_issues')
-      .insert([{
-        test_run_id: issue.testRunId,
-        element_id: issue.elementId,
-        element_selector: issue.elementSelector,
-        wcag_criterion: issue.wcagCriterion,
-        issue_type: issue.issueType,
+  }
+  
+  static async getIssues(testRunId: string): Promise<AccessibilityIssue[]> {
+    try {
+      const { data, error } = await supabase
+        .from('accessibility_issues')
+        .select('*')
+        .eq('test_run_id', testRunId)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      return data.map((issue: any) => ({
+        id: issue.id,
+        testRunId: issue.test_run_id,
+        elementId: issue.element_id,
+        elementSelector: issue.element_selector,
+        wcagCriterion: issue.wcag_criterion,
+        issueType: issue.issue_type,
         severity: issue.severity,
         description: issue.description,
-        impact_description: issue.impactDescription,
+        impactDescription: issue.impact_description,
         recommendation: issue.recommendation,
         status: issue.status
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      toast.error(`Error saving accessibility issue: ${error.message}`);
-      throw error;
+      }));
+    } catch (error) {
+      console.error("Error fetching accessibility issues:", error);
+      
+      // Return empty array if there's an error
+      return [];
     }
-
-    return {
-      id: data.id,
-      testRunId: data.test_run_id,
-      elementId: data.element_id,
-      elementSelector: data.element_selector,
-      wcagCriterion: data.wcag_criterion,
-      issueType: data.issue_type,
-      severity: data.severity as any,
-      description: data.description,
-      impactDescription: data.impact_description,
-      recommendation: data.recommendation,
-      status: data.status as any
-    };
-  },
-
-  async getIssues(testRunId: string): Promise<AccessibilityIssue[]> {
-    const { data, error } = await supabase
-      .from('accessibility_issues')
-      .select('*')
-      .eq('test_run_id', testRunId)
-      .order('created_at');
-
-    if (error) {
-      toast.error(`Error fetching accessibility issues: ${error.message}`);
-      throw error;
-    }
-
-    return data.map(item => ({
-      id: item.id,
-      testRunId: item.test_run_id,
-      elementId: item.element_id,
-      elementSelector: item.element_selector,
-      wcagCriterion: item.wcag_criterion,
-      issueType: item.issue_type,
-      severity: item.severity as any,
-      description: item.description,
-      impactDescription: item.impact_description,
-      recommendation: item.recommendation,
-      status: item.status as any
-    }));
-  },
-
-  // Guidelines
-  async getGuidelines(componentType?: string): Promise<AccessibilityGuideline[]> {
-    let query = supabase.from('accessibility_guidelines').select('*');
-    
-    if (componentType) {
-      query = query.eq('component_type', componentType);
-    }
-    
-    const { data, error } = await query;
-
-    if (error) {
-      toast.error(`Error fetching accessibility guidelines: ${error.message}`);
-      throw error;
-    }
-
-    return data.map(item => ({
-      componentType: item.component_type,
-      ariaAttributes: item.aria_attributes,
-      keyboardInteractions: item.keyboard_interactions,
-      screenReaderRequirements: item.screen_reader_requirements,
-      focusManagement: item.focus_management,
-      wcagCriteria: item.wcag_criteria
-    }));
-  },
-
-  // Testing Operations
-  async runAccessibilityTest(wireframeId: string, wcagLevel = 'AA'): Promise<AccessibilityTestRun> {
-    // Create a new test run
-    const testRun = await this.createTestRun({
-      wireframeId,
-      wcagLevel,
-      status: 'running'
-    });
-
+  }
+  
+  static async runAccessibilityTest(wireframeId: string, wcagLevel: string): Promise<AccessibilityTestRun> {
     try {
-      // In a real implementation, this would use a library like axe-core or pa11y
-      // For now, we're just simulating the test
-
-      // Mock some wireframe data to test against
-      const { data: wireframeData } = await supabase
-        .from('ai_wireframes')
-        .select('generation_params')
-        .eq('id', wireframeId)
-        .single();
-
-      if (!wireframeData) {
-        throw new Error('Wireframe not found');
-      }
-
-      // Wait a moment to simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
+      // In a real implementation, this would run actual accessibility tests
+      // For demo purposes, we're generating mock data
+      
+      // Create a new test run
+      const testRunId = uuidv4();
+      const startedAt = new Date().toISOString();
+      
       // Mock some issues
-      const mockIssues: Omit<AccessibilityIssue, 'id'>[] = [
-        {
-          testRunId: testRun.id!,
-          elementId: 'header-nav',
-          issueType: 'contrast',
-          severity: 'medium',
-          description: 'Text has insufficient contrast against background',
-          impactDescription: 'Users with low vision may have difficulty reading the text',
-          recommendation: 'Increase contrast to at least 4.5:1 for normal text',
-          wcagCriterion: '1.4.3',
-          status: 'failed'
-        },
-        {
-          testRunId: testRun.id!,
-          elementId: 'submit-button',
-          issueType: 'keyboard',
-          severity: 'high',
-          description: 'Button cannot be activated using keyboard',
-          impactDescription: 'Keyboard-only users cannot submit the form',
-          recommendation: 'Ensure button is focusable and responds to Enter/Space',
-          wcagCriterion: '2.1.1',
-          status: 'failed'
-        },
-        {
-          testRunId: testRun.id!,
-          elementId: 'main-image',
-          issueType: 'altText',
-          severity: 'medium',
-          description: 'Image missing alternative text',
-          impactDescription: 'Screen reader users cannot understand the image content',
-          recommendation: 'Add descriptive alt text to the image',
-          wcagCriterion: '1.1.1',
-          status: 'failed'
-        }
+      const issueTypes = [
+        { type: 'Missing alt text', wcag: '1.1.1', severity: 'high' },
+        { type: 'Insufficient color contrast', wcag: '1.4.3', severity: 'medium' },
+        { type: 'Missing form labels', wcag: '3.3.2', severity: 'high' },
+        { type: 'Keyboard navigation issues', wcag: '2.1.1', severity: 'critical' },
+        { type: 'Missing ARIA attributes', wcag: '4.1.2', severity: 'medium' },
+        { type: 'Improper heading structure', wcag: '1.3.1', severity: 'low' }
       ];
-
-      // Save the issues
-      for (const issue of mockIssues) {
-        await this.saveIssue(issue);
+      
+      // Select 2-5 random issues
+      const numIssues = Math.floor(Math.random() * 4) + 2;
+      const selectedIssues = [...issueTypes].sort(() => 0.5 - Math.random()).slice(0, numIssues);
+      
+      const issues = [];
+      let criticalCount = 0;
+      let highCount = 0;
+      let mediumCount = 0;
+      let lowCount = 0;
+      
+      for (const issue of selectedIssues) {
+        const issueId = uuidv4();
+        const elementId = `element-${Math.floor(Math.random() * 10000)}`;
+        
+        // Count by severity
+        if (issue.severity === 'critical') criticalCount++;
+        else if (issue.severity === 'high') highCount++;
+        else if (issue.severity === 'medium') mediumCount++;
+        else lowCount++;
+        
+        issues.push({
+          id: issueId,
+          test_run_id: testRunId,
+          element_id: elementId,
+          element_selector: `#${elementId}`,
+          wcag_criterion: issue.wcag,
+          issue_type: issue.type,
+          severity: issue.severity,
+          description: `This element has an accessibility issue: ${issue.type}`,
+          impact_description: issue.severity === 'critical' || issue.severity === 'high' ? 
+            'This issue severely impacts users with disabilities' : 
+            'This issue may cause difficulties for some users',
+          recommendation: `Add appropriate ${issue.type === 'Missing alt text' ? 'alt attributes' : 
+            issue.type === 'Insufficient color contrast' ? 'higher contrast colors' : 
+            'accessibility attributes'}`,
+          status: 'failed',
+          created_at: new Date().toISOString()
+        });
       }
-
-      // Calculate a mock score
-      const overallScore = 65; // Out of 100
-
-      // Update the test run with the results
-      await this.updateTestRunStatus(testRun.id!, 'completed', overallScore, {
-        total_issues: mockIssues.length,
-        by_severity: {
-          critical: mockIssues.filter(i => i.severity === 'critical').length,
-          high: mockIssues.filter(i => i.severity === 'high').length,
-          medium: mockIssues.filter(i => i.severity === 'medium').length,
-          low: mockIssues.filter(i => i.severity === 'low').length,
-          info: mockIssues.filter(i => i.severity === 'info').length
-        },
-        by_wcag: {
-          '1.1.1': mockIssues.filter(i => i.wcagCriterion === '1.1.1').length,
-          '1.4.3': mockIssues.filter(i => i.wcagCriterion === '1.4.3').length,
-          '2.1.1': mockIssues.filter(i => i.wcagCriterion === '2.1.1').length,
-        }
-      });
-
+      
+      // Insert the issues
+      const { error: issuesError } = await supabase
+        .from('accessibility_issues')
+        .insert(issues);
+      
+      if (issuesError) throw issuesError;
+      
+      // Calculate an overall score (0-100)
+      // Critical issues have the biggest impact, then high, medium, low
+      const baseScore = 100;
+      const criticalPenalty = 20;
+      const highPenalty = 10;
+      const mediumPenalty = 5;
+      const lowPenalty = 2;
+      
+      const overallScore = Math.max(0, Math.min(100, Math.floor(
+        baseScore - 
+        (criticalCount * criticalPenalty) - 
+        (highCount * highPenalty) - 
+        (mediumCount * mediumPenalty) - 
+        (lowCount * lowPenalty)
+      )));
+      
+      // Create a summary
+      const resultsSummary = {
+        critical: criticalCount,
+        high: highCount,
+        medium: mediumCount,
+        low: lowCount,
+        total: issues.length
+      };
+      
+      // Create the test run
+      const { data: testRunData, error: testRunError } = await supabase
+        .from('accessibility_test_runs')
+        .insert([
+          {
+            id: testRunId,
+            wireframe_id: wireframeId,
+            wcag_level: wcagLevel,
+            status: 'completed',
+            started_at: startedAt,
+            completed_at: new Date().toISOString(),
+            overall_score: overallScore,
+            results_summary: resultsSummary
+          }
+        ])
+        .select()
+        .single();
+      
+      if (testRunError) throw testRunError;
+      
+      // Return the test run
       return {
-        ...testRun,
+        id: testRunId,
+        wireframeId: wireframeId,
+        wcagLevel: wcagLevel,
         status: 'completed',
-        overallScore
+        startedAt: startedAt,
+        completedAt: new Date().toISOString(),
+        overallScore: overallScore,
+        resultsSummary: resultsSummary
       };
     } catch (error) {
-      // Handle errors
-      await this.updateTestRunStatus(testRun.id!, 'failed', undefined, { 
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      console.error("Error running accessibility test:", error);
       throw error;
     }
   }
-};
+}
