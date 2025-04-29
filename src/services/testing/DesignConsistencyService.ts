@@ -1,21 +1,30 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
+export interface DesignConsistencyRule {
+  id: string;
+  projectId: string;
+  name: string;
+  ruleType: string;
+  propertyPath?: string;
+  allowedValues?: Record<string, any>;
+  referenceComponentId?: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  isActive: boolean;
+}
 
 export interface DesignConsistencyCheck {
   id: string;
   projectId: string;
-  wireframeIds?: string[];
-  status: string;
-  checkType: string;
   startedAt: string;
   completedAt?: string;
+  status: string;
+  checkType: string;
+  wireframeIds: string[];
   resultsSummary?: {
-    issueCount: number;
-    componentsChecked: number;
-    criticalIssues: number;
-    highIssues: number;
-    standardsChecked: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
   };
 }
 
@@ -23,223 +32,174 @@ export interface DesignConsistencyIssue {
   id: string;
   checkId: string;
   issueType: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  wireframeId?: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
   elementId?: string;
   elementPath?: string;
+  wireframeId?: string;
   propertyName?: string;
   expectedValue?: string;
   actualValue?: string;
   description: string;
   recommendation?: string;
-  status: 'failed' | 'fixed' | 'ignored';
+  status: string;
 }
 
 export class DesignConsistencyService {
-  static async getConsistencyChecks(projectId: string): Promise<DesignConsistencyCheck[]> {
-    try {
-      const { data, error } = await supabase
-        .from('design_consistency_checks')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('started_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data.map((check: any) => ({
-        id: check.id,
-        projectId: check.project_id,
-        wireframeIds: check.wireframe_ids,
-        status: check.status,
-        checkType: check.check_type,
-        startedAt: check.started_at,
-        completedAt: check.completed_at,
-        resultsSummary: check.results_summary
-      }));
-    } catch (error) {
-      console.error("Error fetching consistency checks:", error);
-      
-      // Return empty array if there's an error
-      return [];
-    }
+  static async runConsistencyCheck(projectId: string, wireframeIds: string[], checkType: string = "full"): Promise<DesignConsistencyCheck> {
+    // Mock implementation - in real app would create via API
+    return {
+      id: `check-${Date.now()}`,
+      projectId,
+      wireframeIds,
+      checkType,
+      startedAt: new Date().toISOString(),
+      status: "in_progress"
+    };
   }
-  
-  static async getConsistencyIssues(checkId: string): Promise<DesignConsistencyIssue[]> {
-    try {
-      const { data, error } = await supabase
-        .from('design_consistency_issues')
-        .select('*')
-        .eq('check_id', checkId)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      
-      return data.map((issue: any) => ({
-        id: issue.id,
-        checkId: issue.check_id,
-        issueType: issue.issue_type,
-        severity: issue.severity,
-        wireframeId: issue.wireframe_id,
-        elementId: issue.element_id,
-        elementPath: issue.element_path,
-        propertyName: issue.property_name,
-        expectedValue: issue.expected_value,
-        actualValue: issue.actual_value,
-        description: issue.description,
-        recommendation: issue.recommendation,
-        status: issue.status
-      }));
-    } catch (error) {
-      console.error("Error fetching consistency issues:", error);
-      
-      // Return empty array if there's an error
-      return [];
-    }
-  }
-  
-  static async runConsistencyCheck(projectId: string, wireframeIds: string[]): Promise<DesignConsistencyCheck> {
-    try {
-      // In a real implementation, this would run actual consistency checks
-      // For demo purposes, we're generating mock data
-      
-      // Create a check ID
-      const checkId = uuidv4();
-      const startedAt = new Date().toISOString();
-      
-      // Mock issue types for design consistency
-      const issueTypes = [
-        { type: 'Color inconsistency', severity: 'high', property: 'color' },
-        { type: 'Typography variation', severity: 'medium', property: 'fontFamily' },
-        { type: 'Spacing inconsistency', severity: 'medium', property: 'margin' },
-        { type: 'Different component styles', severity: 'high', property: 'borderRadius' },
-        { type: 'Layout grid deviation', severity: 'low', property: 'gridTemplate' },
-        { type: 'Icon sizing variation', severity: 'medium', property: 'width' },
-        { type: 'Button style inconsistency', severity: 'high', property: 'backgroundColor' },
-        { type: 'Form element inconsistency', severity: 'medium', property: 'padding' }
-      ];
-      
-      // Generate 3-8 random issues
-      const numIssues = Math.floor(Math.random() * 6) + 3;
-      const selectedIssues = [...issueTypes].sort(() => 0.5 - Math.random()).slice(0, numIssues);
-      
-      const issues = [];
-      let criticalCount = 0;
-      let highCount = 0;
-      
-      for (const issue of selectedIssues) {
-        const issueId = uuidv4();
-        const wireframeId = wireframeIds[Math.floor(Math.random() * wireframeIds.length)];
-        const elementId = `element-${Math.floor(Math.random() * 10000)}`;
-        
-        // Count by severity
-        if (issue.severity === 'critical') criticalCount++;
-        else if (issue.severity === 'high') highCount++;
-        
-        // Generate expected vs actual values
-        let expectedValue, actualValue;
-        
-        switch (issue.property) {
-          case 'color':
-            expectedValue = '#3B82F6';
-            actualValue = '#4F46E5';
-            break;
-          case 'fontFamily':
-            expectedValue = 'Inter, sans-serif';
-            actualValue = 'Roboto, sans-serif';
-            break;
-          case 'margin':
-            expectedValue = '16px';
-            actualValue = '12px';
-            break;
-          case 'borderRadius':
-            expectedValue = '8px';
-            actualValue = '4px';
-            break;
-          case 'width':
-            expectedValue = '24px';
-            actualValue = '20px';
-            break;
-          case 'backgroundColor':
-            expectedValue = '#3B82F6';
-            actualValue = '#2563EB';
-            break;
-          case 'padding':
-            expectedValue = '16px 24px';
-            actualValue = '12px 20px';
-            break;
-          default:
-            expectedValue = 'Standard value';
-            actualValue = 'Non-standard value';
+
+  static async getChecks(projectId: string): Promise<DesignConsistencyCheck[]> {
+    // Mock implementation
+    return [
+      {
+        id: "c1",
+        projectId,
+        wireframeIds: ["w1", "w2", "w3"],
+        startedAt: new Date(Date.now() - 7200000).toISOString(),
+        completedAt: new Date(Date.now() - 7140000).toISOString(),
+        status: "completed",
+        checkType: "full",
+        resultsSummary: {
+          critical: 0,
+          high: 2,
+          medium: 5,
+          low: 3,
+          info: 1
         }
-        
-        issues.push({
-          id: issueId,
-          check_id: checkId,
-          issue_type: issue.type,
-          severity: issue.severity,
-          wireframe_id: wireframeId,
-          element_id: elementId,
-          element_path: `#${elementId}`,
-          property_name: issue.property,
-          expected_value: expectedValue,
-          actual_value: actualValue,
-          description: `Inconsistent ${issue.type.toLowerCase()} detected in component styling`,
-          recommendation: `Update the ${issue.property} to match the design system standard: ${expectedValue}`,
-          status: 'failed',
-          created_at: new Date().toISOString()
-        });
+      },
+      {
+        id: "c2",
+        projectId,
+        wireframeIds: ["w1", "w4"],
+        startedAt: new Date(Date.now() - 172800000).toISOString(),
+        completedAt: new Date(Date.now() - 172740000).toISOString(),
+        status: "completed",
+        checkType: "color-only",
+        resultsSummary: {
+          critical: 1,
+          high: 2,
+          medium: 0,
+          low: 0,
+          info: 0
+        }
       }
-      
-      // Insert the issues
-      const { error: issuesError } = await supabase
-        .from('design_consistency_issues')
-        .insert(issues);
-      
-      if (issuesError) throw issuesError;
-      
-      // Create a summary
-      const resultsSummary = {
-        issueCount: issues.length,
-        componentsChecked: Math.floor(Math.random() * 20) + 10, // Random number between 10-30
-        criticalIssues: criticalCount,
-        highIssues: highCount,
-        standardsChecked: Math.floor(Math.random() * 10) + 5 // Random number between 5-15
-      };
-      
-      // Create the check
-      const { data: checkData, error: checkError } = await supabase
-        .from('design_consistency_checks')
-        .insert([
-          {
-            id: checkId,
-            project_id: projectId,
-            wireframe_ids: wireframeIds,
-            status: 'completed',
-            check_type: wireframeIds.length > 1 ? 'multi-wireframe' : 'single-wireframe',
-            started_at: startedAt,
-            completed_at: new Date().toISOString(),
-            results_summary: resultsSummary
-          }
-        ])
-        .select()
-        .single();
-      
-      if (checkError) throw checkError;
-      
-      // Return the check
-      return {
-        id: checkId,
-        projectId: projectId,
-        wireframeIds: wireframeIds,
-        status: 'completed',
-        checkType: wireframeIds.length > 1 ? 'multi-wireframe' : 'single-wireframe',
-        startedAt: startedAt,
-        completedAt: new Date().toISOString(),
-        resultsSummary: resultsSummary
-      };
-    } catch (error) {
-      console.error("Error running consistency check:", error);
-      throw error;
+    ];
+  }
+
+  static async getIssues(checkId: string): Promise<DesignConsistencyIssue[]> {
+    // Mock data
+    return [
+      {
+        id: "dc1",
+        checkId,
+        issueType: "Color Inconsistency",
+        severity: "high",
+        wireframeId: "w1",
+        elementId: "btn-primary",
+        propertyName: "backgroundColor",
+        expectedValue: "#1e40af",
+        actualValue: "#2563eb",
+        description: "Primary button color mismatch with design system",
+        recommendation: "Update button color to match design system token",
+        status: "failed"
+      },
+      {
+        id: "dc2",
+        checkId,
+        issueType: "Typography Inconsistency",
+        severity: "medium",
+        wireframeId: "w2",
+        elementId: "h2-title",
+        propertyName: "fontSize",
+        expectedValue: "1.5rem",
+        actualValue: "1.75rem",
+        description: "Heading font size does not match design system",
+        recommendation: "Adjust font size to match design system token",
+        status: "failed"
+      },
+      {
+        id: "dc3",
+        checkId,
+        issueType: "Spacing Inconsistency",
+        severity: "medium",
+        wireframeId: "w1",
+        elementId: "card-container",
+        propertyName: "padding",
+        expectedValue: "1.5rem",
+        actualValue: "1rem",
+        description: "Card padding is inconsistent with design system",
+        recommendation: "Update padding to use design system spacing token",
+        status: "failed"
+      }
+    ];
+  }
+
+  static async getRules(projectId: string): Promise<DesignConsistencyRule[]> {
+    // Mock data
+    return [
+      {
+        id: "r1",
+        projectId,
+        name: "Primary Button Color",
+        ruleType: "color",
+        propertyPath: "style.backgroundColor",
+        allowedValues: { value: "#1e40af" },
+        severity: "high",
+        isActive: true
+      },
+      {
+        id: "r2",
+        projectId,
+        name: "Heading Font Size",
+        ruleType: "typography",
+        propertyPath: "style.fontSize",
+        allowedValues: { h1: "2rem", h2: "1.5rem", h3: "1.25rem" },
+        severity: "medium",
+        isActive: true
+      },
+      {
+        id: "r3",
+        projectId,
+        name: "Card Component Structure",
+        ruleType: "component",
+        referenceComponentId: "card-standard",
+        severity: "medium",
+        isActive: false
+      }
+    ];
+  }
+
+  static async createRule(rule: Partial<DesignConsistencyRule>): Promise<DesignConsistencyRule> {
+    // Mock implementation - in a real app would call API
+    return {
+      id: `rule-${Date.now()}`,
+      projectId: rule.projectId || "",
+      name: rule.name || "New Rule",
+      ruleType: rule.ruleType || "custom",
+      propertyPath: rule.propertyPath,
+      allowedValues: rule.allowedValues,
+      referenceComponentId: rule.referenceComponentId,
+      severity: rule.severity || "medium",
+      isActive: rule.isActive !== undefined ? rule.isActive : true
+    };
+  }
+
+  static getSeverityColor(severity: string): string {
+    switch (severity) {
+      case 'critical': return "bg-red-100 text-red-800 border-red-300";
+      case 'high': return "bg-red-50 text-red-700 border-red-200";
+      case 'medium': return "bg-amber-50 text-amber-700 border-amber-200";
+      case 'low': return "bg-blue-50 text-blue-700 border-blue-200";
+      default: return "bg-slate-50 text-slate-700 border-slate-200";
     }
   }
 }
