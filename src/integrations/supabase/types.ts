@@ -714,6 +714,100 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_logs: {
+        Row: {
+          backup_size_bytes: number | null
+          completed_at: string | null
+          error_message: string | null
+          file_count: number | null
+          id: string
+          metadata: Json | null
+          schedule_id: string | null
+          started_at: string
+          status: string
+          storage_location: string
+        }
+        Insert: {
+          backup_size_bytes?: number | null
+          completed_at?: string | null
+          error_message?: string | null
+          file_count?: number | null
+          id?: string
+          metadata?: Json | null
+          schedule_id?: string | null
+          started_at?: string
+          status: string
+          storage_location: string
+        }
+        Update: {
+          backup_size_bytes?: number | null
+          completed_at?: string | null
+          error_message?: string | null
+          file_count?: number | null
+          id?: string
+          metadata?: Json | null
+          schedule_id?: string | null
+          started_at?: string
+          status?: string
+          storage_location?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_logs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "backup_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backup_schedules: {
+        Row: {
+          created_at: string | null
+          frequency: string
+          id: string
+          integration_id: string
+          is_active: boolean | null
+          last_backup_at: string | null
+          name: string
+          next_backup_at: string | null
+          retention_days: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          frequency: string
+          id?: string
+          integration_id: string
+          is_active?: boolean | null
+          last_backup_at?: string | null
+          name: string
+          next_backup_at?: string | null
+          retention_days: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          frequency?: string
+          id?: string
+          integration_id?: string
+          is_active?: boolean | null
+          last_backup_at?: string | null
+          name?: string
+          next_backup_at?: string | null
+          retention_days?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_schedules_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "storage_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_access_links: {
         Row: {
           client_email: string
@@ -2806,6 +2900,45 @@ export type Database = {
           },
         ]
       }
+      enterprise_auth_configurations: {
+        Row: {
+          auth_type: string
+          configuration: Json
+          created_at: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          metadata: Json | null
+          organization_id: string
+          provider_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          auth_type: string
+          configuration: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          metadata?: Json | null
+          organization_id: string
+          provider_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          auth_type?: string
+          configuration?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          metadata?: Json | null
+          organization_id?: string
+          provider_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       environment_contexts: {
         Row: {
           adaptation_guidelines: string | null
@@ -3128,6 +3261,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      file_versions: {
+        Row: {
+          checksum: string | null
+          created_at: string | null
+          created_by: string | null
+          file_id: string
+          id: string
+          integration_id: string | null
+          metadata: Json | null
+          size_bytes: number
+          storage_path: string
+          version_number: number
+        }
+        Insert: {
+          checksum?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_id: string
+          id?: string
+          integration_id?: string | null
+          metadata?: Json | null
+          size_bytes: number
+          storage_path: string
+          version_number: number
+        }
+        Update: {
+          checksum?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_id?: string
+          id?: string
+          integration_id?: string | null
+          metadata?: Json | null
+          size_bytes?: number
+          storage_path?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_versions_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "storage_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       flow_path_steps: {
         Row: {
@@ -3616,6 +3796,42 @@ export type Database = {
           memory_id?: string
           memory_type?: string
           metadata?: Json | null
+        }
+        Relationships: []
+      }
+      mfa_configurations: {
+        Row: {
+          backup_codes: Json | null
+          created_at: string | null
+          id: string
+          is_enabled: boolean
+          last_used_at: string | null
+          mfa_type: string
+          secret_key: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: Json | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          last_used_at?: string | null
+          mfa_type: string
+          secret_key?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          backup_codes?: Json | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          last_used_at?: string | null
+          mfa_type?: string
+          secret_key?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -4544,6 +4760,119 @@ export type Database = {
             columns: ["scenario_id"]
             isOneToOne: false
             referencedRelation: "user_test_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sso_sessions: {
+        Row: {
+          auth_token: string | null
+          created_at: string | null
+          expires_at: string
+          external_id: string
+          id: string
+          last_used_at: string | null
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          auth_token?: string | null
+          created_at?: string | null
+          expires_at: string
+          external_id: string
+          id?: string
+          last_used_at?: string | null
+          provider: string
+          user_id: string
+        }
+        Update: {
+          auth_token?: string | null
+          created_at?: string | null
+          expires_at?: string
+          external_id?: string
+          id?: string
+          last_used_at?: string | null
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      storage_integrations: {
+        Row: {
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          integration_type: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          configuration: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          integration_type: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          integration_type?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      storage_sync_logs: {
+        Row: {
+          completed_at: string | null
+          error_details: Json | null
+          files_failed: number | null
+          files_processed: number | null
+          files_succeeded: number | null
+          id: string
+          integration_id: string
+          metadata: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_details?: Json | null
+          files_failed?: number | null
+          files_processed?: number | null
+          files_succeeded?: number | null
+          id?: string
+          integration_id: string
+          metadata?: Json | null
+          started_at?: string | null
+          status: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_details?: Json | null
+          files_failed?: number | null
+          files_processed?: number | null
+          files_succeeded?: number | null
+          id?: string
+          integration_id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storage_sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "storage_integrations"
             referencedColumns: ["id"]
           },
         ]
@@ -6754,6 +7083,23 @@ export type Database = {
         Args: { p_task_type: string; p_input_data: Json }
         Returns: string
       }
+      create_backup_schedule: {
+        Args: {
+          p_integration_id: string
+          p_name: string
+          p_frequency: string
+          p_retention_days: number
+        }
+        Returns: Json
+      }
+      create_storage_integration: {
+        Args: {
+          p_integration_type: string
+          p_name: string
+          p_configuration: Json
+        }
+        Returns: Json
+      }
       create_system_alert: {
         Args: {
           p_severity: string
@@ -6791,6 +7137,10 @@ export type Database = {
         Args: { p_project_id: string; p_wireframe_id: string; p_changes: Json }
         Returns: Json
       }
+      enable_mfa: {
+        Args: { p_user_id: string; p_mfa_type: string }
+        Returns: Json
+      }
       generate_accessibility_recommendations: {
         Args: { p_component_type: string }
         Returns: Json
@@ -6817,6 +7167,28 @@ export type Database = {
           p_specification_id?: string
         }
         Returns: string
+      }
+      get_audit_logs: {
+        Args: {
+          p_start_date?: string
+          p_end_date?: string
+          p_user_id?: string
+          p_resource_type?: string
+          p_action?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          user_id: string
+          user_email: string
+          action: string
+          resource_type: string
+          resource_id: string
+          ip_address: string
+          created_at: string
+          metadata: Json
+        }[]
       }
       get_context_component_recommendations: {
         Args: { p_context: string; p_limit?: number }
@@ -7325,6 +7697,14 @@ export type Database = {
       }
       verify_content_adherence: {
         Args: { p_wireframe_id: string; p_strategy_id: string }
+        Returns: Json
+      }
+      verify_mfa_code: {
+        Args: { p_user_id: string; p_mfa_type: string; p_code: string }
+        Returns: boolean
+      }
+      verify_saml_auth: {
+        Args: { p_saml_response: string; p_config_id: string }
         Returns: Json
       }
     }
