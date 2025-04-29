@@ -62,3 +62,60 @@ export interface MetricsSummary {
   trend: 'up' | 'down' | 'stable';
   period: string;
 }
+
+// Add missing types that were referenced in the error messages
+export interface HeatmapDataPoint {
+  x: number;
+  y: number;
+  value: number;
+  timestamp?: string;
+  element?: string;
+}
+
+export interface UserPreference {
+  id: string;
+  user_id: string;
+  title: string;
+  category: string;
+  rank?: number;
+  notes?: string;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface DesignAnalytics {
+  id: string;
+  title: string;
+  category: string;
+  average_rank: number;
+  selection_count: number;
+  rank: number;
+  percentage?: number;
+}
+
+export type InteractionEventType = 'click' | 'hover' | 'scroll' | 'view' | 'movement';
+
+export interface AnalyticsData {
+  id: string;
+  user_id: string;
+  data_type: string;
+  value: any;
+  timestamp: string;
+}
+
+export interface AnalyticsFilter {
+  startDate?: Date;
+  endDate?: Date;
+  category?: string;
+  userId?: string;
+  limit?: number;
+}
+
+// Chart.js type definitions to match our Dataset interface
+export interface Dataset {
+  label: string;
+  data: number[];
+  backgroundColor?: string | string[];
+  borderColor?: string | string[];
+  type?: string;
+}

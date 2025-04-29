@@ -1,194 +1,245 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import React, { useState, useEffect } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { CompliancePolicy } from "@/types/compliance";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { CompliancePolicy, ComplianceRule } from "@/types/compliance";
+import { ComplianceService } from "@/services/compliance/ComplianceService";
+import { useToast } from "@/components/ui/use-toast";
+import { Plus, Trash } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 
 interface CompliancePolicyDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (policy: Partial<CompliancePolicy>) => void;
+  setOpen: (open: boolean) => void;
+  policy?: CompliancePolicy;
+  onComplete?: () => void;
 }
 
-const policySchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
-  description: z.string().max(500, "Description must be less than 500 characters").optional(),
-  policy_type: z.enum(['accessibility', 'brand', 'regulatory', 'security', 'custom']),
-  severity: z.enum(['low', 'medium', 'high', 'critical']),
-  is_active: z.boolean().default(true),
-  rules: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().optional()
-  })).default([])
-});
+interface RuleForm {
+  id: string;
+  name: string;
+  description: string;
+  validator?: string;
+  params?: Record<string, any>;
+}
 
-type FormValues = z.infer<typeof policySchema>;
-
-export function CompliancePolicyDialog({ open, onOpenChange, onSubmit }: CompliancePolicyDialogProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(policySchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      policy_type: "accessibility",
-      severity: "medium",
-      is_active: true,
-      rules: [
-        { id: "rule-1", name: "Rule 1", description: "Description of Rule 1" }
-      ]
+export function CompliancePolicyDialog({
+  open,
+  setOpen,
+  policy,
+  onComplete
+}: CompliancePolicyDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formRules, setFormRules] = useState<RuleForm[]>(policy ? policy.rules : [{ id: uuidv4(), name: '', description: '' }]);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    if (policy) {
+      setFormRules(policy.rules.map(rule => ({
+        id: rule.id,
+        name: rule.name,
+        description: rule.description,
+        validator: rule.validator,
+        params: rule.params
+      })));
+    } else {
+      // Initialize with a single empty rule when creating a new policy
+      setFormRules([{ id: uuidv4(), name: '', description: '' }]);
     }
-  });
-  
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
-    form.reset();
+  }, [policy]);
+
+  const addRule = () => {
+    setFormRules([...formRules, { id: uuidv4(), name: '', description: '' }]);
   };
-  
+
+  const removeRule = (id: string) => {
+    setFormRules(formRules.filter(rule => rule.id !== id));
+  };
+
+  const updateRule = (id: string, field: string, value: string) => {
+    setFormRules(formRules.map(rule =>
+      rule.id === id ? { ...rule, [field]: value } : rule
+    ));
+  };
+
+  const handleSubmit = async (formData: FormData) => {
+    setIsSubmitting(true);
+    
+    try {
+      // Extract rules and ensure each has an id property
+      const rules = formRules.map(rule => ({
+        id: rule.id || crypto.randomUUID(), // Ensure id is present
+        name: rule.name || '',
+        description: rule.description || '',
+        validator: rule.validator,
+        params: rule.params
+      }));
+      
+      const policyData: Partial<CompliancePolicy> = {
+        name: formData.get('name') as string,
+        description: formData.get('description') as string,
+        policy_type: formData.get('policy_type') as CompliancePolicy['policy_type'],
+        severity: formData.get('severity') as CompliancePolicy['severity'],
+        is_active: formData.get('is_active') === 'true',
+        rules: rules, // Now correctly typed as ComplianceRule[]
+      };
+      
+      let result;
+      if (policy) {
+        result = await ComplianceService.updatePolicy(policy.id, policyData);
+      } else {
+        result = await ComplianceService.createPolicy(policyData);
+      }
+      
+      if (result) {
+        toast.success(policy ? "Policy updated successfully" : "Policy created successfully");
+        setOpen(false);
+        if (onComplete) onComplete();
+      }
+    } catch (error) {
+      console.error('Error saving compliance policy:', error);
+      toast.error('Failed to save compliance policy');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Create Compliance Policy</DialogTitle>
-          <DialogDescription>
-            Create a new policy to enforce compliance standards
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Policy Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="WCAG 2.1 AA Compliance" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Web Content Accessibility Guidelines 2.1 Level AA compliance checks" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="policy_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Policy Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select policy type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="accessibility">Accessibility</SelectItem>
-                        <SelectItem value="brand">Brand</SelectItem>
-                        <SelectItem value="regulatory">Regulatory</SelectItem>
-                        <SelectItem value="security">Security</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="severity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Severity</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select severity" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline">
+          {policy ? "Edit Policy" : "Add Policy"}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{policy ? "Edit Policy" : "Add Policy"}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {policy ? "Update the compliance policy details." : "Create a new compliance policy."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <form onSubmit={e => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          handleSubmit(formData);
+        }}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input type="text" id="name" name="name" defaultValue={policy?.name} className="col-span-3" required />
             </div>
-            
-            <FormField
-              control={form.control}
-              name="is_active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Active Policy</FormLabel>
-                    <FormDescription>
-                      Should this policy be active immediately?
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Input type="text" id="description" name="description" defaultValue={policy?.description} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="policy_type" className="text-right">
+                Policy Type
+              </Label>
+              <Select defaultValue={policy?.policy_type || 'security'} name="policy_type">
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="security">Security</SelectItem>
+                  <SelectItem value="accessibility">Accessibility</SelectItem>
+                  <SelectItem value="brand">Brand</SelectItem>
+                  <SelectItem value="regulatory">Regulatory</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="severity" className="text-right">
+                Severity
+              </Label>
+              <Select defaultValue={policy?.severity || 'high'} name="severity">
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="is_active" className="text-right">
+                Active
+              </Label>
+              <Switch id="is_active" name="is_active" defaultChecked={policy?.is_active} />
+            </div>
+
+            {/* Rules Form */}
+            <div className="col-span-4">
+              <h4 className="mb-2 font-semibold">Rules</h4>
+              {formRules.map((rule, index) => (
+                <div key={rule.id} className="grid grid-cols-4 items-center gap-4 mb-2">
+                  <Label htmlFor={`rule_name_${index}`} className="text-right">
+                    Rule {index + 1}
+                  </Label>
+                  <Input
+                    type="text"
+                    id={`rule_name_${index}`}
+                    value={rule.name}
+                    onChange={(e) => updateRule(rule.id, 'name', e.target.value)}
+                    className="col-span-2"
+                    placeholder="Rule Name"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => removeRule(rule.id)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                  <Label htmlFor={`rule_description_${index}`} className="text-right">
+                    Description
+                  </Label>
+                  <Input
+                    type="text"
+                    id={`rule_description_${index}`}
+                    value={rule.description}
+                    onChange={(e) => updateRule(rule.id, 'description', e.target.value)}
+                    className="col-span-3"
+                    placeholder="Description"
+                  />
+                </div>
+              ))}
+              <Button type="button" variant="secondary" onClick={addRule}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Rule
               </Button>
-              <Button type="submit">Create Policy</Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          </AlertDialogFooter>
+        </form>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

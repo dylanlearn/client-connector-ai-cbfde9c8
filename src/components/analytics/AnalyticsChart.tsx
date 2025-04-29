@@ -1,16 +1,9 @@
 
 import { useEffect, useRef } from 'react';
-import { Chart, registerables } from 'chart.js';
+import { Chart, registerables, ChartTypeRegistry } from 'chart.js';
+import { Dataset } from '@/types/analytics';
 
 Chart.register(...registerables);
-
-interface Dataset {
-  label: string;
-  data: number[];
-  backgroundColor?: string | string[];
-  borderColor?: string | string[];
-  type?: string;
-}
 
 interface AnalyticsChartProps {
   type: 'bar' | 'line' | 'pie' | 'doughnut';
@@ -36,11 +29,12 @@ export const AnalyticsChart = ({ type, labels, datasets, height = 300, width }: 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
+    // Cast datasets to any to avoid TypeScript errors with Chart.js complex types
     chartRef.current = new Chart(ctx, {
       type,
       data: {
         labels,
-        datasets
+        datasets: datasets as any
       },
       options: {
         responsive: true,
