@@ -7,4 +7,5 @@ export * from './UserFlowTestingService';
 export * from './TechnicalFeasibilityService';
 export * from './ContentAdherenceService';
 export * from './SecurityPrivacyService';
-export * from './EnterpriseAuthService';
+export * from '../enterprise/EnterpriseAuthService';
+
