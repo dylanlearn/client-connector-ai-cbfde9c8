@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Building2, LineChart, ShieldCheck } from "lucide-react";
-import { WorkspaceManagement } from "@/components/workspace/WorkspaceManagement";
-import { EnterpriseAnalyticsDashboard } from "@/components/analytics/EnterpriseAnalyticsDashboard";
-import { ComplianceEnforcement } from "@/components/compliance/ComplianceEnforcement";
+import WorkspaceManagement from "@/components/workspace/WorkspaceManagement";
+import EnterpriseAnalyticsDashboard from "@/components/analytics/EnterpriseAnalyticsDashboard";
+import ComplianceEnforcement from "@/components/compliance/ComplianceEnforcement";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('workspaces');

@@ -1,294 +1,269 @@
-'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import {
-  ListChecks,
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
-  XCircle,
-  CheckCircle2,
-  AlertTriangle,
-  HelpCircle
-} from "lucide-react";
-import { CompliancePolicy, ComplianceCheck } from "@/types/compliance";
-import { ComplianceService } from "@/services/compliance/ComplianceService";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { format } from 'date-fns';
-import { CompliancePolicyDialog } from './CompliancePolicyDialog';
+import { AlertTriangle, CheckCircle, Clock, FileText, Plus, Settings, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
+import { CompliancePolicy, ComplianceCheck } from '@/types/compliance';
+import CompliancePolicyDialog from './CompliancePolicyDialog';
+import { ComplianceService } from '@/services/compliance-service';
 
-const ComplianceEnforcement = () => {
+const ComplianceEnforcement: React.FC = () => {
   const [policies, setPolicies] = useState<CompliancePolicy[]>([]);
   const [checks, setChecks] = useState<ComplianceCheck[]>([]);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    to: new Date()
-  });
-  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
-  const [selectedPolicy, setSelectedPolicy] = useState<CompliancePolicy | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const workspaceId = 'your-workspace-id'; // Replace with actual workspace ID
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState('policies');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchPolicies();
-    fetchComplianceChecks();
-  }, [dateRange]);
+    fetchData();
+  }, []);
 
-  const fetchPolicies = async () => {
-    setIsLoading(true);
+  const fetchData = async () => {
     try {
-      const fetchedPolicies = await ComplianceService.getPolicies(workspaceId);
-      setPolicies(fetchedPolicies);
+      setLoading(true);
+      const [policiesData, checksData] = await Promise.all([
+        ComplianceService.getPolicies(),
+        ComplianceService.getChecks()
+      ]);
+      setPolicies(policiesData);
+      setChecks(checksData);
     } catch (error) {
-      console.error("Error fetching compliance policies:", error);
+      console.error('Error fetching compliance data:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const fetchComplianceChecks = async () => {
-    setIsLoading(true);
+  const handleCreatePolicy = async (policy: Partial<CompliancePolicy>) => {
     try {
-      // Fetch compliance checks based on the selected date range
-      const complianceStatus = await ComplianceService.getComplianceStatus(workspaceId);
-      if (complianceStatus && complianceStatus.details) {
-        setChecks(complianceStatus.details);
-      } else {
-        setChecks([]);
-      }
+      await ComplianceService.createPolicy(policy);
+      setAddDialogOpen(false);
+      fetchData();
     } catch (error) {
-      console.error("Error fetching compliance checks:", error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error creating policy:', error);
     }
   };
 
-  const handleRunCheck = async (policyId: string) => {
-    setIsSubmitting(true);
-    try {
-      // Replace with actual resource type and ID
-      await ComplianceService.runComplianceCheck(policyId, 'design', '123');
-      fetchComplianceChecks(); // Refresh checks after running
-    } catch (error) {
-      console.error("Error running compliance check:", error);
-    } finally {
-      setIsSubmitting(false);
+  const getSeverityBadgeClass = (severity: string) => {
+    switch (severity) {
+      case 'low': return 'bg-blue-100 text-blue-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'critical': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handlePolicySubmit = async (policy: Partial<CompliancePolicy>) => {
-    setIsSubmitting(true);
-    try {
-      if (selectedPolicy) {
-        // Update existing policy
-        await ComplianceService.updatePolicy(selectedPolicy.id, policy);
-      } else {
-        // Create new policy
-        await ComplianceService.createPolicy({ ...policy, workspace_id: workspaceId });
-      }
-      fetchPolicies(); // Refresh policies after submitting
-    } catch (error) {
-      console.error("Error submitting policy:", error);
-    } finally {
-      setIsSubmitting(false);
-      setPolicyDialogOpen(false);
-      setSelectedPolicy(null);
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'passed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'warning': return 'bg-yellow-100 text-yellow-800';
+      case 'exempted': return 'bg-purple-100 text-purple-800';
+      case 'pending': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const handleEditPolicy = (policy: CompliancePolicy) => {
-    setSelectedPolicy(policy);
-    setPolicyDialogOpen(true);
-  };
-
-  const handleDeletePolicy = async (policyId: string) => {
-    // Implement delete logic here (e.g., calling a delete API)
-    console.log(`Deleting policy with ID: ${policyId}`);
-    // After successful deletion, refresh the policies list
-    fetchPolicies();
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'passed':
-        return <CheckCircle2 className="text-green-500 h-5 w-5" />;
-      case 'failed':
-        return <XCircle className="text-red-500 h-5 w-5" />;
-      case 'warning':
-        return <AlertTriangle className="text-yellow-500 h-5 w-5" />;
-      case 'exempted':
-        return <ShieldQuestion className="text-muted-foreground h-5 w-5" />;
-      default:
-        return <HelpCircle className="text-muted-foreground h-5 w-5" />;
+      case 'passed': return <CheckCircle className="h-4 w-4" />;
+      case 'failed': return <AlertTriangle className="h-4 w-4" />;
+      case 'warning': return <ShieldAlert className="h-4 w-4" />;
+      case 'exempted': return <Shield className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
     }
   };
 
+  const renderPoliciesList = () => {
+    if (loading) {
+      return <div className="text-center py-8">Loading policies...</div>;
+    }
+
+    if (policies.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">No compliance policies found.</p>
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Policy
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {policies.map((policy) => (
+          <Card key={policy.id}>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg">{policy.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {policy.description || "No description provided"}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <span className={`text-xs px-2 py-1 rounded-full ${getSeverityBadgeClass(policy.severity)}`}>
+                    {policy.severity.charAt(0).toUpperCase() + policy.severity.slice(1)}
+                  </span>
+                  <span className={`ml-2 text-xs px-2 py-1 rounded-full ${policy.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {policy.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground flex items-center">
+                <span className="capitalize">
+                  {policy.policy_type.replace(/-/g, ' ')}
+                </span>
+                <span className="mx-2">•</span>
+                <span>{policy.rules.length} Rules</span>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" size="sm" className="mr-2">
+                  <Settings className="mr-1 h-4 w-4" /> Configure
+                </Button>
+                <Button variant="outline" size="sm">
+                  <ShieldCheck className="mr-1 h-4 w-4" /> Run Check
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const renderChecksList = () => {
+    if (loading) {
+      return <div className="text-center py-8">Loading compliance checks...</div>;
+    }
+
+    if (checks.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">No compliance checks found.</p>
+          <Button onClick={() => setActiveTab('policies')}>
+            <Plus className="mr-2 h-4 w-4" /> Add Policy First
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {checks.map((check) => (
+          <Card key={check.id}>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg">
+                    {check.policy_name || `Check ${check.id.substring(0, 8)}`}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {check.resource_type}: {check.resource_id.substring(0, 8)}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <span className={`text-xs px-2 py-1 rounded-full ${getSeverityBadgeClass(check.severity || 'medium')}`}>
+                    {(check.severity || 'medium').charAt(0).toUpperCase() + (check.severity || 'medium').slice(1)}
+                  </span>
+                  <span className={`ml-2 text-xs px-2 py-1 rounded-full flex items-center ${getStatusBadgeClass(check.status)}`}>
+                    {getStatusIcon(check.status)}
+                    <span className="ml-1 capitalize">{check.status}</span>
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground flex items-center">
+                <span className="capitalize">
+                  {check.policy_type?.replace(/-/g, ' ') || 'General Check'}
+                </span>
+                <span className="mx-2">•</span>
+                <span>
+                  {new Date(check.checked_at).toLocaleDateString()}
+                </span>
+                {check.issues.length > 0 && (
+                  <>
+                    <span className="mx-2">•</span>
+                    <span>{check.issues.length} Issues</span>
+                  </>
+                )}
+              </div>
+              
+              {check.status === 'failed' && check.issues.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-sm font-medium">Issues:</p>
+                  <ul className="text-sm text-muted-foreground list-disc pl-5">
+                    {check.issues.slice(0, 2).map((issue, index) => (
+                      <li key={index}>{issue.message}</li>
+                    ))}
+                    {check.issues.length > 2 && (
+                      <li>...and {check.issues.length - 2} more issues</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+              
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" size="sm" className="mr-2">
+                  <FileText className="mr-1 h-4 w-4" /> Details
+                </Button>
+                <Button variant="outline" size="sm">
+                  <ShieldCheck className="mr-1 h-4 w-4" /> Re-check
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="container py-8">
+    <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Compliance Enforcement</h1>
           <p className="text-muted-foreground">
-            Ensure your designs meet accessibility, brand, and regulatory standards
+            Manage policies and ensure enterprise-wide compliance
           </p>
         </div>
-        <Button onClick={() => setPolicyDialogOpen(true)} disabled={isSubmitting}>
-          Create Policy
+        <Button onClick={() => setAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Add Policy
         </Button>
       </div>
 
-      <div className="mb-4">
-        <DateRangePicker
-          initialDateFrom={dateRange.from}
-          initialDateTo={dateRange.to}
-          onUpdate={(range) => {
-            if (range.from && range.to) {
-              setDateRange({ from: range.from, to: range.to });
-            }
-          }}
-        />
-      </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Active Policies</CardTitle>
-          <CardDescription>
-            Manage and enforce compliance policies across your workspace
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p>Loading policies...</p>
-          ) : policies.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {policies.map((policy) => (
-                <div key={policy.id} className="border rounded-md p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-medium">{policy.name}</h3>
-                    <div>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleEditPolicy(policy)}
-                        className="mr-2"
-                      >
-                        <ListChecks className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDeletePolicy(policy.id)}
-                      >
-                        <ShieldAlert className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{policy.description}</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="flex items-center">
-                      {policy.is_active ? (
-                        <ShieldCheck className="text-green-500 mr-2 h-4 w-4" />
-                      ) : (
-                        <ShieldAlert className="text-red-500 mr-2 h-4 w-4" />
-                      )}
-                      <span>{policy.is_active ? 'Active' : 'Inactive'}</span>
-                    </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleRunCheck(policy.id)}
-                      disabled={isSubmitting}
-                    >
-                      Run Check
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No policies created yet.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Compliance Checks</CardTitle>
-          <CardDescription>
-            Review the latest compliance checks and their statuses
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p>Loading compliance checks...</p>
-          ) : checks.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Policy
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Resource
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Checked
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {checks.map((check) => (
-                    <tr key={check.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{check.policy_name}</div>
-                        <div className="text-sm text-gray-500">{check.policy_type}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{check.resource_type}</div>
-                        <div className="text-sm text-gray-500">{check.resource_id}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {getStatusIcon(check.status)}
-                          <span className="ml-2 text-sm font-medium">{check.status}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {format(new Date(check.checked_at), 'MMM dd, yyyy')}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {format(new Date(check.checked_at), 'h:mm a')}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p>No compliance checks found.</p>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="policies">
+            <Shield className="mr-2 h-4 w-4" />
+            Policies
+          </TabsTrigger>
+          <TabsTrigger value="checks">
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            Compliance Checks
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="policies" className="space-y-4">
+          {renderPoliciesList()}
+        </TabsContent>
+        
+        <TabsContent value="checks" className="space-y-4">
+          {renderChecksList()}
+        </TabsContent>
+      </Tabs>
 
       <CompliancePolicyDialog
-        open={policyDialogOpen}
-        onOpenChange={setPolicyDialogOpen}
-        onSubmit={handlePolicySubmit}
-        policy={selectedPolicy}
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        onSubmit={handleCreatePolicy}
       />
     </div>
   );

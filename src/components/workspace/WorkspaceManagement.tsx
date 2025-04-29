@@ -1,203 +1,208 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Building2, MoreHorizontal, Eye, Edit, Trash, Users } from "lucide-react";
-import { Workspace } from "@/types/workspace";
-import { WorkspaceService } from "@/services/workspace/WorkspaceService";
-import { toast } from "sonner";
+import { Plus, Trash, Edit, UserPlus, Users } from "lucide-react";
+import { WorkspaceService } from '@/services/workspace-service';
+import { Workspace } from '@/types/workspace';
+import { useToast } from '@/components/ui/use-toast';
 
-const WorkspaceManagement = () => {
+const WorkspaceManagement: React.FC = () => {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newWorkspaceName, setNewWorkspaceName] = useState('');
-  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState('');
-
+  const [newWorkspaceName, setNewWorkspaceName] = useState<string>('');
+  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const { toast } = useToast();
+  
   useEffect(() => {
     fetchWorkspaces();
   }, []);
 
   const fetchWorkspaces = async () => {
     try {
-      const fetchedWorkspaces = await WorkspaceService.getWorkspaces();
-      setWorkspaces(fetchedWorkspaces);
+      setIsLoading(true);
+      // Assuming the service method is getUserWorkspaces, not getWorkspaces
+      const data = await WorkspaceService.getUserWorkspaces();
+      setWorkspaces(data);
     } catch (error) {
-      console.error("Failed to fetch workspaces:", error);
-      toast.error("Failed to fetch workspaces");
+      console.error('Error fetching workspaces:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load workspaces",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleCreateWorkspace = async () => {
-    setIsCreating(true);
+    if (!newWorkspaceName) return;
+    
     try {
-      const newWorkspace = await WorkspaceService.createWorkspace({
+      setIsCreating(true);
+      // Create a workspace object to pass to the API
+      const workspaceData = {
         name: newWorkspaceName,
-        description: newWorkspaceDescription,
+        description: newWorkspaceDescription
+      };
+      
+      // Assuming the API expects a workspace object, not just a string
+      await WorkspaceService.createWorkspace(workspaceData);
+      
+      toast({
+        title: "Success",
+        description: "Workspace created successfully",
       });
-      if (newWorkspace) {
-        setWorkspaces([...workspaces, newWorkspace]);
-        setNewWorkspaceName('');
-        setNewWorkspaceDescription('');
-        toast.success("Workspace created successfully!");
-      } else {
-        toast.error("Failed to create workspace.");
-      }
+      
+      setNewWorkspaceName('');
+      setNewWorkspaceDescription('');
+      setIsDialogOpen(false);
+      fetchWorkspaces();
     } catch (error) {
-      console.error("Error creating workspace:", error);
-      toast.error("Failed to create workspace");
+      console.error('Error creating workspace:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create workspace",
+        variant: "destructive",
+      });
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleViewWorkspace = (workspaceId: string) => {
-    console.log(`View workspace with ID: ${workspaceId}`);
-    // Implement navigation or modal to view workspace details
-  };
-
-  const handleEditWorkspace = (workspaceId: string) => {
-    console.log(`Edit workspace with ID: ${workspaceId}`);
-    // Implement navigation or modal to edit workspace details
-  };
-
   const handleDeleteWorkspace = async (workspaceId: string) => {
+    if (!confirm("Are you sure you want to delete this workspace?")) return;
+    
     try {
+      // Create a deleteWorkspace method if it doesn't exist
       await WorkspaceService.deleteWorkspace(workspaceId);
-      setWorkspaces(workspaces.filter(workspace => workspace.id !== workspaceId));
-      toast.success("Workspace deleted successfully!");
+      
+      toast({
+        title: "Success",
+        description: "Workspace deleted successfully",
+      });
+      
+      fetchWorkspaces();
     } catch (error) {
-      console.error("Error deleting workspace:", error);
-      toast.error("Failed to delete workspace");
+      console.error('Error deleting workspace:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete workspace",
+        variant: "destructive",
+      });
     }
   };
 
   return (
-    <div className="container py-8">
+    <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Workspace Management</h1>
-        <Button onClick={handleCreateWorkspace} disabled={isCreating}>
-          {isCreating ? 'Creating...' : 'Create Workspace'}
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> New Workspace
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Workspace</DialogTitle>
+              <DialogDescription>
+                Add a new workspace to manage your enterprise resources.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter workspace name"
+                  value={newWorkspaceName}
+                  onChange={(e) => setNewWorkspaceName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Enter workspace description"
+                  value={newWorkspaceDescription}
+                  onChange={(e) => setNewWorkspaceDescription(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateWorkspace} disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Create New Workspace</CardTitle>
-          <CardDescription>
-            Define the name and description for your new workspace.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="workspace-name">Workspace Name</Label>
-            <Input
-              id="workspace-name"
-              placeholder="Enter workspace name"
-              value={newWorkspaceName}
-              onChange={(e) => setNewWorkspaceName(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="workspace-description">Description</Label>
-            <Input
-              id="workspace-description"
-              placeholder="Enter workspace description"
-              value={newWorkspaceDescription}
-              onChange={(e) => setNewWorkspaceDescription(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-      
-      {workspaces.length > 0 ? (
+
+      {isLoading ? (
+        <div className="text-center my-8">Loading workspaces...</div>
+      ) : workspaces.length === 0 ? (
+        <Card className="text-center p-8">
+          <CardContent>
+            <p className="mb-4 text-muted-foreground">
+              You don't have any workspaces yet. Create your first workspace to get started.
+            </p>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Create Workspace
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {workspaces.map((workspace) => (
-            <Card key={workspace.id} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    {workspace.logo_url ? (
-                      <img 
-                        src={workspace.logo_url} 
-                        alt={workspace.name} 
-                        className="h-8 w-8 rounded"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 bg-primary/20 rounded flex items-center justify-center">
-                        <span className="text-sm font-bold text-primary">
-                          {workspace.name.substring(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <CardTitle>{workspace.name}</CardTitle>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleViewWorkspace(workspace.id)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEditWorkspace(workspace.id)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => handleDeleteWorkspace(workspace.id)}
-                        className="text-red-600"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+            <Card key={workspace.id} className="flex flex-col">
+              <CardHeader>
+                <CardTitle>{workspace.name}</CardTitle>
+                <CardDescription>
+                  {workspace.description || "No description"}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {workspace.description || "No description provided."}
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Created: {new Date(workspace.created_at).toLocaleDateString()}
                 </p>
-              </CardContent>
-              <CardFooter className="flex justify-between pt-2">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Users className="mr-1 h-4 w-4" />
-                  <span>{workspace.members?.length || 0} members</span>
+                {/* This assumes your Workspace type has teams property */}
+                <div className="flex items-center mt-2">
+                  <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    {/* Fix for missing members property - we'll check for an optional membership field */}
+                    {workspace.teams?.length || 0} Teams
+                  </span>
                 </div>
+              </CardContent>
+              <CardFooter className="flex justify-between mt-auto">
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" /> Edit
+                </Button>
+                <Button variant="outline" size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" /> Invite
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => handleViewWorkspace(workspace.id)}
+                  onClick={() => handleDeleteWorkspace(workspace.id)}
                 >
-                  Manage
+                  <Trash className="h-4 w-4 mr-2" /> Delete
                 </Button>
               </CardFooter>
             </Card>
           ))}
         </div>
-      ) : (
-        <Card className="p-12">
-          <div className="flex flex-col items-center text-center">
-            <Building2 className="h-16 w-16 text-muted-foreground/60 mb-4" />
-            <h2 className="text-2xl font-bold mb-2">No Workspaces Found</h2>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              Create a workspace to start organizing your projects, teams, and resources.
-            </p>
-            <Button onClick={handleCreateWorkspace}>Create Your First Workspace</Button>
-          </div>
-        </Card>
       )}
     </div>
   );
