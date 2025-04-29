@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import { EnterpriseGridConfig } from '@/components/wireframe/types/canvas-types';
 
 export function useGridActions(
   updateConfig: (config: Partial<WireframeCanvasConfig>) => void,
@@ -22,68 +21,23 @@ export function useGridActions(
     updateConfig({ gridSize: size });
   }, [updateConfig]);
   
-  // Change grid type (lines, dots, etc.)
+  // Set grid type
   const setGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
     updateConfig({ gridType: type });
   }, [updateConfig]);
   
-  // Set grid color
+  // Update grid color
   const setGridColor = useCallback((color: string) => {
     updateConfig({ gridColor: color });
   }, [updateConfig]);
   
-  // Set snap tolerance
-  const setSnapTolerance = useCallback((tolerance: number) => {
-    updateConfig({ snapTolerance: tolerance });
-  }, [updateConfig]);
-  
-  // Update enterprise grid config (bridge to new system)
-  const updateEnterpriseGrid = useCallback((enterpriseConfig: Partial<EnterpriseGridConfig>) => {
-    // Map enterprise grid config to legacy config for compatibility
-    const compatConfig: Partial<WireframeCanvasConfig> = {};
-    
-    if ('visible' in enterpriseConfig) {
-      compatConfig.showGrid = enterpriseConfig.visible;
-    }
-    
-    if ('type' in enterpriseConfig) {
-      compatConfig.gridType = enterpriseConfig.type as 'lines' | 'dots' | 'columns';
-    }
-    
-    if ('size' in enterpriseConfig) {
-      compatConfig.gridSize = enterpriseConfig.size;
-    }
-    
-    if ('snapToGrid' in enterpriseConfig) {
-      compatConfig.snapToGrid = enterpriseConfig.snapToGrid;
-    }
-    
-    if ('snapThreshold' in enterpriseConfig) {
-      compatConfig.snapTolerance = enterpriseConfig.snapThreshold;
-    }
-    
-    if ('color' in enterpriseConfig) {
-      compatConfig.gridColor = enterpriseConfig.color;
-    }
-    
-    if ('opacity' in enterpriseConfig) {
-      compatConfig.gridOpacity = enterpriseConfig.opacity;
-    }
-    
-    if ('showNumbers' in enterpriseConfig) {
-      compatConfig.showGridNumbers = enterpriseConfig.showNumbers;
-    }
-    
-    updateConfig(compatConfig);
-  }, [updateConfig]);
-  
   return {
-    toggleGrid,
+    toggleGridVisibility: toggleGrid,
     toggleSnapToGrid,
     setGridSize,
     setGridType,
-    setGridColor,
-    setSnapTolerance,
-    updateEnterpriseGrid
+    setGridColor
   };
 }
+
+export default useGridActions;
