@@ -1,18 +1,14 @@
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { nanoid } from 'nanoid';
-import { 
-  CollaborationState, 
-  CollaborationAction, 
-  User, 
-  DocumentChange, 
-  UserPresence 
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  CollaborationState,
+  CollaborationAction,
+  User,
+  DocumentChange
 } from '@/types/collaboration';
-import { DocumentService } from '@/services/collaboration/documentService';
-import { PresenceService } from '@/services/collaboration/presenceService';
-import { useUser } from '@/hooks/useUser';
 
-// Initial state for collaboration
+// Initial state for collaboration context
 const initialState: CollaborationState = {
   users: {},
   activeUsers: [],
@@ -24,232 +20,298 @@ const initialState: CollaborationState = {
   lastSyncedVersion: 0
 };
 
-// Reducer function to handle state updates
+// Reducer for handling collaboration state changes
 function collaborationReducer(state: CollaborationState, action: CollaborationAction): CollaborationState {
   switch (action.type) {
     case 'SET_DOCUMENT_ID':
-      return {
-        ...state,
-        documentId: action.payload,
-        changes: [],
-        pendingChanges: []
-      };
+      return { ...state, documentId: action.payload };
+    
     case 'USER_JOINED':
       return {
         ...state,
-        users: {
-          ...state.users,
-          [action.payload.id]: action.payload
-        },
+        users: { ...state.users, [action.payload.id]: action.payload },
         activeUsers: [...state.activeUsers, action.payload.id]
       };
+    
     case 'USER_LEFT':
       return {
         ...state,
-        activeUsers: state.activeUsers.filter((id) => id !== action.payload),
+        activeUsers: state.activeUsers.filter(id => id !== action.payload)
       };
+    
     case 'UPDATE_USER_PRESENCE':
-      // Get the current user data or create a new user object if it doesn't exist
-      const currentUser = state.users[action.payload.userId] || {
-        id: action.payload.userId,
-        name: `User ${action.payload.userId.substring(0, 4)}`,
-        color: `hsl(${Math.random() * 360}, 80%, 60%)`,
-        avatar: null,
-        presence: {
-          status: 'active',
-          focusElement: null,
-          cursorPosition: null,
-          lastActive: new Date().toISOString(),
-        }
-      };
-      
-      // Update the user with the new presence data, merging it with existing data
       return {
         ...state,
         users: {
           ...state.users,
           [action.payload.userId]: {
-            ...currentUser,
+            ...state.users[action.payload.userId],
             presence: {
-              ...currentUser.presence,
-              ...action.payload.presence,
-            },
-          },
-        },
-        // If not already in active users list, add them
-        activeUsers: state.activeUsers.includes(action.payload.userId) 
-          ? state.activeUsers 
-          : [...state.activeUsers, action.payload.userId]
+              ...state.users[action.payload.userId]?.presence,
+              ...action.payload.presence
+            }
+          }
+        }
       };
+    
     case 'ADD_CHANGE':
       return {
         ...state,
-        pendingChanges: [...state.pendingChanges, action.payload],
+        pendingChanges: [...state.pendingChanges, action.payload]
       };
+    
     case 'CHANGES_APPLIED':
-      // Remove the applied changes from pendingChanges
       return {
         ...state,
         pendingChanges: state.pendingChanges.filter(
-          (change) => !action.payload.includes(change.id)
-        ),
+          change => !action.payload.includes(change.id)
+        )
       };
+    
+    case 'SET_CONNECTION_STATUS':
+      return { ...state, isConnected: action.payload };
+    
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    
     case 'MERGE_REMOTE_CHANGES':
       return {
         ...state,
         changes: [...state.changes, ...action.payload],
+        lastSyncedVersion: action.payload.length
+          ? Math.max(...action.payload.map(c => c.version || 0), state.lastSyncedVersion)
+          : state.lastSyncedVersion
       };
-    case 'SET_CONNECTION_STATUS':
-      return {
-        ...state,
-        isConnected: action.payload,
-      };
-    case 'SET_ERROR':
-      return {
-        ...state,
-        error: action.payload,
-      };
+    
     default:
       return state;
   }
 }
 
-// Create the context
+// Create the collaboration context
 const CollaborationContext = createContext<{
   state: CollaborationState;
-  setDocumentId: (id: string | null) => void;
+  dispatch: React.Dispatch<CollaborationAction>;
   addChange: (change: Omit<DocumentChange, 'id' | 'timestamp'>) => void;
-  applyChanges: (changeIds: string[]) => void;
-  updateUserPresence: (presence: Partial<UserPresence>) => void;
-} | null>(null);
+  updatePresence: (presence: Partial<User['presence']>) => void;
+}>({
+  state: initialState,
+  dispatch: () => {},
+  addChange: () => {},
+  updatePresence: () => {}
+});
 
 // Provider component
 export const CollaborationProvider: React.FC<{
   children: React.ReactNode;
-}> = ({ children }) => {
+  documentId?: string;
+  userId?: string;
+}> = ({ children, documentId, userId }) => {
   const [state, dispatch] = useReducer(collaborationReducer, initialState);
-  const userId = useUser();
 
-  // Set the document ID
-  const setDocumentId = useCallback((id: string | null) => {
-    dispatch({ type: 'SET_DOCUMENT_ID', payload: id });
-  }, []);
-
-  // Add a change to the pending changes
-  const addChange = useCallback((change: Omit<DocumentChange, 'id' | 'timestamp'>) => {
-    const completeChange: DocumentChange = {
-      ...change,
-      id: nanoid(),
-      timestamp: new Date().toISOString(),
-    };
-    dispatch({ type: 'ADD_CHANGE', payload: completeChange });
-  }, []);
-
-  // Mark changes as applied
-  const applyChanges = useCallback((changeIds: string[]) => {
-    dispatch({ type: 'CHANGES_APPLIED', payload: changeIds });
-  }, []);
-
-  // Update user presence
-  const updateUserPresence = useCallback((presence: Partial<UserPresence>) => {
-    dispatch({
-      type: 'UPDATE_USER_PRESENCE',
-      payload: { 
-        userId, 
-        presence 
-      },
-    });
-  }, [userId]);
-
-  // Set up document subscriptions when documentId changes
+  // Initialize document and set up subscriptions
   useEffect(() => {
-    if (!state.documentId) return;
-
-    // Set connection status
-    dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+    if (!documentId) return;
     
-    // Subscribe to document changes
-    const unsubscribeChanges = DocumentService.subscribeToChanges(
-      state.documentId,
-      (changes) => {
-        dispatch({ type: 'MERGE_REMOTE_CHANGES', payload: changes });
-      }
-    );
-    
-    // Subscribe to user presence
-    const unsubscribePresence = PresenceService.subscribeToPresence(
-      state.documentId,
-      (users) => {
-        // Update our local state with the latest user presence data
-        Object.values(users).forEach(user => {
-          dispatch({ type: 'USER_JOINED', payload: user });
-        });
-      }
-    );
+    dispatch({ type: 'SET_DOCUMENT_ID', payload: documentId });
     
     // Initial fetch of active users
-    PresenceService.getActiveUsers(state.documentId)
-      .then(users => {
-        Object.values(users).forEach(user => {
-          dispatch({ type: 'USER_JOINED', payload: user });
-        });
-      })
-      .catch(error => {
-        console.error('Error fetching active users:', error);
+    const fetchActiveUsers = async () => {
+      try {
+        const { data: presenceData } = await supabase
+          .from('user_presence')
+          .select('*')
+          .eq('document_id', documentId);
+        
+        if (presenceData) {
+          // Convert to our user format and dispatch user joined events
+          presenceData.forEach(item => {
+            const user: User = {
+              id: item.user_id,
+              name: `User ${item.user_id.substring(0, 4)}`,
+              color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+              avatar: null,
+              presence: {
+                status: item.status as any,
+                focusElement: item.focus_element,
+                cursorPosition: item.cursor_position as any,
+                lastActive: item.last_active
+              }
+            };
+            
+            dispatch({ type: 'USER_JOINED', payload: user });
+          });
+        }
+        
+        dispatch({ type: 'SET_CONNECTION_STATUS', payload: true });
+      } catch (error) {
+        console.error("Error fetching active users:", error);
         dispatch({ type: 'SET_ERROR', payload: 'Failed to fetch active users' });
-      });
-
-    // Clean up subscriptions
-    return () => {
-      unsubscribeChanges();
-      unsubscribePresence();
-      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false });
+      }
     };
-  }, [state.documentId]);
-
-  // Sync pending changes with the server
-  useEffect(() => {
-    if (!state.documentId || state.pendingChanges.length === 0) return;
     
-    const changeIdsToApply = state.pendingChanges.map(change => change.id);
+    // Fetch document changes
+    const fetchChanges = async () => {
+      try {
+        const { data: changesData } = await supabase
+          .from('document_changes')
+          .select('*')
+          .eq('document_id', documentId)
+          .gt('version', state.lastSyncedVersion)
+          .order('timestamp', { ascending: true });
+        
+        if (changesData && changesData.length > 0) {
+          const formattedChanges: DocumentChange[] = changesData.map(change => ({
+            id: change.id,
+            documentId: change.document_id,
+            userId: change.user_id,
+            operation: change.operation as any,
+            path: change.path,
+            value: change.value,
+            timestamp: change.timestamp,
+            version: change.version
+          }));
+          
+          dispatch({ type: 'MERGE_REMOTE_CHANGES', payload: formattedChanges });
+        }
+      } catch (error) {
+        console.error("Error fetching document changes:", error);
+      }
+    };
     
-    // Save changes to the server
-    DocumentService.saveChanges(state.documentId, state.pendingChanges)
-      .then(() => {
-        // Mark changes as applied
-        applyChanges(changeIdsToApply);
+    // Set up realtime subscriptions
+    const presenceChannel = supabase
+      .channel(`presence-${documentId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_presence',
+        filter: `document_id=eq.${documentId}`
+      }, payload => {
+        // Handle presence changes
+        fetchActiveUsers();
       })
-      .catch(error => {
-        console.error('Error saving changes:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Failed to save changes' });
+      .subscribe();
+    
+    const changesChannel = supabase
+      .channel(`changes-${documentId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'document_changes',
+        filter: `document_id=eq.${documentId}`
+      }, payload => {
+        // Handle new document changes
+        fetchChanges();
+      })
+      .subscribe();
+    
+    // Register current user presence
+    const registerPresence = async () => {
+      if (!userId) return;
+      
+      try {
+        await supabase
+          .from('user_presence')
+          .upsert({
+            user_id: userId,
+            document_id: documentId,
+            status: 'active',
+            last_active: new Date().toISOString()
+          });
+      } catch (error) {
+        console.error("Error registering user presence:", error);
+      }
+    };
+    
+    fetchActiveUsers();
+    fetchChanges();
+    registerPresence();
+    
+    // Set up periodic presence updates
+    const presenceInterval = setInterval(registerPresence, 30000);
+    
+    // Cleanup
+    return () => {
+      clearInterval(presenceInterval);
+      supabase.removeChannel(presenceChannel);
+      supabase.removeChannel(changesChannel);
+    };
+  }, [documentId, userId, state.lastSyncedVersion]);
+  
+  // Add a document change
+  const addChange = async (change: Omit<DocumentChange, 'id' | 'timestamp'>) => {
+    if (!state.documentId) return;
+    
+    try {
+      // Generate a temporary ID for optimistic updates
+      const tempId = Date.now().toString();
+      const fullChange: DocumentChange = {
+        ...change,
+        id: tempId,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Add to pending changes for optimistic UI updates
+      dispatch({ type: 'ADD_CHANGE', payload: fullChange });
+      
+      // Save to database
+      const { data, error } = await supabase
+        .from('document_changes')
+        .insert({
+          document_id: change.documentId,
+          user_id: change.userId,
+          operation: change.operation,
+          path: change.path,
+          value: change.value,
+          version: state.lastSyncedVersion + 1
+        });
+      
+      if (error) throw error;
+      
+      // Mark change as applied
+      dispatch({ type: 'CHANGES_APPLIED', payload: [tempId] });
+    } catch (error) {
+      console.error("Error adding document change:", error);
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to save document change' });
+    }
+  };
+  
+  // Update user presence
+  const updatePresence = async (presence: Partial<User['presence']>) => {
+    if (!state.documentId || !userId) return;
+    
+    try {
+      await supabase
+        .from('user_presence')
+        .upsert({
+          user_id: userId,
+          document_id: state.documentId,
+          status: presence.status || 'active',
+          focus_element: presence.focusElement,
+          cursor_position: presence.cursorPosition,
+          last_active: new Date().toISOString()
+        });
+      
+      // Update local state
+      dispatch({
+        type: 'UPDATE_USER_PRESENCE',
+        payload: { userId, presence }
       });
-  }, [state.documentId, state.pendingChanges, applyChanges]);
-
-  // Update presence to the server when it changes locally
-  useEffect(() => {
-    const currentUser = state.users[userId];
-    if (!state.documentId || !currentUser) return;
-
-    // Update presence on the server
-    PresenceService.updatePresence(
-      state.documentId,
-      userId,
-      currentUser.presence
-    ).catch(error => {
-      console.error('Error updating presence:', error);
-    });
-  }, [state.documentId, state.users, userId]);
-
+    } catch (error) {
+      console.error("Error updating presence:", error);
+    }
+  };
+  
+  const contextValue = {
+    state,
+    dispatch,
+    addChange,
+    updatePresence
+  };
+  
   return (
-    <CollaborationContext.Provider
-      value={{
-        state,
-        setDocumentId,
-        addChange,
-        applyChanges,
-        updateUserPresence,
-      }}
-    >
+    <CollaborationContext.Provider value={contextValue}>
       {children}
     </CollaborationContext.Provider>
   );

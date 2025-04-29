@@ -1,131 +1,150 @@
 
 import React, { useState } from 'react';
-import { CollaborationProvider } from '@/contexts/CollaborationContext';
-import CollaborativeEditor from '@/components/collaboration/CollaborativeEditor';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { nanoid } from 'nanoid';
+import CollaborativeEditorWithAnnotations from '@/components/collaboration/CollaborativeEditorWithAnnotations';
+import HighPerformanceCanvas from '@/components/canvas/HighPerformanceCanvas';
+import WireframeOptimizedDemo from '@/components/canvas/WireframeOptimizedDemo';
 
-const CollaborationDemo = () => {
-  const [documentId, setDocumentId] = useState(nanoid());
-  const [activeTab, setActiveTab] = useState('editor');
-  
-  const generateNewDocument = () => {
-    setDocumentId(nanoid());
-  };
+const CollaborationDemo: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('collaboration');
+  const documentId = nanoid();
+  const projectId = nanoid();
   
   return (
-    <CollaborationProvider>
-      <div className="container mx-auto py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Collaboration Infrastructure</h1>
-          <p className="text-gray-500 mb-6">
-            Real-time collaborative editing with presence awareness
-          </p>
+    <div className="container max-w-7xl mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-2">Cross-Team Collaboration Framework</h1>
+      <div className="flex items-center gap-2 mb-6">
+        <Badge variant="outline" className="text-blue-500 border-blue-200 bg-blue-50">Advanced Canvas Rendering</Badge>
+        <Badge variant="outline" className="text-green-500 border-green-200 bg-green-50">Memory Management</Badge>
+        <Badge variant="outline" className="text-purple-500 border-purple-200 bg-purple-50">Collaborative Editing</Badge>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-3 mb-6">
+          <TabsTrigger value="collaboration">Collaborative Editing</TabsTrigger>
+          <TabsTrigger value="optimization">Canvas Optimization</TabsTrigger>
+          <TabsTrigger value="memory">Memory Management</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="collaboration">
+          <Card>
+            <CardHeader>
+              <CardTitle>Collaborative Document Editor</CardTitle>
+              <CardDescription>
+                Real-time collaborative editing with annotations and user presence
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CollaborativeEditorWithAnnotations documentId={documentId} />
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="text-sm text-muted-foreground">
+                Document ID: {documentId}
+              </div>
+              <Button variant="outline">Share Document</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="optimization">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Canvas Rendering</CardTitle>
+              <CardDescription>
+                Optimized canvas rendering with layer caching, incremental rendering, and hardware acceleration
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[600px]">
+              <WireframeOptimizedDemo />
+            </CardContent>
+            <CardFooter>
+              <div className="text-sm text-muted-foreground">
+                Canvas optimization features improve performance with complex wireframes
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="memory">
+          <Card>
+            <CardHeader>
+              <CardTitle>Memory Management System</CardTitle>
+              <CardDescription>
+                Advanced memory management with object pooling and automatic garbage collection
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="h-[600px]">
+              <HighPerformanceCanvas 
+                width={1200}
+                height={600}
+                optimizationLevel="high"
+                enableLayerCaching={true}
+                enableMemoryManagement={true}
+              />
+            </CardContent>
+            <CardFooter>
+              <div className="text-sm text-muted-foreground">
+                Memory management optimizes resource usage for complex projects
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <div className="mt-8">
+        <h2 className="text-2xl font-semibold mb-4">System Features</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cross-Team Collaboration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Real-time document editing</li>
+                <li>User presence indicators</li>
+                <li>Multi-type annotations (text, voice, video, sketch)</li>
+                <li>Threaded comments and feedback</li>
+                <li>Team project management</li>
+              </ul>
+            </CardContent>
+          </Card>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Real-Time Sync</CardTitle>
-                <CardDescription>
-                  Operational transforms for conflict-free editing
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">
-                  Changes are synchronized in real-time between all collaborators using delta-based
-                  synchronization and operational transforms for conflict resolution.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Presence Awareness</CardTitle>
-                <CardDescription>
-                  See who's online and what they're doing
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">
-                  Real-time indicators show who is online, where their cursor is, and what part of the 
-                  document they are focusing on.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Document Management</CardTitle>
-                <CardDescription>
-                  Create and manage collaborative documents
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <Input 
-                  value={documentId} 
-                  onChange={(e) => setDocumentId(e.target.value)}
-                  className="text-sm font-mono"
-                />
-                <Button size="sm" onClick={generateNewDocument}>
-                  Generate New ID
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Canvas Rendering</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Layer caching for static elements</li>
+                <li>Incremental rendering for large canvases</li>
+                <li>Hardware acceleration</li>
+                <li>Object visibility optimization</li>
+                <li>Performance metrics tracking</li>
+              </ul>
+            </CardContent>
+          </Card>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-            <TabsList>
-              <TabsTrigger value="editor">Collaborative Editor</TabsTrigger>
-              <TabsTrigger value="about">About</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="editor" className="mt-4">
-              <CollaborativeEditor documentId={documentId} />
-            </TabsContent>
-            
-            <TabsContent value="about" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>About Collaboration Infrastructure</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-1">Real-Time Synchronization System</h3>
-                    <p className="text-sm">
-                      The system uses operational transforms to resolve conflicts when multiple users 
-                      edit the same document simultaneously. Changes are represented as operations that can 
-                      be transformed against one another to ensure consistent document state.
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-1">Presence Awareness Framework</h3>
-                    <p className="text-sm">
-                      The presence system tracks users' online status, cursor positions, and current focus. 
-                      This information is distributed to all collaborators in real-time, enabling features like
-                      custom cursors, avatar stacks, and activity indicators.
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-1">Technical Implementation</h3>
-                    <p className="text-sm">
-                      The infrastructure leverages Supabase's real-time channels for communication and 
-                      presence tracking, with a custom React context provider for state management.
-                      Changes are processed through an operational transform system that ensures 
-                      consistency across all clients.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          <Card>
+            <CardHeader>
+              <CardTitle>Memory Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Object pooling for reusable elements</li>
+                <li>Automatic garbage collection</li>
+                <li>Resource monitoring</li>
+                <li>Memory usage optimization</li>
+                <li>Performance analytics</li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </CollaborationProvider>
+    </div>
   );
 };
 

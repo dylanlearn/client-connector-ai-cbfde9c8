@@ -18,18 +18,17 @@ function App() {
     <AppProviders>
       <BrowserRouter>
         <Routes>
-          <Route path="/wireframe-demo" element={<WireframeEditorDemo />} />
-          <Route path="/project/:projectId/wireframe" element={<AdvancedWireframeGeneratorPage />} />
-          <Route path="/variant-logic" element={<ComponentVariantLogicDemo />} />
-          <Route path="/collaboration" element={<CollaborationDemo />} />
-          <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
-          <Route path="/advanced-design-system" element={<AdvancedDesignSystemPage />} />
-          <Route path="/wireframe/:wireframeId/handoff" element={<DesignHandoffPage />} />
-          <Route path="/wireframe/:wireframeId/testing" element={<WireframeTestingPage />} />
-          <Route path="/design-automation/:projectId" element={<DesignAutomationPage />} />
-          <Route path="/design-automation/:projectId/:wireframeId" element={<DesignAutomationPage />} />
-          <Route path="/quality-dashboard" element={<QualityDashboard />} />
           <Route path="/" element={<Home />} />
+          <Route path="/wireframe-editor" element={<WireframeEditorDemo />} />
+          <Route path="/advanced-generator" element={<AdvancedWireframeGeneratorPage />} />
+          <Route path="/component-variants" element={<ComponentVariantLogicDemo />} />
+          <Route path="/collaboration-demo" element={<CollaborationDemo />} />
+          <Route path="/document/:id" element={<CollaborativeDocumentPage />} />
+          <Route path="/design-system" element={<AdvancedDesignSystemPage />} />
+          <Route path="/handoff" element={<DesignHandoffPage />} />
+          <Route path="/automation" element={<DesignAutomationPage />} />
+          <Route path="/quality-dashboard" element={<QualityDashboard />} />
+          <Route path="/wireframe-testing" element={<WireframeTestingPage />} />
         </Routes>
       </BrowserRouter>
     </AppProviders>
