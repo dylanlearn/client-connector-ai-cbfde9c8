@@ -6,6 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BrowserTestingPanel from '@/components/testing/browser-testing/BrowserTestingPanel';
 import AccessibilityTestingPanel from '@/components/testing/accessibility-testing/AccessibilityTestingPanel';
 import DesignConsistencyPanel from '@/components/testing/design-consistency/DesignConsistencyPanel';
+import UserFlowTestingPanel from '@/components/testing/user-flow/UserFlowTestingPanel';
+import TechnicalFeasibilityPanel from '@/components/testing/feasibility/TechnicalFeasibilityPanel';
+import ContentAdherencePanel from '@/components/testing/content-adherence/ContentAdherencePanel';
+import SecurityPrivacyPanel from '@/components/testing/security-privacy/SecurityPrivacyPanel';
 import { supabase } from '@/integrations/supabase/client';
 
 const WireframeTestingPage: React.FC = () => {
@@ -54,10 +58,14 @@ const WireframeTestingPage: React.FC = () => {
         </p>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4 grid grid-cols-3">
-            <TabsTrigger value="browser">Cross-Browser Testing</TabsTrigger>
-            <TabsTrigger value="accessibility">Accessibility Compliance</TabsTrigger>
-            <TabsTrigger value="consistency">Design Consistency</TabsTrigger>
+          <TabsList className="mb-4 grid grid-cols-7">
+            <TabsTrigger value="browser">Cross-Browser</TabsTrigger>
+            <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
+            <TabsTrigger value="consistency">Consistency</TabsTrigger>
+            <TabsTrigger value="userflow">User Flow</TabsTrigger>
+            <TabsTrigger value="feasibility">Feasibility</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
           <TabsContent value="browser" className="mt-0">
             <BrowserTestingPanel wireframeId={wireframeId} />
@@ -70,6 +78,18 @@ const WireframeTestingPage: React.FC = () => {
               projectId={wireframe?.project_id || wireframe?.projects?.id || ''}
               wireframeIds={[wireframeId]}
             />
+          </TabsContent>
+          <TabsContent value="userflow" className="mt-0">
+            <UserFlowTestingPanel wireframeId={wireframeId} />
+          </TabsContent>
+          <TabsContent value="feasibility" className="mt-0">
+            <TechnicalFeasibilityPanel wireframeId={wireframeId} />
+          </TabsContent>
+          <TabsContent value="content" className="mt-0">
+            <ContentAdherencePanel wireframeId={wireframeId} />
+          </TabsContent>
+          <TabsContent value="security" className="mt-0">
+            <SecurityPrivacyPanel wireframeId={wireframeId} />
           </TabsContent>
         </Tabs>
       </div>

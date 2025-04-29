@@ -1429,6 +1429,53 @@ export type Database = {
           },
         ]
       }
+      content_adherence_checks: {
+        Row: {
+          checked_by: string | null
+          completed_at: string | null
+          compliance_score: number | null
+          id: string
+          issues: Json | null
+          recommendations: string | null
+          started_at: string
+          status: string
+          strategy_id: string
+          wireframe_id: string
+        }
+        Insert: {
+          checked_by?: string | null
+          completed_at?: string | null
+          compliance_score?: number | null
+          id?: string
+          issues?: Json | null
+          recommendations?: string | null
+          started_at?: string
+          status?: string
+          strategy_id: string
+          wireframe_id: string
+        }
+        Update: {
+          checked_by?: string | null
+          completed_at?: string | null
+          compliance_score?: number | null
+          id?: string
+          issues?: Json | null
+          recommendations?: string | null
+          started_at?: string
+          status?: string
+          strategy_id?: string
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_adherence_checks_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "content_strategies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_hierarchy: {
         Row: {
           created_at: string
@@ -1570,6 +1617,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_strategies: {
+        Row: {
+          content_requirements: Json
+          created_at: string
+          creator_id: string | null
+          description: string | null
+          id: string
+          information_architecture: Json | null
+          project_id: string
+          title: string
+          tone_guidelines: string | null
+          updated_at: string
+        }
+        Insert: {
+          content_requirements?: Json
+          created_at?: string
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          information_architecture?: Json | null
+          project_id: string
+          title: string
+          tone_guidelines?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content_requirements?: Json
+          created_at?: string
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          information_architecture?: Json | null
+          project_id?: string
+          title?: string
+          tone_guidelines?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       content_strategy: {
         Row: {
@@ -3043,6 +3129,91 @@ export type Database = {
         }
         Relationships: []
       }
+      flow_path_steps: {
+        Row: {
+          action_type: string
+          created_at: string
+          element_id: string
+          expected_destination: string | null
+          id: string
+          path_id: string
+          step_order: number
+          updated_at: string
+          validation_rule: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          element_id: string
+          expected_destination?: string | null
+          id?: string
+          path_id: string
+          step_order: number
+          updated_at?: string
+          validation_rule?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          element_id?: string
+          expected_destination?: string | null
+          id?: string
+          path_id?: string
+          step_order?: number
+          updated_at?: string
+          validation_rule?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_path_steps_path_id_fkey"
+            columns: ["path_id"]
+            isOneToOne: false
+            referencedRelation: "user_flow_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flow_validations: {
+        Row: {
+          completion_rate: number | null
+          execution_time_ms: number | null
+          id: string
+          issues_detected: Json | null
+          path_id: string
+          status: string
+          validation_date: string
+          validator_id: string | null
+        }
+        Insert: {
+          completion_rate?: number | null
+          execution_time_ms?: number | null
+          id?: string
+          issues_detected?: Json | null
+          path_id: string
+          status: string
+          validation_date?: string
+          validator_id?: string | null
+        }
+        Update: {
+          completion_rate?: number | null
+          execution_time_ms?: number | null
+          id?: string
+          issues_detected?: Json | null
+          path_id?: string
+          status?: string
+          validation_date?: string
+          validator_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flow_validations_path_id_fkey"
+            columns: ["path_id"]
+            isOneToOne: false
+            referencedRelation: "user_flow_paths"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_code: {
         Row: {
           accessibility_score: number | null
@@ -4261,6 +4432,75 @@ export type Database = {
         }
         Relationships: []
       }
+      security_privacy_requirements: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          guidance: string | null
+          id: string
+          name: string
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          guidance?: string | null
+          id?: string
+          name: string
+          severity: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          guidance?: string | null
+          id?: string
+          name?: string
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      security_privacy_reviews: {
+        Row: {
+          completed_at: string | null
+          findings: Json | null
+          id: string
+          recommendations: string | null
+          reviewer_id: string | null
+          risk_score: number | null
+          started_at: string
+          status: string
+          wireframe_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          findings?: Json | null
+          id?: string
+          recommendations?: string | null
+          reviewer_id?: string | null
+          risk_score?: number | null
+          started_at?: string
+          status?: string
+          wireframe_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          findings?: Json | null
+          id?: string
+          recommendations?: string | null
+          reviewer_id?: string | null
+          risk_score?: number | null
+          started_at?: string
+          status?: string
+          wireframe_id?: string
+        }
+        Relationships: []
+      }
       simulation_results: {
         Row: {
           average_completion_time: number | null
@@ -4451,6 +4691,39 @@ export type Database = {
           status?: string
           threshold?: number | null
           value?: number | null
+        }
+        Relationships: []
+      }
+      technical_constraints: {
+        Row: {
+          constraint_type: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parameters: Json
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          constraint_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parameters?: Json
+          platform: string
+          updated_at?: string
+        }
+        Update: {
+          constraint_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parameters?: Json
+          platform?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4658,6 +4931,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_flow_paths: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          success_criteria: Json
+          updated_at: string
+          wireframe_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          success_criteria?: Json
+          updated_at?: string
+          wireframe_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          success_criteria?: Json
+          updated_at?: string
+          wireframe_id?: string
+        }
+        Relationships: []
       }
       user_journeys: {
         Row: {
@@ -5476,6 +5785,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wireframe_feasibility_checks: {
+        Row: {
+          completed_at: string | null
+          created_by: string | null
+          id: string
+          issues_detected: Json | null
+          overall_score: number | null
+          platform: string
+          recommendations: Json | null
+          started_at: string
+          status: string
+          wireframe_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_by?: string | null
+          id?: string
+          issues_detected?: Json | null
+          overall_score?: number | null
+          platform: string
+          recommendations?: Json | null
+          started_at?: string
+          status?: string
+          wireframe_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_by?: string | null
+          id?: string
+          issues_detected?: Json | null
+          overall_score?: number | null
+          platform?: string
+          recommendations?: Json | null
+          started_at?: string
+          status?: string
+          wireframe_id?: string
+        }
+        Relationships: []
       }
       wireframe_generated: {
         Row: {
@@ -6378,6 +6726,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      check_technical_feasibility: {
+        Args: { p_wireframe_id: string; p_platform: string }
+        Returns: Json
+      }
       check_wireframe_cache: {
         Args: { p_params_hash: string }
         Returns: Json
@@ -6392,6 +6744,10 @@ export type Database = {
       }
       compare_wireframe_versions: {
         Args: { p_version_id1: string; p_version_id2: string }
+        Returns: Json
+      }
+      conduct_security_review: {
+        Args: { p_wireframe_id: string }
         Returns: Json
       }
       create_background_task: {
@@ -6939,6 +7295,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_user_flow: {
+        Args: { p_path_id: string }
+        Returns: Json
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
@@ -6962,6 +7322,10 @@ export type Database = {
       vector_typmod_in: {
         Args: { "": unknown[] }
         Returns: number
+      }
+      verify_content_adherence: {
+        Args: { p_wireframe_id: string; p_strategy_id: string }
+        Returns: Json
       }
     }
     Enums: {
