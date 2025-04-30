@@ -8,8 +8,7 @@ import { WireframeData } from '@/types/wireframe';
 export interface WireframeEditorProps {
   wireframeData?: WireframeData;
   viewMode?: 'edit' | 'preview' | 'code';
-  projectId?: string; // Added this prop
-  onUpdate?: (updatedWireframe: WireframeData) => void; // Added this prop
+  onUpdate?: (updatedWireframe: WireframeData) => void; 
 }
 
 // Sample wireframe data for demo purposes
@@ -28,7 +27,7 @@ const sampleWireframe: WireframeData = {
       id: 'section-2',
       name: 'Hero Section',
       sectionType: 'hero',
-      description: 'Main hero section with call to action',
+      description: 'Hero section with call to action',
       components: []
     },
     {
@@ -54,7 +53,6 @@ const sampleWireframe: WireframeData = {
 export const WireframeEditor: React.FC<WireframeEditorProps> = ({
   wireframeData = sampleWireframe,
   viewMode = 'edit',
-  projectId, // Use the prop
   onUpdate
 }) => {
   const [activeTab, setActiveTab] = useState(viewMode);
@@ -79,7 +77,6 @@ export const WireframeEditor: React.FC<WireframeEditorProps> = ({
           <CardContent className="p-0">
             <div className="p-4">
               <p>Edit mode - Wireframe editor interface would go here</p>
-              {projectId && <p className="text-xs text-muted-foreground mt-2">Project ID: {projectId}</p>}
             </div>
           </CardContent>
         </TabsContent>

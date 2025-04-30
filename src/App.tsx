@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
 // Import your pages
-import Home from '@/pages';
+import Home from '@/pages/Index';
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 

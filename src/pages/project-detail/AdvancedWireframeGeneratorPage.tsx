@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import WireframeEditor from '../../components/wireframe/WireframeEditor';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -9,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { WireframeEditor } from '@/components/wireframe';
+import { WireframeData } from '@/types/wireframe';
 
 const AdvancedWireframeGeneratorPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -16,11 +17,20 @@ const AdvancedWireframeGeneratorPage: React.FC = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [projectName, setProjectName] = useState<string>('');
-  const [wireframeData, setWireframeData] = useState<any>({
+  const [wireframeData, setWireframeData] = useState<WireframeData>({
     id: uuidv4(),
     title: 'New Wireframe',
-    description: 'Start editing your wireframe',
-    sections: []
+    sections: [],
+    colorScheme: {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff'
+    },
+    typography: {
+      headings: 'Inter',
+      body: 'Inter'
+    }
   });
 
   // Fetch project details when the component mounts
@@ -84,8 +94,8 @@ const AdvancedWireframeGeneratorPage: React.FC = () => {
         </CardHeader>
         <CardContent className="p-0">
           <WireframeEditor 
-            projectId={projectId} 
-            wireframe={wireframeData}
+            wireframeData={wireframeData}
+            viewMode="edit"
             onUpdate={(updatedWireframe) => setWireframeData(updatedWireframe)}
           />
         </CardContent>

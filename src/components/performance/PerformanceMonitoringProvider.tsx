@@ -1,97 +1,129 @@
 
-import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+// Extend Navigator interface to include deviceMemory
+declare global {
+  interface Navigator {
+    deviceMemory?: number;
+  }
+}
 
 interface PerformanceMetrics {
-  renderTime: number;
   fps: number;
-  memoryUsage?: number;
-  networkLatency?: number;
+  memory: {
+    jsHeapSizeLimit: number;
+    totalJSHeapSize: number;
+    usedJSHeapSize: number;
+  } | null;
+  deviceMemory: number | null;
+  cpuCores: number;
+  renderTime: number;
+  loadTime: number;
 }
 
 interface PerformanceContextType {
   metrics: PerformanceMetrics;
+  isMonitoring: boolean;
   startMonitoring: () => void;
   stopMonitoring: () => void;
-  isMonitoring: boolean;
 }
 
 const initialMetrics: PerformanceMetrics = {
+  fps: 0,
+  memory: null,
+  deviceMemory: null,
+  cpuCores: 0,
   renderTime: 0,
-  fps: 60,
-  memoryUsage: undefined,
-  networkLatency: undefined
+  loadTime: 0,
 };
 
-const PerformanceContext = createContext<PerformanceContextType | undefined>(undefined);
+const PerformanceContext = createContext<PerformanceContextType>({
+  metrics: initialMetrics,
+  isMonitoring: false,
+  startMonitoring: () => {},
+  stopMonitoring: () => {},
+});
 
-export function usePerformanceMonitoring() {
-  const context = useContext(PerformanceContext);
-  if (context === undefined) {
-    throw new Error('usePerformanceMonitoring must be used within a PerformanceMonitoringProvider');
-  }
-  return context;
-}
+export const usePerformanceMonitoring = () => useContext(PerformanceContext);
 
 interface PerformanceMonitoringProviderProps {
   children: ReactNode;
   enabled?: boolean;
-  interval?: number;
+  sampleRate?: number;
 }
 
 export const PerformanceMonitoringProvider: React.FC<PerformanceMonitoringProviderProps> = ({
   children,
   enabled = false,
-  interval = 5000
+  sampleRate = 1000,
 }) => {
-  const [isMonitoring, setIsMonitoring] = useState<boolean>(enabled);
   const [metrics, setMetrics] = useState<PerformanceMetrics>(initialMetrics);
+  const [isMonitoring, setIsMonitoring] = useState<boolean>(enabled);
+  const [monitoringInterval, setMonitoringInterval] = useState<number | null>(null);
 
   const startMonitoring = () => {
-    setIsMonitoring(true);
+    if (!isMonitoring) {
+      setIsMonitoring(true);
+    }
   };
 
   const stopMonitoring = () => {
-    setIsMonitoring(false);
+    if (isMonitoring) {
+      setIsMonitoring(false);
+      if (monitoringInterval !== null) {
+        window.clearInterval(monitoringInterval);
+        setMonitoringInterval(null);
+      }
+    }
   };
 
-  // Simulate monitoring metrics
   useEffect(() => {
-    let timerId: number | undefined;
-
     if (isMonitoring) {
-      timerId = window.setInterval(() => {
-        // Simulated metrics collection
-        const now = performance.now();
-        const lastRenderTime = Math.random() * 10 + 5; // Simulated render time between 5-15ms
-        const currentFps = Math.floor(60 - Math.random() * 10); // Simulated FPS between 50-60
+      // Get initial device info
+      const deviceMemory = navigator.deviceMemory !== undefined ? navigator.deviceMemory : null;
+      const cpuCores = navigator.hardwareConcurrency || 0;
 
-        setMetrics({
-          renderTime: lastRenderTime,
-          fps: currentFps,
-          memoryUsage: navigator.deviceMemory ? navigator.deviceMemory * 1024 : undefined,
-          networkLatency: Math.random() * 50 + 20 // Simulated network latency between 20-70ms
-        });
+      setMetrics((prev) => ({
+        ...prev,
+        deviceMemory,
+        cpuCores,
+        loadTime: performance.now(),
+      }));
 
-        // Log metrics to console for debugging
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('Performance metrics:', {
-            renderTime: lastRenderTime,
-            fps: currentFps,
-            timestamp: new Date().toISOString()
-          });
-        }
-      }, interval);
+      // Set up monitoring interval
+      const intervalId = window.setInterval(() => {
+        const memory = (performance as any).memory
+          ? {
+              jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit,
+              totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
+              usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
+            }
+          : null;
+
+        setMetrics((prev) => ({
+          ...prev,
+          memory,
+          renderTime: performance.now(),
+        }));
+      }, sampleRate);
+
+      setMonitoringInterval(intervalId);
+
+      return () => {
+        window.clearInterval(intervalId);
+      };
     }
-
-    return () => {
-      if (timerId) {
-        clearInterval(timerId);
-      }
-    };
-  }, [isMonitoring, interval]);
+  }, [isMonitoring, sampleRate]);
 
   return (
-    <PerformanceContext.Provider value={{ metrics, startMonitoring, stopMonitoring, isMonitoring }}>
+    <PerformanceContext.Provider
+      value={{
+        metrics,
+        isMonitoring,
+        startMonitoring,
+        stopMonitoring,
+      }}
+    >
       {children}
     </PerformanceContext.Provider>
   );
