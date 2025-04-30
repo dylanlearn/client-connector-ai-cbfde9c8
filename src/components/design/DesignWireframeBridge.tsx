@@ -1,187 +1,98 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { AlertMessage } from '@/components/ui/alert-message';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { useWireframe } from '@/hooks/useWireframe';
-import { AdvancedWireframeGenerator } from '@/components/wireframe';
-import { v4 as uuidv4 } from 'uuid';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WireframeEditor } from '@/components/wireframe';
+import { WireframeData as ServiceWireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData as TypesWireframeData } from '@/types/wireframe';
 
 interface DesignWireframeBridgeProps {
-  designData: any;
-  onWireframeGenerated?: (wireframe: WireframeData) => void;
+  designData?: any;
   projectId?: string;
 }
 
-const DesignWireframeBridge: React.FC<DesignWireframeBridgeProps> = ({
-  designData,
-  onWireframeGenerated,
-  projectId
+// Create a bridging function to ensure compatibility between the two WireframeData types
+const adaptWireframeData = (wireframe: ServiceWireframeData): TypesWireframeData => {
+  // Ensure all required properties in TypesWireframeData are present
+  return {
+    ...wireframe,
+    sections: wireframe.sections.map(section => ({
+      ...section,
+      // Ensure 'name' is always provided as it's required in TypesWireframeData
+      name: section.name || `Section ${section.id.substring(0, 5)}`,
+    }))
+  } as TypesWireframeData;
+};
+
+const DesignWireframeBridge: React.FC<DesignWireframeBridgeProps> = ({ 
+  designData = {}, 
+  projectId 
 }) => {
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [wireframeData, setWireframeData] = useState<WireframeData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
-  const [bridgeProjectId] = useState(() => projectId || uuidv4());
+  const [wireframeData, setWireframeData] = React.useState<TypesWireframeData | null>(null);
   
-  const { generateWireframe } = useWireframe({
-    projectId: bridgeProjectId,
-    showToasts: true
-  });
+  // Process design data into wireframe when the component mounts or designData changes
+  React.useEffect(() => {
+    if (Object.keys(designData).length > 0) {
+      // Convert design data to wireframe structure
+      // This is a simplified implementation - you'd want to expand this based on your needs
+      const wireframe: ServiceWireframeData = {
+        id: projectId || 'design-wireframe',
+        title: designData.title || 'Design Wireframe',
+        sections: designData.sections || [],
+        colorScheme: designData.colorScheme || {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          background: '#ffffff'
+        },
+        typography: designData.typography || {
+          headings: 'Inter',
+          body: 'Inter'
+        }
+      };
+      
+      // Adapt the wireframe to ensure compatibility
+      setWireframeData(adaptWireframeData(wireframe));
+    }
+  }, [designData, projectId]);
   
-  // Generate a prompt based on design data
-  useEffect(() => {
-    if (!designData) return;
-
-    try {
-      // Extract relevant information from design data
-      const { 
-        businessName, 
-        businessType,
-        brandStyle,
-        colorScheme,
-        typography,
-        layoutPreferences,
-        designElements = {},
-      } = designData;
-      
-      // Create a descriptive prompt based on design data
-      let prompt = `Create a ${businessType || 'business'} website`;
-      
-      if (businessName) {
-        prompt += ` for ${businessName}`;
-      }
-      
-      if (brandStyle) {
-        prompt += ` with a ${brandStyle} style`;
-      }
-      
-      if (colorScheme && colorScheme.primary) {
-        prompt += `. Use ${colorScheme.primary} as the primary color`;
-        if (colorScheme.secondary) {
-          prompt += ` and ${colorScheme.secondary} as the secondary color`;
-        }
-      }
-      
-      if (typography && typography.headings) {
-        prompt += `. Use ${typography.headings} for headings`;
-        if (typography.body) {
-          prompt += ` and ${typography.body} for body text`;
-        }
-      }
-      
-      if (layoutPreferences) {
-        prompt += `. The layout should be ${layoutPreferences}`;
-      }
-      
-      setGeneratedPrompt(prompt);
-    } catch (err) {
-      console.error("Error generating prompt from design data:", err);
-      setError("Failed to process design data");
-    }
-  }, [designData]);
-
-  // Handle wireframe generation
-  const handleGenerateWireframe = async () => {
-    if (!generatedPrompt) {
-      toast.error('Cannot generate wireframe: No design data available');
-      return;
-    }
-    
-    setIsGenerating(true);
-    setError(null);
-    
-    try {
-      const result = await generateWireframe({
-        description: generatedPrompt,
-        projectId: bridgeProjectId
-      });
-      
-      if (result.success && result.wireframe) {
-        setWireframeData(result.wireframe);
-        
-        if (onWireframeGenerated) {
-          onWireframeGenerated(result.wireframe);
-        }
-        
-        toast.success('Wireframe generated successfully!');
-      } else {
-        throw new Error(result.message || 'Failed to generate wireframe');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
-      toast.error('Error generating wireframe: ' + errorMessage);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-  
-  // Helper to render status message
-  const renderStatus = () => {
-    if (error) {
-      return (
-        <AlertMessage type="error" title="Error">
-          {error}
-        </AlertMessage>
-      );
-    }
-    
-    if (wireframeData) {
-      return (
-        <AlertMessage type="success" title="Success">
-          Wireframe generated successfully!
-        </AlertMessage>
-      );
-    }
-    
-    return null;
-  };
-
   return (
-    <div className="design-wireframe-bridge p-4 border rounded-lg bg-background">
-      <h3 className="text-lg font-medium mb-4">Generate Wireframe from Design</h3>
-      
-      {renderStatus()}
-      
-      {designData && (
-        <div className="space-y-4 mt-4">
-          <div className="p-4 bg-muted rounded-md">
-            <h4 className="text-sm font-medium mb-2">Generated Prompt</h4>
-            <p className="text-sm text-muted-foreground">{generatedPrompt}</p>
-          </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Design to Wireframe</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="wireframe">
+          <TabsList className="mb-4">
+            <TabsTrigger value="wireframe">Wireframe</TabsTrigger>
+            <TabsTrigger value="design">Design Details</TabsTrigger>
+          </TabsList>
           
-          <div className="flex justify-between items-center">
-            <Button 
-              onClick={handleGenerateWireframe}
-              disabled={isGenerating || !generatedPrompt}
-            >
-              {isGenerating ? 'Generating...' : 'Generate Wireframe'}
-            </Button>
-            
-            {wireframeData && (
-              <Button 
-                variant="outline"
-                onClick={() => setWireframeData(null)}
-              >
-                Reset
-              </Button>
-            )}
-          </div>
-          
-          {wireframeData && (
-            <div className="mt-6 border rounded-lg overflow-hidden">
-              <AdvancedWireframeGenerator
-                projectId={bridgeProjectId}
-                initialWireframeData={wireframeData}
-                viewMode="preview"
+          <TabsContent value="wireframe" className="space-y-4">
+            {wireframeData ? (
+              <WireframeEditor 
+                wireframeData={wireframeData}
+                projectId={projectId}
+                onUpdate={(updated) => setWireframeData(updated)}
               />
+            ) : (
+              <div className="p-4 text-center bg-muted rounded-md">
+                <p>No wireframe data available. Please provide design details.</p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="design">
+            <div className="p-4 bg-muted rounded-lg">
+              <h3 className="text-lg font-medium mb-2">Design Specifications</h3>
+              <pre className="text-xs overflow-auto max-h-96 p-4 bg-background rounded border">
+                {JSON.stringify(designData, null, 2)}
+              </pre>
             </div>
-          )}
-        </div>
-      )}
-    </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
