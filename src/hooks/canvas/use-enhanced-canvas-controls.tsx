@@ -8,6 +8,7 @@ import {
   Grid2X2,
   LayoutGrid
 } from 'lucide-react';
+import { fabric } from 'fabric';
 
 export interface CanvasControlsProps {
   canvas: fabric.Canvas | null;

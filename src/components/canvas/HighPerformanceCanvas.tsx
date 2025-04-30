@@ -1,6 +1,7 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useEnhancedCanvasEngine } from '@/hooks/canvas/use-enhanced-canvas-engine';
+import { useEnhancedCanvasControls } from '@/hooks/canvas/use-enhanced-canvas-controls';
 
 export interface HighPerformanceCanvasProps {
   width?: number;
@@ -22,6 +23,7 @@ const HighPerformanceCanvas: React.FC<HighPerformanceCanvasProps> = ({
   enableMemoryManagement = true
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [gridVisible, setGridVisible] = useState(enableGrid);
   
   // Configure optimization options based on level
   const optimizationOptions = {
@@ -45,35 +47,49 @@ const HighPerformanceCanvas: React.FC<HighPerformanceCanvasProps> = ({
   // Initialize enhanced canvas engine
   const {
     canvasRef,
-    canvasControls,
+    canvas,
+    isDragging,
+    isZooming,
+    zoom,
     performanceMetrics,
-    gridVisible,
-    setGridVisible
+    panCanvas,
+    zoomIn, 
+    zoomOut,
+    resetZoom,
+    setZoom,
+    toggleGridVisibility
   } = useEnhancedCanvasEngine({
+    gridOptions: {
+      visible: gridVisible,
+      size: 20,
+      type: 'lines'
+    },
     canvasOptions: {
       width,
       height,
       backgroundColor
-    },
-    gridOptions: {
-      visible: enableGrid,
-      size: 20,
-      type: 'lines'
-    },
-    optimizationOptions: {
-      ...optimizationOptions,
-      useLayerCaching: enableLayerCaching
-    },
-    memoryOptions: {
-      autoGarbageCollection: enableMemoryManagement,
-      objectPooling: enableMemoryManagement
     }
+  });
+  
+  // Create canvas controls using our hook
+  const canvasControls = useEnhancedCanvasControls({
+    canvas,
+    zoom,
+    isDragging,
+    onZoomIn: zoomIn,
+    onZoomOut: zoomOut,
+    onResetZoom: resetZoom,
+    onToggleGrid: () => {
+      setGridVisible(prev => !prev);
+      toggleGridVisibility();
+    },
+    onSetZoom: setZoom
   });
   
   // Update grid visibility when prop changes
   useEffect(() => {
     setGridVisible(enableGrid);
-  }, [enableGrid, setGridVisible]);
+  }, [enableGrid]);
   
   return (
     <div className="w-full h-full flex flex-col" ref={containerRef}>
