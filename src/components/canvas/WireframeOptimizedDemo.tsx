@@ -27,7 +27,8 @@ const WireframeOptimizedDemo: React.FC<WireframeOptimizedDemoProps> = ({
     toggleGridVisibility,
     renderCanvas,
     addObject,
-    removeObject
+    removeObject,
+    panCanvas
   } = useEnhancedCanvasEngine({
     canvasOptions: {
       width,
@@ -37,7 +38,9 @@ const WireframeOptimizedDemo: React.FC<WireframeOptimizedDemoProps> = ({
     gridOptions: {
       visible: true,
       size: 20,
-      type: 'lines'
+      type: 'lines',
+      color: '#e0e0e0',
+      opacity: 0.5
     }
   });
   

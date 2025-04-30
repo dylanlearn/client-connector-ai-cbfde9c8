@@ -1,230 +1,281 @@
-/**
- * Canvas Optimization Service
- * Provides optimization techniques for Fabric.js canvas rendering
- */
+
+import { fabric } from 'fabric';
 
 export interface RenderingMetrics {
   frameRate: number;
   renderTime: number;
   objectCount: number;
-  timestamp?: number;
-  memoryUsage?: number;
 }
 
 export interface CanvasOptimizationOptions {
-  useLayerCaching?: boolean;
-  offscreenSkipping?: boolean;
-  incrementalRendering?: boolean;
-  hardwareAcceleration?: boolean;
-  disableSmoothing?: boolean;
-  minimumFrameTime?: number;
+  enableLayerCaching?: boolean;
+  enableIncrementalRendering?: boolean;
+  enableHardwareAcceleration?: boolean;
+  autoOptimize?: boolean;
   objectThreshold?: number;
+  optimizationInterval?: number;
 }
+
+type CanvasRegistry = Record<string, {
+  canvas: fabric.Canvas;
+  options: CanvasOptimizationOptions;
+  metrics: RenderingMetrics;
+  lastRenderTime: number;
+  frameCount: number;
+  lastFrameTimestamp: number;
+}>;
 
 class CanvasOptimizationService {
   private options: CanvasOptimizationOptions = {
-    useLayerCaching: true,
-    offscreenSkipping: true,
-    incrementalRendering: false,
-    hardwareAcceleration: true,
-    disableSmoothing: false,
-    minimumFrameTime: 16, // ~60fps
-    objectThreshold: 100
+    enableLayerCaching: true,
+    enableIncrementalRendering: true,
+    enableHardwareAcceleration: true,
+    autoOptimize: true,
+    objectThreshold: 100,
+    optimizationInterval: 500
   };
-
-  private canvasRegistry: Map<string, fabric.Canvas> = new Map();
-  private layerCache: Map<string, HTMLCanvasElement> = new Map();
-  private metrics: RenderingMetrics = {
-    frameRate: 60,
-    renderTime: 0,
-    objectCount: 0
-  };
-
-  private lastRenderTime: number = 0;
-  private frameCount: number = 0;
-  private fpsAccumulator: number = 0;
-  private measurementInterval: number = 1000; // 1 second
-
-  /**
-   * Configure the optimization service options
-   */
-  configure(options: Partial<CanvasOptimizationOptions>): void {
+  
+  private canvasRegistry: CanvasRegistry = {};
+  private animationFrameRequestId: number | null = null;
+  
+  // Configure global optimization options
+  public configure(options: CanvasOptimizationOptions): void {
     this.options = { ...this.options, ...options };
-  }
-
-  /**
-   * Initialize optimization for a specific canvas
-   */
-  initializeCanvas(canvas: fabric.Canvas, canvasId: string): void {
-    if (!canvas) return;
     
-    this.canvasRegistry.set(canvasId, canvas);
+    // Apply to any existing registered canvases
+    Object.values(this.canvasRegistry).forEach(entry => {
+      entry.options = { ...entry.options, ...options };
+    });
+  }
+  
+  // Initialize a canvas with optimizations
+  public initializeCanvas(canvas: fabric.Canvas, id: string): void {
+    // Register the canvas
+    this.canvasRegistry[id] = {
+      canvas,
+      options: { ...this.options },
+      metrics: {
+        frameRate: 60,
+        renderTime: 0,
+        objectCount: canvas.getObjects().length
+      },
+      lastRenderTime: 0,
+      frameCount: 0,
+      lastFrameTimestamp: performance.now()
+    };
     
     // Apply hardware acceleration if enabled
-    if (this.options.hardwareAcceleration) {
-      this.enableHardwareAcceleration(canvas);
+    if (this.options.enableHardwareAcceleration) {
+      this.applyHardwareAcceleration(canvas);
     }
     
-    // Setup incremental rendering if enabled
-    if (this.options.incrementalRendering) {
-      this.setupIncrementalRendering(canvas);
+    // Apply layer caching if enabled
+    if (this.options.enableLayerCaching) {
+      this.applyLayerCaching(canvas);
     }
     
-    // Setup frame rate monitoring
-    this.setupPerformanceMonitoring(canvas);
-    
-    // Initialize layer cache if enabled
-    if (this.options.useLayerCaching) {
-      this.initializeLayerCache(canvas, canvasId);
-    }
-    
-    console.log(`Canvas optimization initialized for ${canvasId} with options:`, this.options);
+    // Start performance monitoring
+    this.startMonitoring();
   }
-
-  /**
-   * Enable hardware acceleration for the canvas
-   */
-  private enableHardwareAcceleration(canvas: fabric.Canvas): void {
-    if (!canvas.lowerCanvasEl) return;
-    
-    // Apply hardware acceleration via CSS transform
-    const lowerCanvas = canvas.lowerCanvasEl as HTMLCanvasElement;
-    lowerCanvas.style.transform = 'translateZ(0)';
-    lowerCanvas.style.backfaceVisibility = 'hidden';
-    
-    // Force GPU acceleration
-    const upperCanvas = canvas.upperCanvasEl as HTMLCanvasElement;
-    if (upperCanvas) {
-      upperCanvas.style.transform = 'translateZ(0)';
-      upperCanvas.style.backfaceVisibility = 'hidden';
-    }
-  }
-
-  /**
-   * Setup incremental rendering for complex scenes
-   */
-  private setupIncrementalRendering(canvas: fabric.Canvas): void {
-    const originalRenderAll = canvas.renderAll.bind(canvas);
-    
-    canvas.renderAll = function() {
-      const objects = this.getObjects();
-      const objectCount = objects.length;
+  
+  // Apply hardware acceleration
+  private applyHardwareAcceleration(canvas: fabric.Canvas): void {
+    // Access the canvas element
+    const canvasEl = canvas.lowerCanvasEl;
+    if (canvasEl) {
+      // Force GPU acceleration
+      canvasEl.style.transform = 'translateZ(0)';
+      canvasEl.style.backfaceVisibility = 'hidden';
       
-      // If object count is below threshold, use standard rendering
-      if (objectCount < this.options?.objectThreshold || !this.options?.incrementalRendering) {
-        return originalRenderAll();
+      // Optional: use webkitBackingStorePixelRatio for retina displays
+      const ctx = canvasEl.getContext('2d');
+      if (ctx) {
+        // Force subpixel rendering
+        ctx.imageSmoothingEnabled = true;
+        // For Safari
+        (ctx as any).webkitImageSmoothingEnabled = true;
       }
-      
-      // Otherwise use incremental rendering
-      const batchSize = Math.ceil(objectCount / 3); // Render in 3 batches
-      let renderedCount = 0;
-      
-      const renderBatch = () => {
-        const start = renderedCount;
-        const end = Math.min(renderedCount + batchSize, objectCount);
+    }
+  }
+  
+  // Apply layer caching
+  private applyLayerCaching(canvas: fabric.Canvas): void {
+    // Configure caching properties for all objects
+    canvas.getObjects().forEach(obj => {
+      if (this.shouldCacheObject(obj)) {
+        // Disable automatic cache invalidation
+        obj.objectCaching = true;
+        obj.statefullCache = false;
+        obj.noScaleCache = false;
         
-        for (let i = start; i < end; i++) {
-          objects[i].dirty = true;
+        // Force regeneration of cache
+        obj.dirty = true;
+      }
+    });
+    
+    // Override the object addition to apply caching to new objects
+    const originalAdd = canvas.add.bind(canvas);
+    canvas.add = function(...objects: fabric.Object[]) {
+      objects.forEach(obj => {
+        if (this.shouldCacheObject(obj)) {
+          obj.objectCaching = true;
         }
+      });
+      return originalAdd(...objects);
+    }.bind(canvas);
+  }
+  
+  // Determine if an object should be cached
+  private shouldCacheObject(obj: fabric.Object): boolean {
+    // Only cache objects that are expensive to render
+    const isComplex = obj instanceof fabric.Group || 
+                      obj instanceof fabric.Path || 
+                      obj instanceof fabric.Text;
+    
+    return isComplex || 
+           (obj.width && obj.width > 100) || 
+           (obj.height && obj.height > 100);
+  }
+  
+  // Start performance monitoring
+  private startMonitoring(): void {
+    if (this.animationFrameRequestId === null) {
+      const monitorFrameRate = () => {
+        const timestamp = performance.now();
         
-        renderedCount = end;
-        originalRenderAll();
+        Object.entries(this.canvasRegistry).forEach(([id, entry]) => {
+          // Update frame count and timestamp
+          entry.frameCount++;
+          
+          // Calculate FPS every second
+          if (timestamp - entry.lastFrameTimestamp >= 1000) {
+            const fps = entry.frameCount * 1000 / (timestamp - entry.lastFrameTimestamp);
+            entry.metrics.frameRate = fps;
+            entry.frameCount = 0;
+            entry.lastFrameTimestamp = timestamp;
+            entry.metrics.objectCount = entry.canvas.getObjects().length;
+            
+            // Auto-optimize if needed
+            if (entry.options.autoOptimize && 
+                entry.metrics.frameRate < 30 && 
+                entry.metrics.objectCount > (entry.options.objectThreshold || 100)) {
+              this.optimizeCanvas(id);
+            }
+          }
+        });
         
-        if (renderedCount < objectCount) {
-          requestAnimationFrame(renderBatch);
-        }
+        this.animationFrameRequestId = requestAnimationFrame(monitorFrameRate);
       };
       
-      requestAnimationFrame(renderBatch);
-      return this;
+      this.animationFrameRequestId = requestAnimationFrame(monitorFrameRate);
+    }
+  }
+  
+  // Stop performance monitoring
+  private stopMonitoring(): void {
+    if (this.animationFrameRequestId !== null) {
+      cancelAnimationFrame(this.animationFrameRequestId);
+      this.animationFrameRequestId = null;
+    }
+  }
+  
+  // Optimize a specific canvas
+  public optimizeCanvas(id: string): void {
+    const entry = this.canvasRegistry[id];
+    if (!entry) return;
+    
+    const { canvas, options } = entry;
+    const objects = canvas.getObjects();
+    
+    // Implement canvas-specific optimizations based on options
+    if (options.enableLayerCaching) {
+      objects.forEach(obj => {
+        if (this.shouldCacheObject(obj)) {
+          obj.objectCaching = true;
+        }
+      });
+    }
+    
+    if (options.enableIncrementalRendering && objects.length > (options.objectThreshold || 100)) {
+      // Implement incremental rendering strategies
+      // For example, only render objects in the viewport
+      this.applyIncrementalRendering(canvas);
+    }
+  }
+  
+  // Apply incremental rendering
+  private applyIncrementalRendering(canvas: fabric.Canvas): void {
+    // Example implementation - could be more sophisticated
+    // This is a simplified approach that skips rendering off-screen objects
+    
+    // Get viewport bounds
+    const vpt = canvas.viewportTransform;
+    if (!vpt) return;
+    
+    const vpWidth = canvas.width || 0;
+    const vpHeight = canvas.height || 0;
+    
+    // Adjust object.visible based on whether they're in the viewport
+    canvas.getObjects().forEach(obj => {
+      if (!obj.aCoords) return;
+      
+      // Convert object coords to viewport
+      const objLeft = obj.aCoords.tl.x * vpt[0] + vpt[4];
+      const objTop = obj.aCoords.tl.y * vpt[3] + vpt[5];
+      const objRight = obj.aCoords.br.x * vpt[0] + vpt[4];
+      const objBottom = obj.aCoords.br.y * vpt[3] + vpt[5];
+      
+      // Check if object is in viewport
+      const inViewport = !(
+        objRight < 0 ||
+        objLeft > vpWidth ||
+        objBottom < 0 ||
+        objTop > vpHeight
+      );
+      
+      // Skip rendering for objects outside viewport
+      // Don't change visibility, just skip rendering calculations
+      if (!inViewport && obj.visible) {
+        obj.visible = false;
+        obj.__inViewport = false; // Custom property to track actual visibility
+      } else if (inViewport && obj.__inViewport === false) {
+        obj.visible = true;
+        obj.__inViewport = undefined;
+      }
+    });
+  }
+  
+  // Get current rendering metrics
+  public getRenderingMetrics(): RenderingMetrics {
+    // Aggregate metrics from all canvases
+    const canvases = Object.values(this.canvasRegistry);
+    if (canvases.length === 0) {
+      return {
+        frameRate: 60,
+        renderTime: 0,
+        objectCount: 0
+      };
+    }
+    
+    // Calculate average metrics across all canvases
+    return {
+      frameRate: canvases.reduce((sum, entry) => sum + entry.metrics.frameRate, 0) / canvases.length,
+      renderTime: canvases.reduce((sum, entry) => sum + entry.metrics.renderTime, 0) / canvases.length,
+      objectCount: canvases.reduce((sum, entry) => sum + entry.metrics.objectCount, 0)
     };
   }
-
-  /**
-   * Initialize layer caching for static elements
-   */
-  private initializeLayerCache(canvas: fabric.Canvas, canvasId: string): void {
-    const cachedCanvas = document.createElement('canvas');
-    cachedCanvas.width = canvas.width || 0;
-    cachedCanvas.height = canvas.height || 0;
+  
+  // Clean up when a canvas is removed
+  public cleanupCanvas(id: string): void {
+    delete this.canvasRegistry[id];
     
-    this.layerCache.set(canvasId, cachedCanvas);
-    
-    // Override renderAll to use layer caching
-    const originalRenderAll = canvas.renderAll.bind(canvas);
-    
-    canvas.renderAll = function() {
-      const start = performance.now();
-      originalRenderAll();
-      const end = performance.now();
-      
-      // Update metrics
-      this.metrics = {
-        ...this.metrics,
-        renderTime: end - start,
-        objectCount: canvas.getObjects().length,
-        timestamp: Date.now()
-      };
-      
-      return this;
-    }.bind(this);
-  }
-
-  /**
-   * Setup performance monitoring
-   */
-  private setupPerformanceMonitoring(canvas: fabric.Canvas): void {
-    let lastFrameTime = performance.now();
-    let frameCount = 0;
-    
-    // Patch the renderAll method to track performance
-    const originalRenderAll = canvas.renderAll.bind(canvas);
-    
-    canvas.renderAll = function() {
-      const now = performance.now();
-      const delta = now - lastFrameTime;
-      frameCount++;
-      
-      // Calculate metrics every second
-      if (delta >= this.measurementInterval) {
-        const fps = Math.round((frameCount * 1000) / delta);
-        
-        this.metrics = {
-          ...this.metrics,
-          frameRate: fps,
-          objectCount: canvas.getObjects().length
-        };
-        
-        frameCount = 0;
-        lastFrameTime = now;
-      }
-      
-      const start = performance.now();
-      originalRenderAll();
-      const renderTime = performance.now() - start;
-      
-      this.metrics.renderTime = renderTime;
-      
-      return this;
-    }.bind(this);
-  }
-
-  /**
-   * Get the current rendering metrics
-   */
-  getRenderingMetrics(): RenderingMetrics {
-    return { ...this.metrics };
-  }
-
-  /**
-   * Cleanup canvas resources
-   */
-  cleanupCanvas(canvasId: string): void {
-    this.canvasRegistry.delete(canvasId);
-    this.layerCache.delete(canvasId);
+    if (Object.keys(this.canvasRegistry).length === 0) {
+      this.stopMonitoring();
+    }
   }
 }
 
-// Export singleton instance
+// Create singleton instance
 const canvasOptimizationService = new CanvasOptimizationService();
+
 export default canvasOptimizationService;

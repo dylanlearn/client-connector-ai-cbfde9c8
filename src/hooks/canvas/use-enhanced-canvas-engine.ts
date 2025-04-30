@@ -2,7 +2,6 @@
 import { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import { useHighPerformanceCanvas } from './use-high-performance-canvas';
 import { fabric } from 'fabric';
-import { GridConfig } from '@/utils/monitoring/grid-utils';
 
 export interface GridOptions {
   visible: boolean;
@@ -30,7 +29,7 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
   const [isDragging, setIsDragging] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 }); // Renamed from pan to panPosition
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const lastPointerPos = useRef({ x: 0, y: 0 });
   const isPointerDown = useRef(false);
   
@@ -68,9 +67,10 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
     width: canvasOptions.width,
     height: canvasOptions.height,
     optimizationOptions: {
-      useLayerCaching: true, // Changed from enableLayerCaching to useLayerCaching
-      incrementalRendering: true,
-      hardwareAcceleration: true
+      enableLayerCaching: true,
+      enableIncrementalRendering: true,
+      enableHardwareAcceleration: true,
+      autoOptimize: true
     }
   });
   
@@ -108,7 +108,7 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
           vpt[5] += dy;
           canvas.setViewportTransform(vpt);
           
-          setPanPosition({  // Changed from setPan to setPanPosition
+          setPanPosition({
             x: vpt[4],
             y: vpt[5]
           });
@@ -153,7 +153,7 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
             newZoom, 0, 0, newZoom, vpt[4], vpt[5]
           ]);
           
-          setPanPosition({  // Changed from setPan to setPanPosition
+          setPanPosition({
             x: vpt[4],
             y: vpt[5]
           });
@@ -234,13 +234,13 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     
     setZoom(1);
-    setPanPosition({ x: 0, y: 0 });  // Changed from setPan to setPanPosition
+    setPanPosition({ x: 0, y: 0 });
     setIsZooming(true);
     setTimeout(() => setIsZooming(false), 300);
   }, [canvas]);
   
-  // Pan function - renamed to panCanvas to avoid conflict with the state variable
-  const panCanvas = useCallback((x: number, y: number) => {  // Renamed from pan to panCanvas
+  // Pan function
+  const panCanvas = useCallback((x: number, y: number) => {
     if (!canvas) return;
     
     if (canvas.viewportTransform) {
@@ -249,7 +249,7 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
       vpt[5] += y;
       canvas.setViewportTransform(vpt);
       
-      setPanPosition({  // Changed from setPan to setPanPosition
+      setPanPosition({
         x: vpt[4],
         y: vpt[5]
       });
@@ -271,7 +271,7 @@ export function useEnhancedCanvasEngine(options?: EnhancedCanvasEngineOptions) {
     performanceMetrics,
     initializeCanvas,
     renderCanvas,
-    panCanvas,  // Changed from pan to panCanvas
+    panCanvas,
     zoomIn,
     zoomOut,
     resetZoom,

@@ -2,137 +2,169 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 import { 
-  GridConfig, 
-  DEFAULT_GRID_CONFIG,
+  DEFAULT_GRID_CONFIG, 
+  GridConfig,
+  GridBreakpoint,
   createCanvasGrid,
   removeGridFromCanvas,
-  updateCanvasGrid
+  updateCanvasGrid,
+  getBreakpointFromWidth
 } from '@/utils/monitoring/grid-utils';
 
-interface UseGridSystemOptions {
-  initialConfig?: Partial<GridConfig>;
+export interface UseGridSystemOptions {
   canvas: fabric.Canvas | null;
+  width: number;
+  height: number;
+  initialConfig?: Partial<GridConfig>;
 }
 
-export function useGridSystem({ initialConfig = {}, canvas }: UseGridSystemOptions) {
-  // Initialize grid config with defaults and any provided overrides
+export function useGridSystem({
+  canvas,
+  width,
+  height,
+  initialConfig = {}
+}: UseGridSystemOptions) {
+  // Initialize grid config with defaults and any overrides
   const [gridConfig, setGridConfig] = useState<GridConfig>({
     ...DEFAULT_GRID_CONFIG,
     ...initialConfig
   });
-  
+
   // Toggle grid visibility
   const toggleGridVisibility = useCallback(() => {
-    setGridConfig(prev => {
-      const newVisibility = !prev.visible;
-      
-      if (canvas) {
-        if (newVisibility) {
-          // Show grid
-          const gridResult = createCanvasGrid(canvas, prev.size, prev.type);
-          gridResult.gridLines.forEach(line => {
-            canvas.add(line);
-            canvas.sendToBack(line);
-          });
-        } else {
-          // Hide grid
-          removeGridFromCanvas(canvas);
-        }
-        canvas.renderAll();
-      }
-      
-      return { ...prev, visible: newVisibility };
-    });
-  }, [canvas]);
-  
+    setGridConfig(prev => ({
+      ...prev,
+      visible: !prev.visible
+    }));
+  }, []);
+
   // Toggle snap to grid
   const toggleSnapToGrid = useCallback(() => {
-    setGridConfig(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }));
+    setGridConfig(prev => ({
+      ...prev,
+      snapToGrid: !prev.snapToGrid
+    }));
   }, []);
-  
+
   // Set grid size
   const setGridSize = useCallback((size: number) => {
-    setGridConfig(prev => {
-      if (canvas && prev.visible) {
-        const gridResult = updateCanvasGrid(canvas, size, prev.type);
-        canvas.renderAll();
-      }
-      return { ...prev, size };
-    });
-  }, [canvas]);
-  
+    setGridConfig(prev => ({
+      ...prev,
+      size
+    }));
+  }, []);
+
   // Set grid type
   const setGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
-    setGridConfig(prev => {
-      if (canvas && prev.visible) {
-        const gridResult = updateCanvasGrid(canvas, prev.size, type);
-        canvas.renderAll();
-      }
-      return { ...prev, type };
-    });
-  }, [canvas]);
-  
-  // Update column settings for column grid
-  const updateColumnSettings = useCallback((columns: number, gutterWidth: number, marginWidth: number) => {
-    setGridConfig(prev => ({ ...prev }));
-    
-    // Implementation would depend on how you want to handle column grids
+    setGridConfig(prev => ({
+      ...prev,
+      type
+    }));
   }, []);
-  
+
+  // Set grid color
+  const setGridColor = useCallback((color: string) => {
+    setGridConfig(prev => ({
+      ...prev,
+      color
+    }));
+  }, []);
+
   // Update the entire grid config
   const updateGridConfig = useCallback((newConfig: Partial<GridConfig>) => {
-    setGridConfig(prev => {
-      const updated = { ...prev, ...newConfig };
-      
-      // If visibility changed
-      if (canvas && prev.visible !== updated.visible) {
-        if (updated.visible) {
-          // Show grid
-          const gridResult = createCanvasGrid(canvas, updated.size, updated.type);
-          gridResult.gridLines.forEach(line => {
-            canvas.add(line);
-            canvas.sendToBack(line);
-          });
-        } else {
-          // Hide grid
-          removeGridFromCanvas(canvas);
-        }
-      } 
-      // If grid is visible and size or type changed
-      else if (canvas && updated.visible && 
-               (prev.size !== updated.size || prev.type !== updated.type)) {
-        const gridResult = updateCanvasGrid(canvas, updated.size, updated.type);
-        canvas.renderAll();
-      }
-      
-      return updated;
-    });
-  }, [canvas]);
-  
-  // Initialize or update grid when canvas changes
+    setGridConfig(prev => ({
+      ...prev,
+      ...newConfig
+    }));
+  }, []);
+
+  // Render grid when config changes
   useEffect(() => {
-    if (canvas && gridConfig.visible) {
-      // Clear any existing grid
-      removeGridFromCanvas(canvas);
+    if (!canvas) return;
+
+    // Clear existing grid
+    removeGridFromCanvas(canvas);
+
+    // Create new grid if visible
+    if (gridConfig.visible) {
+      const result = createCanvasGrid(canvas, gridConfig.size, gridConfig.type);
       
-      // Create new grid
-      const gridResult = createCanvasGrid(canvas, gridConfig.size, gridConfig.type);
-      gridResult.gridLines.forEach(line => {
+      result.gridLines.forEach(line => {
+        if (gridConfig.color) {
+          line.set('stroke', gridConfig.color);
+        }
         canvas.add(line);
         canvas.sendToBack(line);
       });
-      
+
       canvas.renderAll();
     }
-  }, [canvas, gridConfig.visible]);
-  
+  }, [canvas, gridConfig.visible, gridConfig.size, gridConfig.type, gridConfig.color]);
+
+  // Set up snap to grid
+  useEffect(() => {
+    if (!canvas) return;
+
+    const handleObjectMoving = (e: fabric.IEvent) => {
+      if (!gridConfig.snapToGrid || !e.target) return;
+
+      const target = e.target;
+      const gridSize = gridConfig.size;
+
+      if (target.left !== undefined) {
+        target.set({
+          left: Math.round(target.left / gridSize) * gridSize
+        });
+      }
+
+      if (target.top !== undefined) {
+        target.set({
+          top: Math.round(target.top / gridSize) * gridSize
+        });
+      }
+    };
+
+    if (gridConfig.snapToGrid) {
+      canvas.on('object:moving', handleObjectMoving);
+    } else {
+      canvas.off('object:moving', handleObjectMoving);
+    }
+
+    return () => {
+      canvas.off('object:moving', handleObjectMoving);
+    };
+  }, [canvas, gridConfig.snapToGrid, gridConfig.size]);
+
+  // Update grid when canvas dimensions change
+  useEffect(() => {
+    if (!canvas) return;
+
+    // Update grid positions for new dimensions
+    removeGridFromCanvas(canvas);
+    
+    // Create new grid if visible
+    if (gridConfig.visible) {
+      const result = createCanvasGrid(canvas, gridConfig.size, gridConfig.type);
+      
+      result.gridLines.forEach(line => {
+        if (gridConfig.color) {
+          line.set('stroke', gridConfig.color);
+        }
+        canvas.add(line);
+        canvas.sendToBack(line);
+      });
+
+      canvas.renderAll();
+    }
+  }, [canvas, width, height, gridConfig.visible, gridConfig.size, gridConfig.type, gridConfig.color]);
+
   return {
     gridConfig,
     toggleGridVisibility,
     toggleSnapToGrid,
     setGridSize,
     setGridType,
-    updateColumnSettings,
+    setGridColor,
     updateGridConfig
   };
 }

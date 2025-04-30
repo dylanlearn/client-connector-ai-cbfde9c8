@@ -1,10 +1,5 @@
 
-/**
- * Memory Management Service
- * Handles efficient memory usage for canvas objects
- */
 import { fabric } from 'fabric';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface MemoryStats {
   objectCount: number;
@@ -15,286 +10,364 @@ export interface MemoryStats {
   timestamp: number;
 }
 
-export interface MemoryManagementOptions {
-  autoGarbageCollection?: boolean;
-  gcInterval?: number;
-  maxInactiveTime?: number;
-  objectPooling?: boolean;
-  maxPoolSize?: number;
-  memoryLimit?: number;
+export interface ObjectPoolConfig {
+  type: string;
+  initialSize: number;
+  maxSize: number;
+  factoryFn: () => fabric.Object;
 }
 
-export interface ObjectPoolConfig {
-  objectType: string;
-  factory: () => fabric.Object;
-  initialSize?: number;
-  maxSize?: number;
+export interface MemoryManagementOptions {
+  poolingEnabled?: boolean;
+  gcIntervalMs?: number;
+  inactivityThresholdMs?: number;
+  maxPoolSize?: number;
+  retentionPolicy?: 'lru' | 'fifo';
 }
+
+// Types for internal tracking
+interface TrackedObject {
+  object: fabric.Object;
+  lastAccessed: number;
+  memoryEstimate: number;
+}
+
+interface ObjectPool {
+  type: string;
+  objects: fabric.Object[];
+  factoryFn: () => fabric.Object;
+  maxSize: number;
+}
+
+// Object tracking by canvas
+type CanvasMemoryRegistry = Record<string, {
+  trackedObjects: Map<string, TrackedObject>;
+  pools: Map<string, ObjectPool>;
+  stats: MemoryStats;
+  gcIntervalId: number | null;
+}>;
 
 class MemoryManagementService {
   private options: MemoryManagementOptions = {
-    autoGarbageCollection: true,
-    gcInterval: 30000, // 30 seconds
-    maxInactiveTime: 60000, // 60 seconds
-    objectPooling: true,
-    maxPoolSize: 50,
-    memoryLimit: 100 * 1024 * 1024 // 100MB
+    poolingEnabled: true,
+    gcIntervalMs: 30000,
+    inactivityThresholdMs: 60000,
+    maxPoolSize: 100,
+    retentionPolicy: 'lru'
   };
-
-  // Store last accessed timestamps for objects
-  private objectAccessTimes: Map<fabric.Object, number> = new Map();
-  // Store managed objects by canvas ID
-  private managedObjects: Map<string, Set<fabric.Object>> = new Map();
-  // Object pools by canvas ID and object type
-  private objectPools: Map<string, Map<string, fabric.Object[]>> = new Map();
-
-  private gcRuns: number = 0;
-  private gcTimer: ReturnType<typeof setInterval> | null = null;
-  private memoryStats: MemoryStats = {
-    objectCount: 0,
-    estimatedMemoryUsage: 0,
-    inactivePoolSize: 0,
-    activePoolSize: 0,
-    gcRuns: 0,
-    timestamp: Date.now()
-  };
-
-  /**
-   * Configure memory management options
-   */
-  configure(options: Partial<MemoryManagementOptions>): void {
+  
+  private canvasRegistry: CanvasMemoryRegistry = {};
+  private totalGcRuns = 0;
+  
+  // Configure options
+  public configure(options: MemoryManagementOptions): void {
     this.options = { ...this.options, ...options };
     
-    // Setup or clear garbage collection timer
-    if (this.gcTimer) {
-      clearInterval(this.gcTimer);
-      this.gcTimer = null;
-    }
-    
-    if (this.options.autoGarbageCollection) {
-      this.gcTimer = setInterval(() => this.runGarbageCollection(), this.options.gcInterval);
-    }
-    
-    console.log('Memory management configured with options:', this.options);
+    // Update GC intervals for existing canvases
+    Object.entries(this.canvasRegistry).forEach(([canvasId, registry]) => {
+      if (registry.gcIntervalId) {
+        clearInterval(registry.gcIntervalId);
+      }
+      
+      if (this.options.gcIntervalMs) {
+        registry.gcIntervalId = window.setInterval(
+          () => this.runGarbageCollection(canvasId),
+          this.options.gcIntervalMs
+        );
+      }
+    });
   }
-
-  /**
-   * Initialize an object pool for a specific canvas
-   */
-  initializeObjectPool(canvasId: string, config: ObjectPoolConfig): void {
-    const { objectType, factory, initialSize = 10, maxSize = this.options.maxPoolSize } = config;
+  
+  // Initialize for a new canvas
+  public initializeCanvas(canvasId: string): void {
+    this.canvasRegistry[canvasId] = {
+      trackedObjects: new Map<string, TrackedObject>(),
+      pools: new Map<string, ObjectPool>(),
+      stats: {
+        objectCount: 0,
+        estimatedMemoryUsage: 0,
+        inactivePoolSize: 0,
+        activePoolSize: 0,
+        gcRuns: 0,
+        timestamp: Date.now()
+      },
+      gcIntervalId: null
+    };
     
-    if (!this.objectPools.has(canvasId)) {
-      this.objectPools.set(canvasId, new Map());
+    // Set up garbage collection interval
+    if (this.options.gcIntervalMs) {
+      this.canvasRegistry[canvasId].gcIntervalId = window.setInterval(
+        () => this.runGarbageCollection(canvasId),
+        this.options.gcIntervalMs
+      );
     }
-    
-    const canvasPools = this.objectPools.get(canvasId)!;
-    const pool: fabric.Object[] = [];
-    
-    // Initialize pool with objects
-    for (let i = 0; i < initialSize; i++) {
-      const obj = factory();
-      pool.push(obj);
-    }
-    
-    canvasPools.set(objectType, pool);
-    
-    console.log(`Object pool initialized for ${objectType} with ${initialSize} objects`);
-    this.updateMemoryStats();
   }
-
-  /**
-   * Acquire an object from a pool
-   */
-  acquireObject(canvasId: string, objectType: string): fabric.Object | null {
-    const canvasPools = this.objectPools.get(canvasId);
-    if (!canvasPools || !canvasPools.has(objectType)) {
-      console.warn(`No object pool found for ${objectType} in canvas ${canvasId}`);
-      return null;
+  
+  // Initialize an object pool
+  public initializeObjectPool(canvasId: string, config: ObjectPoolConfig): void {
+    if (!this.canvasRegistry[canvasId]) {
+      this.initializeCanvas(canvasId);
     }
     
-    const pool = canvasPools.get(objectType)!;
-    let obj: fabric.Object | undefined = pool.pop();
+    const registry = this.canvasRegistry[canvasId];
     
-    if (obj) {
-      // Mark as accessed
-      this.markObjectAccessed(obj);
+    // Create the pool
+    const pool: ObjectPool = {
+      type: config.type,
+      objects: [],
+      factoryFn: config.factoryFn,
+      maxSize: config.maxSize
+    };
+    
+    // Pre-create objects if initial size is specified
+    for (let i = 0; i < config.initialSize; i++) {
+      const obj = config.factoryFn();
+      pool.objects.push(obj);
+      this.estimateObjectMemory(obj);
+    }
+    
+    // Update stats
+    registry.stats.inactivePoolSize += pool.objects.length;
+    
+    // Store the pool
+    registry.pools.set(config.type, pool);
+  }
+  
+  // Acquire an object from a pool
+  public acquireObject(canvasId: string, objectType: string): fabric.Object {
+    if (!this.canvasRegistry[canvasId]) {
+      this.initializeCanvas(canvasId);
+    }
+    
+    const registry = this.canvasRegistry[canvasId];
+    const pool = registry.pools.get(objectType);
+    
+    if (!pool || pool.objects.length === 0) {
+      // No pool or empty pool, create a new object
+      const obj = pool ? pool.factoryFn() : this.createDefaultObject();
+      this.registerObject(canvasId, obj);
       return obj;
     }
     
-    console.warn(`Object pool for ${objectType} is empty`);
-    return null;
+    // Get object from pool
+    const obj = pool.objects.pop()!;
+    registry.stats.inactivePoolSize--;
+    registry.stats.activePoolSize++;
+    
+    // Track the object
+    const objId = this.getObjectId(obj);
+    registry.trackedObjects.set(objId, {
+      object: obj,
+      lastAccessed: Date.now(),
+      memoryEstimate: this.estimateObjectMemory(obj)
+    });
+    
+    return obj;
   }
-
-  /**
-   * Release an object back to its pool
-   */
-  releaseObject(canvasId: string, obj: fabric.Object, objectType: string): void {
-    const canvasPools = this.objectPools.get(canvasId);
-    if (!canvasPools || !canvasPools.has(objectType)) {
-      console.warn(`No object pool found for ${objectType} in canvas ${canvasId}`);
-      return;
+  
+  // Release an object back to its pool
+  public releaseObject(canvasId: string, obj: fabric.Object, objectType: string): void {
+    if (!this.canvasRegistry[canvasId]) return;
+    
+    const registry = this.canvasRegistry[canvasId];
+    const pool = registry.pools.get(objectType);
+    
+    if (!pool) return;
+    
+    // Remove from tracked objects
+    const objId = this.getObjectId(obj);
+    registry.trackedObjects.delete(objId);
+    
+    // Clean up object state
+    obj.set({
+      left: 0,
+      top: 0,
+      scaleX: 1,
+      scaleY: 1,
+      angle: 0,
+      flipX: false,
+      flipY: false
+    });
+    
+    // Only add to pool if not at max capacity
+    if (pool.objects.length < pool.maxSize) {
+      pool.objects.push(obj);
+      registry.stats.inactivePoolSize++;
     }
     
-    const pool = canvasPools.get(objectType)!;
-    const maxSize = this.options.maxPoolSize || 50;
+    registry.stats.activePoolSize--;
+  }
+  
+  // Register an object for memory tracking
+  public registerObject(canvasId: string, obj: fabric.Object): void {
+    if (!this.canvasRegistry[canvasId]) {
+      this.initializeCanvas(canvasId);
+    }
     
-    // Only add to pool if not exceeding max size
-    if (pool.length < maxSize) {
-      // Reset object properties to a clean state
-      if (obj.set) {
-        obj.set({
-          left: 0,
-          top: 0,
-          scaleX: 1,
-          scaleY: 1,
-          angle: 0,
-          opacity: 1
-        });
-      }
+    const registry = this.canvasRegistry[canvasId];
+    const objId = this.getObjectId(obj);
+    
+    // Track the object
+    registry.trackedObjects.set(objId, {
+      object: obj,
+      lastAccessed: Date.now(),
+      memoryEstimate: this.estimateObjectMemory(obj)
+    });
+    
+    // Update stats
+    registry.stats.objectCount = registry.trackedObjects.size;
+    registry.stats.estimatedMemoryUsage += registry.trackedObjects.get(objId)!.memoryEstimate;
+    registry.stats.activePoolSize++;
+  }
+  
+  // Unregister an object from memory tracking
+  public unregisterObject(canvasId: string, obj: fabric.Object): void {
+    if (!this.canvasRegistry[canvasId]) return;
+    
+    const registry = this.canvasRegistry[canvasId];
+    const objId = this.getObjectId(obj);
+    
+    if (registry.trackedObjects.has(objId)) {
+      const trackedObj = registry.trackedObjects.get(objId)!;
       
-      pool.push(obj);
+      // Update stats
+      registry.stats.estimatedMemoryUsage -= trackedObj.memoryEstimate;
+      registry.stats.activePoolSize--;
+      
+      // Remove from tracking
+      registry.trackedObjects.delete(objId);
+      registry.stats.objectCount = registry.trackedObjects.size;
     }
-    
-    this.updateMemoryStats();
   }
-
-  /**
-   * Register an object for memory management
-   */
-  registerObject(canvasId: string, obj: fabric.Object): void {
-    if (!obj) return;
-    
-    if (!this.managedObjects.has(canvasId)) {
-      this.managedObjects.set(canvasId, new Set());
+  
+  // Mark an object as accessed
+  public markObjectAccessed(obj: fabric.Object): void {
+    // Find the canvas this object belongs to
+    for (const [canvasId, registry] of Object.entries(this.canvasRegistry)) {
+      const objId = this.getObjectId(obj);
+      
+      if (registry.trackedObjects.has(objId)) {
+        const trackedObj = registry.trackedObjects.get(objId)!;
+        trackedObj.lastAccessed = Date.now();
+        break;
+      }
     }
-    
-    const canvasObjects = this.managedObjects.get(canvasId)!;
-    canvasObjects.add(obj);
-    
-    // Mark as recently accessed
-    this.markObjectAccessed(obj);
-    
-    this.updateMemoryStats();
   }
-
-  /**
-   * Unregister an object from memory management
-   */
-  unregisterObject(canvasId: string, obj: fabric.Object): void {
-    if (!obj) return;
+  
+  // Run garbage collection
+  private runGarbageCollection(canvasId: string): void {
+    const registry = this.canvasRegistry[canvasId];
+    if (!registry) return;
     
-    const canvasObjects = this.managedObjects.get(canvasId);
-    if (!canvasObjects) return;
-    
-    canvasObjects.delete(obj);
-    this.objectAccessTimes.delete(obj);
-    
-    this.updateMemoryStats();
-  }
-
-  /**
-   * Mark an object as accessed (recently used)
-   */
-  markObjectAccessed(obj: fabric.Object): void {
-    if (!obj) return;
-    this.objectAccessTimes.set(obj, Date.now());
-  }
-
-  /**
-   * Run garbage collection to free memory
-   */
-  runGarbageCollection(): void {
     const now = Date.now();
-    let freedCount = 0;
+    const inactiveThreshold = now - (this.options.inactivityThresholdMs || 60000);
+    let removedCount = 0;
     
-    // Process each canvas's objects
-    for (const [canvasId, objects] of this.managedObjects.entries()) {
-      const toRemove: fabric.Object[] = [];
-      
-      for (const obj of objects) {
-        const lastAccessed = this.objectAccessTimes.get(obj) || 0;
-        
-        // If object hasn't been accessed for maxInactiveTime, clean it up
-        if (now - lastAccessed > (this.options.maxInactiveTime || 60000)) {
-          toRemove.push(obj);
-          freedCount++;
-        }
+    // Find inactive objects
+    registry.trackedObjects.forEach((trackedObj, objId) => {
+      if (trackedObj.lastAccessed < inactiveThreshold) {
+        // Object hasn't been accessed recently
+        // In a real implementation, we might check if it's visible/on-screen
+        // For now we'll just track stats
+        removedCount++;
       }
-      
-      // Remove identified objects
-      for (const obj of toRemove) {
-        objects.delete(obj);
-        this.objectAccessTimes.delete(obj);
-      }
-    }
+    });
     
-    this.gcRuns++;
-    console.log(`Garbage collection run completed: ${freedCount} objects freed`);
-    
-    this.updateMemoryStats();
+    // Update stats
+    registry.stats.gcRuns++;
+    this.totalGcRuns++;
+    registry.stats.timestamp = now;
   }
-
-  /**
-   * Force garbage collection immediately
-   */
-  forceGarbageCollection(): void {
-    this.runGarbageCollection();
+  
+  // Force garbage collection
+  public forceGarbageCollection(): void {
+    Object.keys(this.canvasRegistry).forEach(canvasId => {
+      this.runGarbageCollection(canvasId);
+    });
   }
-
-  /**
-   * Clean up resources for a specific canvas
-   */
-  cleanupCanvas(canvasId: string): void {
-    this.managedObjects.delete(canvasId);
-    this.objectPools.delete(canvasId);
-    this.updateMemoryStats();
-  }
-
-  /**
-   * Update memory statistics
-   */
-  private updateMemoryStats(): void {
-    let totalObjects = 0;
-    let activeObjects = 0;
-    let inactiveObjects = 0;
+  
+  // Get memory statistics
+  public getMemoryStats(): MemoryStats {
+    let objectCount = 0;
+    let estimatedMemoryUsage = 0;
+    let inactivePoolSize = 0;
+    let activePoolSize = 0;
+    let gcRuns = 0;
     
-    // Count managed objects
-    for (const objects of this.managedObjects.values()) {
-      totalObjects += objects.size;
-      activeObjects += objects.size;
-    }
+    // Aggregate stats from all canvases
+    Object.values(this.canvasRegistry).forEach(registry => {
+      objectCount += registry.stats.objectCount;
+      estimatedMemoryUsage += registry.stats.estimatedMemoryUsage;
+      inactivePoolSize += registry.stats.inactivePoolSize;
+      activePoolSize += registry.stats.activePoolSize;
+      gcRuns += registry.stats.gcRuns;
+    });
     
-    // Count pool objects
-    for (const canvasPools of this.objectPools.values()) {
-      for (const pool of canvasPools.values()) {
-        totalObjects += pool.length;
-        inactiveObjects += pool.length;
-      }
-    }
-    
-    // Estimate memory usage (rough approximation)
-    const avgObjectSize = 5000; // Assuming average of 5KB per object
-    const estimatedMemory = totalObjects * avgObjectSize;
-    
-    this.memoryStats = {
-      objectCount: totalObjects,
-      estimatedMemoryUsage: estimatedMemory,
-      activePoolSize: activeObjects,
-      inactivePoolSize: inactiveObjects,
-      gcRuns: this.gcRuns,
+    return {
+      objectCount,
+      estimatedMemoryUsage,
+      inactivePoolSize,
+      activePoolSize,
+      gcRuns,
       timestamp: Date.now()
     };
   }
-
-  /**
-   * Get current memory statistics
-   */
-  getMemoryStats(): MemoryStats {
-    return { ...this.memoryStats };
+  
+  // Cleanup canvas resources
+  public cleanupCanvas(canvasId: string): void {
+    const registry = this.canvasRegistry[canvasId];
+    if (!registry) return;
+    
+    // Clear GC interval
+    if (registry.gcIntervalId) {
+      clearInterval(registry.gcIntervalId);
+    }
+    
+    // Remove from registry
+    delete this.canvasRegistry[canvasId];
+  }
+  
+  // Helper methods
+  
+  // Estimate memory usage of an object
+  private estimateObjectMemory(obj: fabric.Object): number {
+    let estimate = 1000; // Base size for any object
+    
+    // Size based on dimensions
+    if (obj.width && obj.height) {
+      estimate += obj.width * obj.height * 4; // RGBA pixels
+    }
+    
+    // Add extra for complex objects
+    if (obj instanceof fabric.Group) {
+      estimate += 2000;
+    } else if (obj instanceof fabric.Text) {
+      estimate += obj.text?.length * 2 || 0;
+    } else if (obj instanceof fabric.Path) {
+      estimate += 3000;
+    }
+    
+    return estimate;
+  }
+  
+  // Get a unique ID for an object
+  private getObjectId(obj: fabric.Object): string {
+    // Use fabric's internal ID or generate one
+    return obj.id?.toString() || Math.random().toString(36).substr(2, 9);
+  }
+  
+  // Create a default object for when a pool doesn't exist
+  private createDefaultObject(): fabric.Object {
+    return new fabric.Rect({
+      width: 50,
+      height: 50,
+      fill: '#ccc',
+      left: 0,
+      top: 0
+    });
   }
 }
 
-// Export singleton instance
+// Create singleton instance
 const memoryManagementService = new MemoryManagementService();
 export default memoryManagementService;

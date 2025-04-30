@@ -1,186 +1,64 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { useCollaboration } from '@/contexts/CollaborationContext';
-import UserPresenceOverlay from './UserPresenceOverlay';
-import { useUser } from '@/hooks/useUser';
-import { DocumentService } from '@/services/collaboration/documentService';
+import { useRealTimeCollaboration } from '@/hooks/useRealTimeCollaboration';
+import UserPresenceIndicator from './UserPresenceIndicator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CollaborativeEditorProps {
   documentId: string;
 }
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ documentId }) => {
-  const { state, addChange, applyChanges, updateUserPresence } = useCollaboration();
-  const [content, setContent] = useState<string>('');
-  const editorRef = useRef<HTMLTextAreaElement>(null);
-  const userId = useUser();
-  
-  // Setup document and user presence when component mounts
-  useEffect(() => {
-    // Initial document content from the database
-    DocumentService.getDocument(documentId)
-      .then(document => {
-        if (document?.content) {
-          setContent(document.content);
-        } else {
-          // Fallback content if document doesn't exist or has no content
-          setContent(`# Collaborative Document
+  const { state, applyChanges, updatePresence } = useCollaboration();
+  const { activeUsers, isConnected } = useRealTimeCollaboration(documentId);
+  const [content, setContent] = useState('');
 
-Start editing this document to see real-time collaboration in action.
-Multiple users can edit simultaneously, and changes are synchronized in real-time.
-
-## Features
-- Real-time synchronization
-- Conflict resolution with operational transforms
-- User presence awareness
-- Cursor tracking
-`);
-        }
-      })
-      .catch(error => {
-        console.error('Error loading document:', error);
-        // Use default content if there's an error
-        setContent('# Collaborative Document\n\nStart editing...');
-      });
-    
-    // Update user presence with focus on editor
-    if (editorRef.current) {
-      updateUserPresence({
-        status: 'active',
-        focusElement: 'editor',
-        cursorPosition: {
-          x: 0,
-          y: 0,
-          elementId: 'collaborative-editor',
-        },
-        lastActive: new Date().toISOString(),
-      });
-    }
-    
-    // Add listeners for user activity and presence
-    const handleActivityDetection = () => {
-      updateUserPresence({
-        status: 'active',
-        lastActive: new Date().toISOString(),
-      });
-    };
-    
-    window.addEventListener('mousemove', handleActivityDetection);
-    window.addEventListener('keydown', handleActivityDetection);
-    
-    return () => {
-      // Clean up event listeners
-      window.removeEventListener('mousemove', handleActivityDetection);
-      window.removeEventListener('keydown', handleActivityDetection);
-    };
-  }, [documentId, updateUserPresence]);
-  
-  // Apply incoming changes from other users
+  // Update the document content based on changes
   useEffect(() => {
-    // Process and apply remote changes
-    if (state.changes.length > 0) {
-      // Get change IDs to mark as processed
-      const changeIds = state.changes.map(change => change.id);
-      
-      // Simple approach: Just re-fetch the document content
-      // In a real app, use operational transforms to merge changes
-      DocumentService.getDocument(documentId)
-        .then(document => {
-          if (document?.content) {
-            setContent(document.content);
-          }
-          // Mark changes as processed
-          applyChanges(changeIds);
-        })
-        .catch(error => {
-          console.error('Error applying changes:', error);
-        });
-    }
-  }, [state.changes, applyChanges, documentId]);
-  
-  // Handle editor content changes
-  const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    
-    // Simple change detection - in a real app would use a diff algorithm
-    if (newContent.length > content.length) {
-      // Addition
-      const addedText = newContent.substring(content.length);
-      
-      addChange({
-        userId: userId,
-        documentId: documentId,
-        operation: 'insert',
-        path: `content.${content.length}`,
-        value: addedText,
-      });
-    } else if (newContent.length < content.length) {
-      // Deletion
-      const deletedText = content.substring(newContent.length);
-      
-      addChange({
-        userId: userId,
-        documentId: documentId,
-        operation: 'delete',
-        path: `content.${newContent.length}`,
-        value: deletedText,
-      });
-    } else {
-      // Update (replacement)
-      // In a real app we would compute an actual diff rather than full replacement
-      
-      addChange({
-        userId: userId,
-        documentId: documentId,
-        operation: 'update',
-        path: 'content',
-        value: {
-          oldText: content,
-          newText: newContent
-        },
-      });
-    }
-    
+    // This would apply changes to the content
+    // In a real implementation, this would be much more complex
+    setContent(`Document content for ${documentId}`);
+  }, [state.changes, documentId]);
+
+  // Update cursor position when content changes
+  const handleContentChange = (newContent: string) => {
     setContent(newContent);
-  };
-  
-  // Track cursor position in the textarea
-  const handleCursorPosition = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    if (!editorRef.current) return;
     
-    const rect = editorRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    updateUserPresence({
-      cursorPosition: {
-        x,
-        y,
-        elementId: 'collaborative-editor',
-      },
+    // Update presence with cursor information
+    updatePresence({
+      cursorPosition: { x: 0, y: 0 } // Simplified - would be actual cursor position
     });
   };
-  
+
   return (
-    <Card className="relative w-full">
-      <CardHeader>
-        <CardTitle>Collaborative Document Editor</CardTitle>
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle>Collaborative Editor</CardTitle>
+          <div className="flex gap-2">
+            {activeUsers.map(user => (
+              <UserPresenceIndicator key={user.id} user={user} />
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="relative" id="editor-container">
-          <textarea
-            id="collaborative-editor"
-            ref={editorRef}
+        <div className="relative border rounded-md p-4 min-h-[300px]">
+          <textarea 
+            className="w-full min-h-[250px] focus:outline-none bg-transparent"
             value={content}
-            onChange={handleEditorChange}
-            onMouseMove={handleCursorPosition}
-            className="w-full h-96 p-4 font-mono text-sm resize-none border rounded-md"
-            style={{ position: 'relative', zIndex: 1 }}
+            onChange={(e) => handleContentChange(e.target.value)}
+            placeholder="Start typing..."
           />
-          
-          {/* User presence overlay shows cursors and avatars */}
-          <UserPresenceOverlay containerId="editor-container" />
+
+          {/* Show connection status */}
+          <div className="absolute bottom-2 right-2 text-xs">
+            {isConnected ? 
+              <span className="text-green-500">Connected</span> : 
+              <span className="text-red-500">Disconnected</span>
+            }
+          </div>
         </div>
       </CardContent>
     </Card>
