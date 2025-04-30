@@ -1,157 +1,92 @@
 
-import React, { useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import EnhancedPerformanceWireframe from './EnhancedPerformanceWireframe';
+import { WireframeData } from '@/types/wireframe';
 
-// Import refactored components
-import WireframeToolbar from './editor/WireframeToolbar';
-import WireframeCanvas from './editor/WireframeCanvas';
-import Wireframe from './Wireframe';
-import WireframeSidebar from './editor/WireframeSidebar';
-import WireframeControls from './editor/WireframeControls';
-import ErrorDisplay from './common/ErrorDisplay';
-
-// Import unified hook
-import { useWireframeStudio } from '@/hooks/use-wireframe-studio';
-
-export interface WireframeEditorProps {
-  projectId?: string;
-  wireframe?: WireframeData;
+interface WireframeEditorProps {
+  wireframeData?: WireframeData;
   viewMode?: 'edit' | 'preview' | 'code';
-  onUpdate?: (wireframe: WireframeData) => void;
-  onExport?: (format: string) => void;
 }
 
-const WireframeEditor: React.FC<WireframeEditorProps> = ({
-  projectId,
-  wireframe: initialWireframe,
-  viewMode: initialViewMode = 'edit',
-  onUpdate,
-  onExport
+// Sample wireframe data for demo purposes
+const sampleWireframe: WireframeData = {
+  id: 'demo-wireframe-1',
+  title: 'Sample Wireframe',
+  sections: [
+    {
+      id: 'section-1',
+      name: 'Header Section',
+      sectionType: 'header',
+      description: 'Main navigation and header area',
+      components: []
+    },
+    {
+      id: 'section-2',
+      name: 'Hero Section',
+      sectionType: 'hero',
+      description: 'Main hero section with call to action',
+      components: []
+    },
+    {
+      id: 'section-3',
+      name: 'Features Section',
+      sectionType: 'features',
+      description: 'Product features showcase',
+      components: []
+    }
+  ],
+  colorScheme: {
+    primary: '#3b82f6',
+    secondary: '#10b981',
+    accent: '#f59e0b',
+    background: '#ffffff'
+  },
+  typography: {
+    headings: 'Inter',
+    body: 'Inter'
+  }
+};
+
+export const WireframeEditor: React.FC<WireframeEditorProps> = ({
+  wireframeData = sampleWireframe,
+  viewMode = 'edit'
 }) => {
-  // Use our unified wireframe studio hook
-  const {
-    wireframe,
-    error,
-    isGenerating,
-    isSaving,
-    viewMode,
-    showSidebar,
-    selectedElement,
-    updateWireframe,
-    generateWireframe,
-    saveWireframe,
-    exportWireframe,
-    setViewMode,
-    toggleSidebar,
-    selectElement,
-    clearError
-  } = useWireframeStudio({
-    projectId,
-    initialData: initialWireframe,
-    viewMode: initialViewMode,
-    autoSave: true,
-    showToasts: true,
-    componentName: 'WireframeEditor'
-  });
-  
-  // Handle updates from external sources
-  useEffect(() => {
-    if (initialWireframe && initialWireframe !== wireframe) {
-      updateWireframe(initialWireframe);
-    }
-  }, [initialWireframe, updateWireframe, wireframe]);
-  
-  // Handle saving
-  const handleSave = async () => {
-    const saved = await saveWireframe();
-    if (saved && onUpdate) {
-      onUpdate(saved);
-    }
-  };
-  
-  // Handle exporting
-  const handleExport = async (format: string) => {
-    const result = await exportWireframe(format);
-    if (result && onExport) {
-      onExport(format);
-    }
-  };
-  
-  // Handle section click
-  const handleSectionClick = (sectionId: string) => {
-    selectElement(sectionId);
-  };
-  
-  // Retry generation if error occurred
-  const handleRetry = () => {
-    if (initialWireframe) {
-      updateWireframe(initialWireframe);
-    }
-    clearError();
-  };
-  
+  const [activeTab, setActiveTab] = useState(viewMode);
+
   return (
-    <div className="wireframe-editor flex flex-col h-full">
-      {error && (
-        <ErrorDisplay 
-          error={error} 
-          onRetry={handleRetry}
-          onClearError={clearError}
-          showRetry={true}
-        />
-      )}
-      
-      <WireframeToolbar
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onSave={handleSave}
-        onExport={handleExport}
-        isSaving={isSaving}
-        showSidebar={showSidebar}
-        toggleSidebar={toggleSidebar}
-      />
-      
-      <div className="flex-1 flex">
-        {wireframe ? (
-          <>
-            <div className="flex-1 overflow-auto p-4">
-              <WireframeCanvas viewMode={viewMode}>
-                <Wireframe 
-                  wireframe={wireframe} 
-                  viewMode={viewMode} 
-                  onSectionClick={handleSectionClick}
-                  activeSection={selectedElement}
-                />
-              </WireframeCanvas>
+    <Card className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab as any}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="edit">Edit</TabsTrigger>
+          <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsTrigger value="code">Code</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="edit" className="p-0">
+          <CardContent className="p-0">
+            <div className="p-4">
+              <p>Edit mode - Wireframe editor interface would go here</p>
             </div>
-            
-            {showSidebar && viewMode === 'edit' && (
-              <WireframeSidebar
-                wireframe={wireframe}
-                selectedElement={selectedElement}
-                onWireframeUpdate={updateWireframe}
-              />
-            )}
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <Card className="p-8 text-center max-w-md">
-              <p className="text-muted-foreground mb-4">
-                {isGenerating ? 'Generating wireframe...' : 'No wireframe data available'}
-              </p>
-              {!isGenerating && (
-                <WireframeControls 
-                  projectId={projectId}
-                  onWireframeCreated={updateWireframe}
-                  generateWireframe={generateWireframe}
-                />
-              )}
-            </Card>
-          </div>
-        )}
-      </div>
-    </div>
+          </CardContent>
+        </TabsContent>
+        
+        <TabsContent value="preview" className="p-0">
+          <CardContent className="p-0">
+            <EnhancedPerformanceWireframe wireframe={wireframeData} />
+          </CardContent>
+        </TabsContent>
+        
+        <TabsContent value="code" className="p-0">
+          <CardContent>
+            <pre className="p-4 bg-slate-100 rounded overflow-auto max-h-[500px]">
+              {JSON.stringify(wireframeData, null, 2)}
+            </pre>
+          </CardContent>
+        </TabsContent>
+      </Tabs>
+    </Card>
   );
 };
 
