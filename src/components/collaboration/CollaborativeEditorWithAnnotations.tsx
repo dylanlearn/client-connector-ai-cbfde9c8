@@ -1,233 +1,297 @@
 
-import React, { useState, useEffect } from 'react';
-import { useRealTimeCollaboration } from '@/hooks/useRealTimeCollaboration';
-import { useCollaboration } from '@/contexts/CollaborationContext';
-import { AnnotationMarker } from '../annotations/AnnotationMarker';
-import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
-import UserPresenceIndicator from './UserPresenceIndicator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import { Textarea } from '@/components/ui/textarea';
-import { User } from '@/types/collaboration';
+import { useCollaboration } from '@/contexts/CollaborationContext';
+import { useRealTimeCollaboration } from '@/hooks/useRealTimeCollaboration';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Annotation } from '@/types/annotations';
+import { DocumentChange } from '@/types/collaboration';
+import UserPresenceIndicator from './UserPresenceIndicator';
+import UserCursor from './UserCursor';
 
 interface CollaborativeEditorWithAnnotationsProps {
   documentId: string;
 }
 
-type Priority = 'low' | 'medium' | 'high';
-
-interface Annotation {
-  id: string;
-  x: number;
-  y: number;
-  text: string;
-  userId: string;
-  timestamp: string;
-  priority: Priority;
-}
-
 const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ documentId }) => {
-  const [isAddingAnnotation, setIsAddingAnnotation] = useState(false);
-  const [selectedPriority, setSelectedPriority] = useState<Priority>('medium');
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [newAnnotationText, setNewAnnotationText] = useState('');
-  const [annotationPosition, setAnnotationPosition] = useState({ x: 0, y: 0 });
-  const [content, setContent] = useState(`Collaborative document content for ${documentId}`);
-  const { state, applyChanges, updatePresence } = useCollaboration();
-
-  const userId = 'current-user-id'; // In a real app, this would come from auth context
-
-  const { users, activeUsers, isConnected } = useRealTimeCollaboration({
+  const { state, applyChanges, addChange } = useCollaboration();
+  const { activeUsers, isConnected, users } = useRealTimeCollaboration({
     documentId,
-    userId,
-    onUserUpdate: (user) => {
-      console.log('User updated:', user);
-    },
-    onAnnotationAdded: (annotation) => {
-      // Add the new annotation to our local state
-      setAnnotations(prev => [...prev, annotation]);
-    }
+    userId: 'current-user-id',
   });
 
-  // Handle clicking on the document to add annotation
-  const handleDocumentClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isAddingAnnotation) return;
-    
-    // Get position relative to the document container
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    setAnnotationPosition({ x, y });
-    
-    // Show annotation creation form
-    setNewAnnotationText('');
-    
-    // In a real app, you would open a form/modal here to enter annotation content
-    // For this demo, we'll use a prompt
-    const text = prompt('Enter annotation text:');
-    if (text) {
-      createAnnotation(x, y, text);
+  const [content, setContent] = useState('');
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [isAddingAnnotation, setIsAddingAnnotation] = useState(false);
+  const [newAnnotationText, setNewAnnotationText] = useState('');
+  const [annotationPosition, setAnnotationPosition] = useState({ x: 0, y: 0 });
+  const [editorRef, setEditorRef] = useState<HTMLDivElement | null>(null);
+
+  // Update the document content based on changes
+  useEffect(() => {
+    if (state.changes && state.changes.length > 0) {
+      // This simplifies the real implementation which would be more complex
+      // For each change, we would apply it to the content
+      setContent(`Document content for ${documentId} with ${state.changes.length} changes applied`);
+      
+      // Extract annotations from changes
+      const annotationChanges = state.changes.filter(
+        change => change.operation === 'insert' && change.path.startsWith('/annotations/')
+      );
+      
+      if (annotationChanges.length > 0) {
+        // Process annotations from changes
+        const extractedAnnotations = annotationChanges.map(change => change.value as unknown as Annotation);
+        setAnnotations(prev => [...prev, ...extractedAnnotations]);
+      }
     } else {
-      setIsAddingAnnotation(false);
+      setContent(`Document content for ${documentId}`);
     }
-  };
-  
-  // Create a new annotation
-  const createAnnotation = (x: number, y: number, text: string) => {
+  }, [state.changes, documentId]);
+
+  // Handle click on editor to add annotation
+  const handleEditorClick = useCallback((e: React.MouseEvent) => {
+    if (isAddingAnnotation && editorRef) {
+      const rect = editorRef.getBoundingClientRect();
+      setAnnotationPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  }, [isAddingAnnotation, editorRef]);
+
+  // Handle saving new annotation
+  const handleSaveAnnotation = () => {
+    if (newAnnotationText.trim() === '') return;
+    
     const newAnnotation: Annotation = {
       id: nanoid(),
-      x,
-      y,
-      text,
-      userId,
-      timestamp: new Date().toISOString(),
-      priority: selectedPriority
+      documentId,
+      userId: 'current-user-id',
+      type: 'text',
+      content: newAnnotationText,
+      position: {
+        x: annotationPosition.x,
+        y: annotationPosition.y
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'open',
+      metadata: {
+        priority: 'medium'
+      }
     };
     
-    // Add annotation locally
     setAnnotations(prev => [...prev, newAnnotation]);
     
-    // Reset state
-    setIsAddingAnnotation(false);
-    
-    // In a real app, we would sync this to the backend
-    applyChanges([{
-      userId,
+    // Add change to context
+    const change: DocumentChange = {
+      id: nanoid(),
+      userId: 'current-user-id',
       documentId,
       operation: 'insert',
-      path: '/annotations',
+      path: `/annotations/${newAnnotation.id}`,
+      value: newAnnotation,
+      timestamp: new Date().toISOString()
+    };
+    
+    addChange({
+      userId: 'current-user-id',
+      documentId,
+      operation: 'insert',
+      path: `/annotations/${newAnnotation.id}`,
       value: newAnnotation
-    }]);
-  };
-  
-  // Toggle annotation mode
-  const toggleAnnotationMode = () => {
-    setIsAddingAnnotation(!isAddingAnnotation);
-  };
-  
-  // Change priority for new annotations
-  const handlePriorityChange = (priority: Priority) => {
-    setSelectedPriority(priority);
-  };
-  
-  // Update cursor position when moving
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isConnected) return;
+    });
     
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    setNewAnnotationText('');
+    setIsAddingAnnotation(false);
+  };
+
+  // Handle resolving annotation
+  const handleResolveAnnotation = (annotationId: string) => {
+    // Update annotation status
+    setAnnotations(prev =>
+      prev.map(ann =>
+        ann.id === annotationId
+          ? { ...ann, status: 'resolved' as const, updatedAt: new Date().toISOString() }
+          : ann
+      )
+    );
     
-    updatePresence({
-      cursorPosition: { x, y }
+    // Add change to context
+    const change: DocumentChange = {
+      id: nanoid(),
+      userId: 'current-user-id',
+      documentId,
+      operation: 'update',
+      path: `/annotations/${annotationId}/status`,
+      value: 'resolved',
+      timestamp: new Date().toISOString()
+    };
+    
+    addChange({
+      userId: 'current-user-id',
+      documentId,
+      operation: 'update',
+      path: `/annotations/${annotationId}/status`,
+      value: 'resolved'
     });
   };
 
-  // Update document content
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
-    
-    // In a real app, this would be debounced and synced to other users
-    applyChanges([{
-      userId,
-      documentId,
-      operation: 'update',
-      path: '/content',
-      value: e.target.value
-    }]);
-  };
-
   return (
-    <div className="w-full flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-medium">Document: {documentId}</h2>
-        <AnnotationToolbar 
-          onAddAnnotation={toggleAnnotationMode}
-          isAddingAnnotation={isAddingAnnotation}
-          onPriorityChange={handlePriorityChange}
-          selectedPriority={selectedPriority}
-        />
-      </div>
-      
-      <Card className="w-full">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <CardTitle>Collaborative Editor</CardTitle>
-            <div className="flex gap-2">
-              {Object.values(users).map((user) => (
-                <UserPresenceIndicator key={user.id} user={user} />
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div 
-            className="relative border rounded-md p-4 min-h-[400px]"
-            onClick={handleDocumentClick}
-            onMouseMove={handleMouseMove}
-            style={{ cursor: isAddingAnnotation ? 'crosshair' : 'default' }}
-          >
-            <Textarea
-              className="w-full min-h-[350px] focus:outline-none bg-transparent resize-none"
-              value={content}
-              onChange={handleContentChange}
-              placeholder="Start typing..."
-              disabled={isAddingAnnotation}
-            />
-            
-            {/* Render annotations */}
-            {annotations.map((annotation) => (
-              <AnnotationMarker 
-                key={annotation.id}
-                x={annotation.x}
-                y={annotation.y}
-                text={annotation.text}
-                userId={annotation.userId}
-                timestamp={annotation.timestamp}
-                priority={annotation.priority}
-              />
-            ))}
-            
-            {/* Render user cursors */}
-            {Object.values(users).map((user) => {
-              if (user.id === userId || !user.presence?.cursor) return null;
-              
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle>Collaborative Document</CardTitle>
+          <div className="flex gap-2">
+            {activeUsers.map(userId => {
+              const user = users[userId];
+              if (!user) return null;
               return (
-                <div
-                  key={user.id}
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${user.presence.cursor.x}px`,
-                    top: `${user.presence.cursor.y}px`,
-                    transition: 'transform 0.1s ease'
+                <UserPresenceIndicator 
+                  key={userId} 
+                  user={{
+                    id: user.id,
+                    name: user.name || `User ${user.id.substring(0, 4)}`,
+                    color: user.color || '#666',
+                    avatar: user.avatar || null,
+                    presence: {
+                      status: user.presence?.status || 'offline',
+                      focusElement: null,
+                      cursorPosition: user.presence?.cursorPosition || null,
+                      lastActive: new Date().toISOString()
+                    }
                   }}
-                >
-                  <div 
-                    className="w-4 h-4 transform -translate-x-1/2 -translate-y-1/2"
-                    style={{ backgroundColor: user.color || '#6366f1' }}
-                  />
-                  <div 
-                    className="absolute top-5 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
-                  >
-                    {user.name || `User ${user.id.substring(0, 4)}`}
-                  </div>
-                </div>
+                />
               );
             })}
-            
-            {/* Show connection status */}
-            <div className="absolute bottom-2 right-2 text-xs">
-              {isConnected ? 
-                <span className="text-green-500">Connected</span> : 
-                <span className="text-red-500">Disconnected</span>
-              }
-            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+        <div className="flex gap-2 mt-2">
+          <Button 
+            size="sm" 
+            variant={isAddingAnnotation ? "secondary" : "outline"}
+            onClick={() => setIsAddingAnnotation(!isAddingAnnotation)}
+          >
+            {isAddingAnnotation ? 'Cancel' : 'Add Annotation'}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div 
+          className="relative border rounded-md p-4 min-h-[350px] bg-white"
+          ref={setEditorRef}
+          onClick={handleEditorClick}
+        >
+          {isAddingAnnotation && (
+            <div 
+              className="absolute bg-yellow-100 p-2 rounded shadow-md z-10"
+              style={{ 
+                left: `${annotationPosition.x}px`, 
+                top: `${annotationPosition.y}px`,
+                transform: 'translate(-50%, -100%)'
+              }}
+            >
+              <textarea
+                className="w-full p-2 border rounded mb-2"
+                value={newAnnotationText}
+                onChange={(e) => setNewAnnotationText(e.target.value)}
+                placeholder="Enter annotation"
+                rows={2}
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => setIsAddingAnnotation(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSaveAnnotation}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          <textarea 
+            className="w-full min-h-[300px] focus:outline-none bg-transparent"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Start typing..."
+            disabled={isAddingAnnotation}
+          />
+
+          {/* Annotations */}
+          {annotations.map(annotation => (
+            <div
+              key={annotation.id}
+              className={`absolute bg-yellow-100 p-2 rounded shadow-sm z-5 border-l-4 ${
+                annotation.status === 'resolved' ? 'border-green-500 bg-green-50' : 'border-yellow-500'
+              }`}
+              style={{
+                left: `${annotation.position.x}px`,
+                top: `${annotation.position.y}px`,
+                maxWidth: '200px'
+              }}
+            >
+              <p className="text-xs">{annotation.content}</p>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs text-gray-500">
+                  {new Date(annotation.createdAt).toLocaleTimeString()}
+                </span>
+                {annotation.status !== 'resolved' && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 px-2 text-xs"
+                    onClick={() => handleResolveAnnotation(annotation.id)}
+                  >
+                    Resolve
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* User Cursors */}
+          {editorRef && activeUsers.map(userId => {
+            const user = users[userId];
+            if (userId === 'current-user-id' || !user || !user.presence?.cursorPosition) return null;
+            
+            return (
+              <div 
+                key={`cursor-${userId}`} 
+                className="absolute pointer-events-none z-50"
+                style={{
+                  left: `${user.presence.cursorPosition.x}px`,
+                  top: `${user.presence.cursorPosition.y}px`
+                }}
+              >
+                <div 
+                  className="w-4 h-4 rounded-full border border-white shadow-sm flex items-center justify-center text-xs text-white"
+                  style={{ backgroundColor: user.color || '#666' }}
+                >
+                  {user.name ? user.name.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div 
+                  className="absolute top-5 left-0 px-2 py-1 text-xs rounded whitespace-nowrap"
+                  style={{ backgroundColor: user.color || '#666', color: 'white' }}
+                >
+                  {user.name || `User ${userId.substring(0, 4)}`}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Show connection status */}
+          <div className="absolute bottom-2 right-2 text-xs">
+            {isConnected ? 
+              <span className="text-green-500">Connected</span> : 
+              <span className="text-red-500">Disconnected</span>
+            }
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

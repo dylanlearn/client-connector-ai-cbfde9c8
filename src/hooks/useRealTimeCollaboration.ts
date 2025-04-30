@@ -1,11 +1,19 @@
 
 import { useEffect, useState } from 'react';
+import { User } from '@/types/collaboration';
 
 interface CollaborationUser {
   id: string;
   name?: string;
+  color?: string;
+  avatar?: string | null;
   presence?: {
+    status?: 'active' | 'idle' | 'offline';
     cursor?: {
+      x: number;
+      y: number;
+    };
+    cursorPosition?: {
       x: number;
       y: number;
     };
@@ -16,7 +24,7 @@ interface CollaborationUser {
 interface RealTimeCollaborationHook {
   users: Record<string, CollaborationUser>;
   activeUsers: string[];
-  isConnected: boolean; // Added to fix the error
+  isConnected: boolean; 
 }
 
 interface Annotation {
@@ -44,7 +52,7 @@ export function useRealTimeCollaboration({
 }: RealTimeCollaborationOptions): RealTimeCollaborationHook {
   const [users, setUsers] = useState<Record<string, CollaborationUser>>({});
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
-  const [isConnected, setIsConnected] = useState<boolean>(true); // Added to fix the error
+  const [isConnected, setIsConnected] = useState<boolean>(true);
 
   // Setup real-time collaboration hooks
   useEffect(() => {
@@ -54,26 +62,33 @@ export function useRealTimeCollaboration({
     }
 
     // In a real production application, this would connect to a real-time service
-    // like WebSockets, Supabase Realtime, Firebase, etc.
     console.log(`Setting up real-time collaboration for document ${documentId} and user ${userId}`);
 
-    // Simulate connection status
+    // Set connection status
     setIsConnected(true);
 
     // Mock data for demo purposes
     const mockUser1: CollaborationUser = {
       id: 'user-123',
       name: 'Alice Smith',
+      color: '#4a9af5',
+      avatar: null,
       presence: {
-        cursor: { x: 150, y: 120 }
+        status: 'active',
+        cursor: { x: 150, y: 120 },
+        cursorPosition: { x: 150, y: 120 }
       }
     };
 
     const mockUser2: CollaborationUser = {
       id: 'user-456',
       name: 'Bob Johnson',
+      color: '#f5724a',
+      avatar: null,
       presence: {
-        cursor: { x: 300, y: 220 }
+        status: 'active',
+        cursor: { x: 300, y: 220 },
+        cursorPosition: { x: 300, y: 220 }
       }
     };
 
@@ -81,7 +96,13 @@ export function useRealTimeCollaboration({
     const currentUser: CollaborationUser = {
       id: userId,
       name: 'Current User',
-      presence: {}
+      color: '#4af572',
+      avatar: null,
+      presence: {
+        status: 'active',
+        cursor: { x: 200, y: 150 },
+        cursorPosition: { x: 200, y: 150 }
+      }
     };
 
     // Set up mock data
@@ -111,6 +132,10 @@ export function useRealTimeCollaboration({
               cursor: {
                 x: Math.max(0, updated['user-123'].presence!.cursor!.x + (Math.random() * 10 - 5)),
                 y: Math.max(0, updated['user-123'].presence!.cursor!.y + (Math.random() * 10 - 5))
+              },
+              cursorPosition: {
+                x: Math.max(0, updated['user-123'].presence!.cursor!.x + (Math.random() * 10 - 5)),
+                y: Math.max(0, updated['user-123'].presence!.cursor!.y + (Math.random() * 10 - 5))
               }
             }
           };
@@ -123,6 +148,10 @@ export function useRealTimeCollaboration({
             presence: {
               ...updated['user-456'].presence,
               cursor: {
+                x: Math.max(0, updated['user-456'].presence!.cursor!.x + (Math.random() * 10 - 5)),
+                y: Math.max(0, updated['user-456'].presence!.cursor!.y + (Math.random() * 10 - 5))
+              },
+              cursorPosition: {
                 x: Math.max(0, updated['user-456'].presence!.cursor!.x + (Math.random() * 10 - 5)),
                 y: Math.max(0, updated['user-456'].presence!.cursor!.y + (Math.random() * 10 - 5))
               }

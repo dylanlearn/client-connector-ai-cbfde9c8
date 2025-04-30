@@ -40,9 +40,27 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ documentId })
         <div className="flex justify-between items-center">
           <CardTitle>Collaborative Editor</CardTitle>
           <div className="flex gap-2">
-            {activeUsers.map(userId => (
-              <UserPresenceIndicator key={userId} user={users[userId]} />
-            ))}
+            {activeUsers.map(userId => {
+              const user = users[userId];
+              if (!user) return null;
+              return (
+                <UserPresenceIndicator 
+                  key={userId} 
+                  user={{
+                    id: user.id,
+                    name: user.name || `User ${user.id.substring(0, 4)}`,
+                    color: user.color || '#666',
+                    avatar: user.avatar || null,
+                    presence: {
+                      status: user.presence?.status || 'offline',
+                      focusElement: null,
+                      cursorPosition: user.presence?.cursorPosition || null,
+                      lastActive: new Date().toISOString()
+                    }
+                  }} 
+                />
+              );
+            })}
           </div>
         </div>
       </CardHeader>
