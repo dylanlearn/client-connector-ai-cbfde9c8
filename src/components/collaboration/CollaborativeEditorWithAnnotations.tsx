@@ -1,12 +1,18 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { CollaborationProvider, useCollaboration } from '@/contexts/CollaborationContext';
-import UserPresenceIndicator from './UserPresenceIndicator';
-import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
-import { AnnotationMarker } from '../annotations/AnnotationMarker';
-import { useUser } from '@/hooks/useUser';
+import React, { useState, useEffect } from 'react';
 import { useRealTimeCollaboration } from '@/hooks/useRealTimeCollaboration';
+import { useCollaboration } from '@/contexts/CollaborationContext';
+import { AnnotationMarker } from '../annotations/AnnotationMarker';
+import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
+import UserPresenceIndicator from './UserPresenceIndicator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { nanoid } from 'nanoid';
+import { Textarea } from '@/components/ui/textarea';
+import { User } from '@/types/collaboration';
+
+interface CollaborativeEditorWithAnnotationsProps {
+  documentId: string;
+}
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -18,264 +24,210 @@ interface Annotation {
   userId: string;
   timestamp: string;
   priority: Priority;
-  elementId?: string;
 }
 
-interface Position {
-  x: number;
-  y: number;
-  elementId?: string;
-}
-
-const CollaborativeEditor = ({ documentId }: { documentId: string }) => {
-  const userId = useUser();
-  const { state, addChange, updatePresence } = useCollaboration();
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ documentId }) => {
   const [isAddingAnnotation, setIsAddingAnnotation] = useState(false);
-  const [annotationText, setAnnotationText] = useState('');
-  const [annotationPosition, setAnnotationPosition] = useState<Position | null>(null);
-  const [annotationPriority, setAnnotationPriority] = useState<Priority>('medium');
+  const [selectedPriority, setSelectedPriority] = useState<Priority>('medium');
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [newAnnotationText, setNewAnnotationText] = useState('');
+  const [annotationPosition, setAnnotationPosition] = useState({ x: 0, y: 0 });
+  const [content, setContent] = useState(`Collaborative document content for ${documentId}`);
+  const { state, applyChanges, updatePresence } = useCollaboration();
 
-  const { users, activeUsers } = useRealTimeCollaboration({
+  const userId = 'current-user-id'; // In a real app, this would come from auth context
+
+  const { users, activeUsers, isConnected } = useRealTimeCollaboration({
     documentId,
     userId,
-    onUserUpdate: (userData) => {
-      console.log('User updated:', userData);
+    onUserUpdate: (user) => {
+      console.log('User updated:', user);
     },
     onAnnotationAdded: (annotation) => {
+      // Add the new annotation to our local state
       setAnnotations(prev => [...prev, annotation]);
     }
   });
 
-  // Load existing annotations when component mounts
-  useEffect(() => {
-    // In a real application, this would fetch from a database
-    const loadAnnotations = async () => {
-      // Mock data
-      const mockAnnotations: Annotation[] = [
-        {
-          id: 'annotation-1',
-          x: 150,
-          y: 100,
-          text: 'This section needs to be clearer',
-          userId: 'user-456',
-          timestamp: new Date(Date.now() - 60000).toISOString(),
-          priority: 'high',
-          elementId: 'section-1'
-        },
-        {
-          id: 'annotation-2',
-          x: 300,
-          y: 200,
-          text: 'Can we make this more visually appealing?',
-          userId: 'user-123',
-          timestamp: new Date(Date.now() - 300000).toISOString(),
-          priority: 'medium'
-        }
-      ];
-      setAnnotations(mockAnnotations);
-    };
-    
-    loadAnnotations();
-  }, []);
-
-  // Track mouse position for document
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isAddingAnnotation) return;
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    updatePresence({
-      cursor: {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      }
-    });
-  }, [isAddingAnnotation, updatePresence]);
-
-  // Handle mouse leaving the document area
-  const handleMouseLeave = useCallback(() => {
-    updatePresence({
-      cursor: null
-    });
-  }, [updatePresence]);
-
-  // Start adding a new annotation
-  const startAddingAnnotation = useCallback(() => {
-    setIsAddingAnnotation(true);
-    setAnnotationText('');
-    setAnnotationPosition(null);
-  }, []);
-
-  // Place annotation at the clicked position
-  const handleDocumentClick = useCallback((e: React.MouseEvent) => {
+  // Handle clicking on the document to add annotation
+  const handleDocumentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isAddingAnnotation) return;
     
+    // Get position relative to the document container
     const rect = e.currentTarget.getBoundingClientRect();
-    setAnnotationPosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  }, [isAddingAnnotation]);
-
-  // Save the new annotation
-  const saveAnnotation = useCallback(() => {
-    if (!annotationPosition || !annotationText.trim()) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     
+    setAnnotationPosition({ x, y });
+    
+    // Show annotation creation form
+    setNewAnnotationText('');
+    
+    // In a real app, you would open a form/modal here to enter annotation content
+    // For this demo, we'll use a prompt
+    const text = prompt('Enter annotation text:');
+    if (text) {
+      createAnnotation(x, y, text);
+    } else {
+      setIsAddingAnnotation(false);
+    }
+  };
+  
+  // Create a new annotation
+  const createAnnotation = (x: number, y: number, text: string) => {
     const newAnnotation: Annotation = {
       id: nanoid(),
-      x: annotationPosition.x,
-      y: annotationPosition.y,
-      text: annotationText.trim(),
+      x,
+      y,
+      text,
       userId,
       timestamp: new Date().toISOString(),
-      priority: annotationPriority,
-      elementId: annotationPosition.elementId
+      priority: selectedPriority
     };
     
+    // Add annotation locally
     setAnnotations(prev => [...prev, newAnnotation]);
-    
-    // In a real app, you'd save this to a database
-    addChange({
-      type: 'add_annotation',
-      payload: newAnnotation
-    });
     
     // Reset state
     setIsAddingAnnotation(false);
-    setAnnotationText('');
-    setAnnotationPosition(null);
-  }, [annotationPosition, annotationText, annotationPriority, userId, addChange]);
+    
+    // In a real app, we would sync this to the backend
+    applyChanges([{
+      userId,
+      documentId,
+      operation: 'insert',
+      path: '/annotations',
+      value: newAnnotation
+    }]);
+  };
+  
+  // Toggle annotation mode
+  const toggleAnnotationMode = () => {
+    setIsAddingAnnotation(!isAddingAnnotation);
+  };
+  
+  // Change priority for new annotations
+  const handlePriorityChange = (priority: Priority) => {
+    setSelectedPriority(priority);
+  };
+  
+  // Update cursor position when moving
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isConnected) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    updatePresence({
+      cursorPosition: { x, y }
+    });
+  };
 
-  // Cancel adding annotation
-  const cancelAnnotation = useCallback(() => {
-    setIsAddingAnnotation(false);
-    setAnnotationText('');
-    setAnnotationPosition(null);
-  }, []);
-
-  const toggleAnnotationToolbar = useCallback(() => {
-    setIsAddingAnnotation(prev => !prev);
-  }, []);
+  // Update document content
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    
+    // In a real app, this would be debounced and synced to other users
+    applyChanges([{
+      userId,
+      documentId,
+      operation: 'update',
+      path: '/content',
+      value: e.target.value
+    }]);
+  };
 
   return (
-    <div className="collaborative-editor relative border rounded-md bg-white">
-      {/* Editor toolbar */}
-      <div className="flex items-center justify-between border-b p-2 bg-gray-50">
-        <h3 className="text-sm font-medium">Document Editor</h3>
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-medium">Document: {documentId}</h2>
         <AnnotationToolbar 
-          onAddAnnotation={toggleAnnotationToolbar} 
+          onAddAnnotation={toggleAnnotationMode}
           isAddingAnnotation={isAddingAnnotation}
-          onPriorityChange={setAnnotationPriority}
-          selectedPriority={annotationPriority}
+          onPriorityChange={handlePriorityChange}
+          selectedPriority={selectedPriority}
         />
       </div>
-
-      {/* Active users indicator */}
-      <div className="flex items-center gap-1 p-2 bg-gray-50 border-b">
-        <span className="text-xs text-gray-500">Active users:</span>
-        <div className="flex -space-x-2">
-          {activeUsers.map(id => (
-            <div key={id} className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs border-2 border-white">
-              {users[id]?.name?.substring(0, 1) || '?'}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Document area */}
-      <div 
-        className="p-4 min-h-[300px]" 
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onClick={handleDocumentClick}
-      >
-        <div className="prose max-w-none">
-          <h1>Project Requirements Document</h1>
-          <p>This document outlines the requirements for the new product feature.</p>
-          
-          <h2 id="section-1">User Authentication</h2>
-          <p>The system should support secure login with two-factor authentication.</p>
-          
-          <h2 id="section-2">Dashboard Interface</h2>
-          <p>Users need a clean dashboard showing key metrics and recent activity.</p>
-          
-          <h2 id="section-3">Reporting Features</h2>
-          <p>Generate detailed reports with export options to various formats.</p>
-        </div>
-        
-        {/* Render annotations */}
-        {annotations.map(annotation => (
-          <AnnotationMarker 
-            key={annotation.id}
-            x={annotation.x}
-            y={annotation.y}
-            text={annotation.text}
-            userId={annotation.userId}
-            timestamp={annotation.timestamp}
-            priority={annotation.priority}
-          />
-        ))}
-        
-        {/* User presence indicators */}
-        {Object.entries(state.users).map(([uid, user]) => {
-          if (!user.presence?.cursor || uid === userId) return null;
-          
-          return (
-            <UserPresenceIndicator
-              key={uid}
-              x={user.presence.cursor.x}
-              y={user.presence.cursor.y}
-              name={user.name || 'Unknown'}
-            />
-          );
-        })}
-        
-        {/* Annotation input form */}
-        {isAddingAnnotation && annotationPosition && (
-          <div 
-            className="absolute bg-white border shadow-lg rounded-md p-3 w-64"
-            style={{
-              left: `${annotationPosition.x + 20}px`,
-              top: `${annotationPosition.y}px`,
-            }}
-          >
-            <textarea
-              className="w-full border rounded p-2 mb-2 text-sm"
-              placeholder="Add your annotation..."
-              rows={3}
-              value={annotationText}
-              onChange={(e) => setAnnotationText(e.target.value)}
-              autoFocus
-            />
-            <div className="flex justify-end space-x-2">
-              <button 
-                className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
-                onClick={cancelAnnotation}
-              >
-                Cancel
-              </button>
-              <button 
-                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={saveAnnotation}
-                disabled={!annotationText.trim()}
-              >
-                Save
-              </button>
+      
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle>Collaborative Editor</CardTitle>
+            <div className="flex gap-2">
+              {Object.values(users).map((user) => (
+                <UserPresenceIndicator key={user.id} user={user} />
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </CardHeader>
+        
+        <CardContent>
+          <div 
+            className="relative border rounded-md p-4 min-h-[400px]"
+            onClick={handleDocumentClick}
+            onMouseMove={handleMouseMove}
+            style={{ cursor: isAddingAnnotation ? 'crosshair' : 'default' }}
+          >
+            <Textarea
+              className="w-full min-h-[350px] focus:outline-none bg-transparent resize-none"
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Start typing..."
+              disabled={isAddingAnnotation}
+            />
+            
+            {/* Render annotations */}
+            {annotations.map((annotation) => (
+              <AnnotationMarker 
+                key={annotation.id}
+                x={annotation.x}
+                y={annotation.y}
+                text={annotation.text}
+                userId={annotation.userId}
+                timestamp={annotation.timestamp}
+                priority={annotation.priority}
+              />
+            ))}
+            
+            {/* Render user cursors */}
+            {Object.values(users).map((user) => {
+              if (user.id === userId || !user.presence?.cursor) return null;
+              
+              return (
+                <div
+                  key={user.id}
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: `${user.presence.cursor.x}px`,
+                    top: `${user.presence.cursor.y}px`,
+                    transition: 'transform 0.1s ease'
+                  }}
+                >
+                  <div 
+                    className="w-4 h-4 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ backgroundColor: user.color || '#6366f1' }}
+                  />
+                  <div 
+                    className="absolute top-5 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap"
+                  >
+                    {user.name || `User ${user.id.substring(0, 4)}`}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Show connection status */}
+            <div className="absolute bottom-2 right-2 text-xs">
+              {isConnected ? 
+                <span className="text-green-500">Connected</span> : 
+                <span className="text-red-500">Disconnected</span>
+              }
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  );
-};
-
-const CollaborativeEditorWithAnnotations = ({ documentId }: { documentId: string }) => {
-  const userId = useUser();
-  
-  return (
-    <CollaborationProvider documentId={documentId} userId={userId}>
-      <CollaborativeEditor documentId={documentId} />
-    </CollaborationProvider>
   );
 };
 

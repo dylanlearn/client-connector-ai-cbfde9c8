@@ -16,6 +16,7 @@ interface CollaborationUser {
 interface RealTimeCollaborationHook {
   users: Record<string, CollaborationUser>;
   activeUsers: string[];
+  isConnected: boolean; // Added to fix the error
 }
 
 interface Annotation {
@@ -43,6 +44,7 @@ export function useRealTimeCollaboration({
 }: RealTimeCollaborationOptions): RealTimeCollaborationHook {
   const [users, setUsers] = useState<Record<string, CollaborationUser>>({});
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
+  const [isConnected, setIsConnected] = useState<boolean>(true); // Added to fix the error
 
   // Setup real-time collaboration hooks
   useEffect(() => {
@@ -54,6 +56,9 @@ export function useRealTimeCollaboration({
     // In a real production application, this would connect to a real-time service
     // like WebSockets, Supabase Realtime, Firebase, etc.
     console.log(`Setting up real-time collaboration for document ${documentId} and user ${userId}`);
+
+    // Simulate connection status
+    setIsConnected(true);
 
     // Mock data for demo purposes
     const mockUser1: CollaborationUser = {
@@ -132,11 +137,13 @@ export function useRealTimeCollaboration({
     // Cleanup
     return () => {
       clearInterval(movementInterval);
+      setIsConnected(false);
     };
   }, [documentId, userId, onUserUpdate]);
 
   return {
     users,
-    activeUsers
+    activeUsers,
+    isConnected
   };
 }

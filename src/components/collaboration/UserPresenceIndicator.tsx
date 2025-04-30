@@ -14,6 +14,8 @@ interface UserPresenceIndicatorProps {
 }
 
 const UserPresenceIndicator: React.FC<UserPresenceIndicatorProps> = ({ user }) => {
+  if (!user) return null;
+  
   const statusColors = {
     active: 'bg-green-500',
     idle: 'bg-yellow-500',
@@ -21,6 +23,9 @@ const UserPresenceIndicator: React.FC<UserPresenceIndicatorProps> = ({ user }) =
   };
 
   const avatarLetter = user.name ? user.name.charAt(0).toUpperCase() : '?';
+  
+  // Safely access status, defaulting to 'offline' if not present
+  const status = user.presence?.status || 'offline';
 
   return (
     <TooltipProvider>
@@ -44,17 +49,17 @@ const UserPresenceIndicator: React.FC<UserPresenceIndicatorProps> = ({ user }) =
             <span 
               className={cn(
                 "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white",
-                statusColors[user.presence.status as keyof typeof statusColors] || statusColors.offline
+                statusColors[status as keyof typeof statusColors] || statusColors.offline
               )}
             />
           </div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <div>
-            <p className="font-medium">{user.name}</p>
+            <p className="font-medium">{user.name || `User ${user.id.substring(0, 4)}`}</p>
             <p className="text-xs text-muted-foreground capitalize">
-              {user.presence.status}
-              {user.presence.lastActive && 
+              {status}
+              {user.presence?.lastActive && 
                 ` - Last active: ${new Date(user.presence.lastActive).toLocaleTimeString()}`
               }
             </p>

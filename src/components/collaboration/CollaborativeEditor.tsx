@@ -11,7 +11,10 @@ interface CollaborativeEditorProps {
 
 const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ documentId }) => {
   const { state, applyChanges, updatePresence } = useCollaboration();
-  const { activeUsers, isConnected } = useRealTimeCollaboration(documentId);
+  const { activeUsers, isConnected, users } = useRealTimeCollaboration({
+    documentId,
+    userId: 'current-user-id', // Using a default ID here
+  });
   const [content, setContent] = useState('');
 
   // Update the document content based on changes
@@ -37,8 +40,8 @@ const CollaborativeEditor: React.FC<CollaborativeEditorProps> = ({ documentId })
         <div className="flex justify-between items-center">
           <CardTitle>Collaborative Editor</CardTitle>
           <div className="flex gap-2">
-            {activeUsers.map(user => (
-              <UserPresenceIndicator key={user.id} user={user} />
+            {activeUsers.map(userId => (
+              <UserPresenceIndicator key={userId} user={users[userId]} />
             ))}
           </div>
         </div>
