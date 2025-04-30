@@ -5,8 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
-// Import your pages
-import Home from '@/pages/index.tsx'; // Use explicit file extension to resolve casing issues
+// Import your pages - using direct import without aliasing to avoid case sensitivity issues
+import Home from '../src/pages/index'; // Import directly without using alias
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 
