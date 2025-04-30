@@ -69,11 +69,11 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
         position: 'relative',
         marginBottom: '20px',
         border: selectedSection === section.id ? '2px dashed blue' : '1px solid #e5e7eb',
-        // Get style properties either from direct props or from style object
-        backgroundColor: section.backgroundColor || section.style?.backgroundColor || '#ffffff',
-        textAlign: (section.textAlign || section.style?.textAlign || 'left') as any,
-        padding: section.padding || section.style?.padding || '20px',
-        gap: section.gap || section.style?.gap || '10px',
+        // Use optional chaining to safely access potentially missing properties
+        backgroundColor: section.style?.backgroundColor || '#ffffff',
+        textAlign: (section.style?.textAlign || 'left') as any,
+        padding: section.style?.padding || '20px',
+        gap: section.style?.gap || '10px',
       };
 
       // Add specific styles based on section type

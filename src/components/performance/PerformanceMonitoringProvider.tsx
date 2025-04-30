@@ -80,7 +80,8 @@ export const PerformanceMonitoringProvider: React.FC<PerformanceMonitoringProvid
   useEffect(() => {
     if (isMonitoring) {
       // Get initial device info
-      const deviceMemory = navigator.deviceMemory !== undefined ? navigator.deviceMemory : null;
+      // Use optional chaining to safely access deviceMemory
+      const deviceMemory = navigator.deviceMemory ?? null;
       const cpuCores = navigator.hardwareConcurrency || 0;
 
       setMetrics((prev) => ({

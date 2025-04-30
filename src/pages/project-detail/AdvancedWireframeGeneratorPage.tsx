@@ -97,6 +97,7 @@ const AdvancedWireframeGeneratorPage: React.FC = () => {
             wireframeData={wireframeData}
             viewMode="edit"
             onUpdate={(updatedWireframe) => setWireframeData(updatedWireframe)}
+            projectId={projectId}
           />
         </CardContent>
       </Card>
