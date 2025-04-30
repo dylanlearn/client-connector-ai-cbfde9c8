@@ -6,8 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
 // Import your pages
-import Home from './pages/index';
-import WireframeGeneratorPage from './pages/wireframe-generator';
+import Home from '@/pages/index';
+import WireframeGeneratorPage from '@/pages/wireframe-generator';
+import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
+          <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
         </Routes>
         <Toaster />
       </PerformanceMonitoringProvider>

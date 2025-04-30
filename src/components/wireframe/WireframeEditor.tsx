@@ -5,7 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import EnhancedPerformanceWireframe from './EnhancedPerformanceWireframe';
 import { WireframeData } from '@/types/wireframe';
 
-interface WireframeEditorProps {
+export interface WireframeEditorProps {
   wireframeData?: WireframeData;
   viewMode?: 'edit' | 'preview' | 'code';
 }
