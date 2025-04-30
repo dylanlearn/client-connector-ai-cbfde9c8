@@ -1,114 +1,111 @@
 
-import { useState, useCallback } from 'react';
-import { WireframeVersion } from '@/types/wireframe';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { WireframeVersion, WireframeData } from '@/types/wireframe';
+import { useToast } from '@/hooks/use-toast';
 
 export function useWireframeVersionControl() {
   const [versions, setVersions] = useState<WireframeVersion[]>([]);
+  const [currentVersion, setCurrentVersion] = useState<WireframeVersion | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
-  
+
+  // Load wireframe versions
   const loadWireframeVersions = useCallback(async (projectId: string, wireframeId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('wireframe_versions')
         .select('*')
         .eq('wireframe_id', wireframeId)
         .order('version_number', { ascending: false });
-        
-      if (error) {
-        throw new Error(`Failed to load wireframe versions: ${error.message}`);
+      
+      if (fetchError) throw new Error(fetchError.message);
+      
+      setVersions(data as WireframeVersion[]);
+      
+      // Set the current version as the one with is_current = true, or the most recent one
+      const currentVersionData = data.find((v: any) => v.is_current === true) || data[0];
+      if (currentVersionData) {
+        setCurrentVersion(currentVersionData as WireframeVersion);
       }
       
-      setVersions(data || []);
-      return data;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to load wireframe versions';
-      setError(errorMessage);
-      toast({ 
-        title: 'Error loading versions', 
-        description: errorMessage, 
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load wireframe versions'));
+      toast({
+        title: 'Error',
+        description: 'Failed to load wireframe versions',
         variant: 'destructive'
       });
-      return [];
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
-  
+
+  // Create a new version
   const createVersion = useCallback(async (
     wireframeId: string, 
-    data: any, 
-    description: string,
-    branchName: string = 'main'
+    data: WireframeData, 
+    changeDescription?: string
   ) => {
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      
-      // First get the latest version number
+      // Get the latest version number
       const { data: latestVersions, error: fetchError } = await supabase
         .from('wireframe_versions')
         .select('version_number')
         .eq('wireframe_id', wireframeId)
-        .eq('branch_name', branchName)
         .order('version_number', { ascending: false })
         .limit(1);
-        
-      if (fetchError) {
-        throw new Error(`Failed to check latest version: ${fetchError.message}`);
-      }
       
-      const nextVersionNumber = latestVersions && latestVersions.length > 0 
-        ? (latestVersions[0].version_number + 1)
+      if (fetchError) throw new Error(fetchError.message);
+      
+      const versionNumber = (latestVersions.length > 0) 
+        ? latestVersions[0].version_number + 1 
         : 1;
       
-      const newVersion = {
+      // Prepare the new version data
+      const versionData = {
         wireframe_id: wireframeId,
-        version_number: nextVersionNumber,
-        branch_name: branchName,
-        data: data,
+        version_number: versionNumber,
+        data,
         is_current: true,
-        change_description: description,
+        change_description: changeDescription || `Version ${versionNumber}`,
         created_at: new Date().toISOString()
       };
       
-      // Update any existing current version to not be current
+      // Update all existing versions to not be current
       await supabase
         .from('wireframe_versions')
         .update({ is_current: false })
-        .eq('wireframe_id', wireframeId)
-        .eq('is_current', true);
+        .eq('wireframe_id', wireframeId);
       
       // Insert the new version
-      const { data: savedVersion, error: insertError } = await supabase
+      const { data: newVersion, error: insertError } = await supabase
         .from('wireframe_versions')
-        .insert(newVersion)
+        .insert(versionData)
         .select();
-        
-      if (insertError) {
-        throw new Error(`Failed to save version: ${insertError.message}`);
-      }
       
-      // Refresh the versions list
-      await loadWireframeVersions(wireframeId, wireframeId);
+      if (insertError) throw new Error(insertError.message);
+      
+      // Reload versions
+      loadWireframeVersions(wireframeId, wireframeId);
       
       toast({
-        title: 'Version created',
-        description: `Version ${nextVersionNumber} created successfully`,
+        title: 'Success',
+        description: `Created version ${versionNumber}`,
       });
       
-      return savedVersion;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create version';
-      setError(errorMessage);
-      toast({ 
-        title: 'Error creating version', 
-        description: errorMessage, 
+      return newVersion[0] as WireframeVersion;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to create version'));
+      toast({
+        title: 'Error',
+        description: 'Failed to create version',
         variant: 'destructive'
       });
       return null;
@@ -116,9 +113,10 @@ export function useWireframeVersionControl() {
       setIsLoading(false);
     }
   }, [loadWireframeVersions, toast]);
-  
+
   return {
     versions,
+    currentVersion,
     isLoading,
     error,
     loadWireframeVersions,

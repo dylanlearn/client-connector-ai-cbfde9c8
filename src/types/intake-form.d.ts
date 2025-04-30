@@ -1,30 +1,24 @@
 
 export interface IntakeFormData {
-  id?: string;
-  userId?: string;
-  siteType?: string;
+  siteType: 'ecommerce' | 'portfolio' | 'business' | 'blog' | 'personal' | 'other';
   businessName?: string;
-  businessDescription?: string;
-  projectName?: string;
-  projectDescription?: string;
+  businessType?: string;
+  mission?: string;
+  vision?: string;
+  targetAudience?: string;
+  industryType?: string;
+  brandPersonality?: string;
   primaryColor?: string;
   secondaryColor?: string;
-  specificQuestions?: Record<string, any>;
+  accentColor?: string;
+  backgroundColor?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  description?: string;
+  keyFeatures?: string[];
   designPreferences?: {
-    layoutStyle?: string;
-    colorScheme?: string;
-    typography?: string;
     visualStyle?: string;
-    accentColor?: string;
-    backgroundColor?: string;
-    headingFont?: string;
-    bodyFont?: string;
-    fontPairings?: string[];
+    [key: string]: any;
   };
-  status?: 'draft' | 'submitted' | 'processing' | 'completed';
-  submittedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  lastUpdated?: string;
   [key: string]: any;
 }

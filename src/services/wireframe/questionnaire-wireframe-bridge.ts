@@ -1,3 +1,4 @@
+
 import { WireframeData, WireframeSection } from '@/types/wireframe';
 import { v4 as uuidv4 } from 'uuid';
 import { IntakeFormData } from '@/types/intake-form';
@@ -54,9 +55,7 @@ const createWireframeData = (projectData: any, recommendations: any): WireframeD
   return {
     id: uuidv4(), // Add an ID field
     title: name || 'Untitled Wireframe',
-    description: projectDescription || '',
     sections: [],
-    layoutType: 'responsive',
     colorScheme: {
       primary: projectData.primaryColor || '#3b82f6',
       secondary: projectData.secondaryColor || '#10b981',
@@ -66,12 +65,9 @@ const createWireframeData = (projectData: any, recommendations: any): WireframeD
     typography: {
       headings: projectData.headingFont || 'Inter',
       body: projectData.bodyFont || 'Roboto',
-      fontPairings: projectData.fontPairings || []
     },
-    // Instead of setting mobileConsiderations directly, add it to the designTokens object
-    designTokens: {
-      mobileConsiderations: recommendations?.mobileConsiderations || "Ensure all elements are responsive and accessible on mobile devices."
-    },
-    // Keep any other existing properties
+    // Add description as a top-level property instead of in designTokens
+    status: 'draft',
+    description: projectData.description || ''
   };
 };
