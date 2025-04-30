@@ -1,255 +1,265 @@
-import React, { useState, useEffect } from 'react';
-import { useCollaboration, CollaborationProvider } from '@/contexts/CollaborationContext';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
 import UserPresenceIndicator from './UserPresenceIndicator';
-import AnnotationToolbar from '../annotations/AnnotationToolbar';
-import AnnotationMarker from '../annotations/AnnotationMarker';
+import { AnnotationToolbar } from '../annotations/AnnotationToolbar';
+import { AnnotationMarker } from '../annotations/AnnotationMarker';
 import { useUser } from '@/hooks/useUser';
 import { useRealTimeCollaboration } from '@/hooks/useRealTimeCollaboration';
-import { Annotation } from '@/types/annotations';
-import { AnnotationService } from '@/services/collaboration/annotationService';
-import { User } from '@/types/collaboration';
-import { toast } from 'sonner';
+import { Annotation, AnnotationType } from '@/types/annotations';
+import { AnnotationCreator } from '../annotations/AnnotationCreator';
+import { useCollaboration } from '@/contexts/CollaborationContext';
+import { Button } from '../ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { nanoid } from 'nanoid';
-import { Card } from '@/components/ui/card';
-
-interface CollaborativeEditorContentProps {
-  documentId: string;
-}
-
-const CollaborativeEditorContent: React.FC<CollaborativeEditorContentProps> = ({ documentId }) => {
-  const { state, addChange } = useCollaboration();
-  const userId = useUser();
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [selectedAnnotationType, setSelectedAnnotationType] = useState<string | null>(null);
-  const [isToolbarVisible, setIsToolbarVisible] = useState(false);
-  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
-  const [activeAnnotation, setActiveAnnotation] = useState<Annotation | null>(null);
-  const [newAnnotationContent, setNewAnnotationContent] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Real-time collaboration setup
-  const { isConnected, activeUsers, error: collaborationError } = useRealTimeCollaboration(documentId);
-  
-  // Load annotations on mount
-  useEffect(() => {
-    const loadAnnotations = async () => {
-      setIsLoading(true);
-      try {
-        const loadedAnnotations = await AnnotationService.getAnnotations(documentId);
-        setAnnotations(loadedAnnotations);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load annotations');
-        toast.error(`Error loading annotations: ${err.message}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadAnnotations();
-  }, [documentId]);
-  
-  // Subscribe to annotation changes
-  useEffect(() => {
-    const unsubscribe = AnnotationService.subscribeToAnnotations(documentId, (updatedAnnotations) => {
-      setAnnotations(updatedAnnotations);
-    });
-    
-    return () => {
-      unsubscribe();
-    };
-  }, [documentId]);
-  
-  // Generic function to handle annotation creation
-  const handleCreateAnnotation = async (x: number, y: number) => {
-    if (!selectedAnnotationType) {
-      toast.error('Please select an annotation type.');
-      return;
-    }
-    
-    try {
-      const newAnnotation = await AnnotationService.createAnnotation(
-        documentId,
-        userId,
-        selectedAnnotationType as any,
-        newAnnotationContent,
-        { x, y }
-      );
-      
-      setAnnotations(prevAnnotations => [...prevAnnotations, newAnnotation]);
-      toast.success(`Annotation created: ${selectedAnnotationType}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create annotation');
-      toast.error(`Error creating annotation: ${err.message}`);
-    } finally {
-      setIsToolbarVisible(false);
-      setNewAnnotationContent('');
-      setSelectedAnnotationType(null);
-    }
-  };
-  
-  // Handle annotation updates
-  const handleUpdateAnnotation = async (annotationId: string, updates: Partial<Annotation>) => {
-    try {
-      await AnnotationService.updateAnnotation(annotationId, updates);
-      setAnnotations(prevAnnotations =>
-        prevAnnotations.map(ann => (ann.id === annotationId ? { ...ann, ...updates } : ann))
-      );
-      toast.success('Annotation updated successfully.');
-    } catch (err: any) {
-      setError(err.message || 'Failed to update annotation');
-      toast.error(`Error updating annotation: ${err.message}`);
-    }
-  };
-  
-  // Handle annotation deletion
-  const handleDeleteAnnotation = async (annotationId: string) => {
-    try {
-      await AnnotationService.deleteAnnotation(annotationId);
-      setAnnotations(prevAnnotations => prevAnnotations.filter(ann => ann.id !== annotationId));
-      toast.success('Annotation deleted successfully.');
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete annotation');
-      toast.error(`Error deleting annotation: ${err.message}`);
-    }
-  };
-  
-  // Handle canvas click to create annotation
-  const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const x = event.clientX;
-    const y = event.clientY;
-    
-    setIsToolbarVisible(true);
-    setToolbarPosition({ x, y });
-  };
-  
-  // Handle annotation type selection
-  const handleAnnotationTypeSelect = (type: string) => {
-    setSelectedAnnotationType(type);
-    handleCreateAnnotation(toolbarPosition.x, toolbarPosition.y);
-  };
-  
-  // Handle input change for new annotation content
-  const handleAnnotationContentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewAnnotationContent(event.target.value);
-  };
-  
-  // Handle annotation status change
-  const handleAnnotationStatusChange = (annotationId: string, status: string) => {
-    handleUpdateAnnotation(annotationId, { status: status as any });
-  };
-  
-  // Handle annotation replies
-  const handleAddAnnotationReply = async (parentId: string, content: string) => {
-    try {
-      const newAnnotation = await AnnotationService.createAnnotation(
-        documentId,
-        userId,
-        'text', // Assuming replies are always text-based
-        content,
-        { x: 0, y: 0 }, // Position doesn't matter for replies
-        parentId
-      );
-      
-      setAnnotations(prevAnnotations => [...prevAnnotations, newAnnotation]);
-      toast.success('Reply added successfully.');
-    } catch (err: any) {
-      setError(err.message || 'Failed to add reply');
-      toast.error(`Error adding reply: ${err.message}`);
-    }
-  };
-  
-  // Handle annotation assignment
-  const handleAssignAnnotation = (annotationId: string, assignedTo: string) => {
-    handleUpdateAnnotation(annotationId, { metadata: { assignedTo } });
-  };
-  
-  // Handle annotation priority
-  const handleSetAnnotationPriority = (annotationId: string, priority: string) => {
-    handleUpdateAnnotation(annotationId, { metadata: { priority } });
-  };
-  
-  // Handle annotation label color
-  const handleSetAnnotationLabelColor = (annotationId: string, labelColor: string) => {
-    handleUpdateAnnotation(annotationId, { metadata: { labelColor } });
-  };
-  
-  // Handle annotation linking to element
-  const handleLinkAnnotationToElement = (annotationId: string, elementId: string) => {
-    handleUpdateAnnotation(annotationId, { position: { elementId } });
-  };
-  
-  if (isLoading) {
-    return <div>Loading annotations...</div>;
-  }
-  
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-  
-  return (
-    <div className="collaborative-editor relative" onClick={handleCanvasClick}>
-      <Card className="p-4">
-        <h2 className="text-xl font-semibold mb-4">Document Editor</h2>
-        <p className="text-gray-600">Document ID: {documentId}</p>
-        
-        <div className="flex items-center space-x-4 mb-4">
-          {activeUsers.map((user: User) => (
-            <UserPresenceIndicator key={user.id} user={user} />
-          ))}
-        </div>
-        
-        <div className="relative">
-          {/* Mock Document Content - Replace with actual editor */}
-          <div className="prose max-w-none">
-            <p>
-              This is a collaborative document. Click anywhere to add annotations.
-            </p>
-            <p>
-              Annotations can be used to highlight text, add comments, or provide feedback.
-            </p>
-            <p>
-              Use the toolbar to select the type of annotation you want to add.
-            </p>
-          </div>
-          
-          {/* Render Annotations */}
-          {annotations.map(annotation => (
-            <AnnotationMarker
-              key={annotation.id}
-              annotation={annotation}
-              onUpdate={handleUpdateAnnotation}
-              onDelete={handleDeleteAnnotation}
-            />
-          ))}
-          
-          {/* Annotation Toolbar */}
-          {isToolbarVisible && (
-            <AnnotationToolbar
-              x={toolbarPosition.x}
-              y={toolbarPosition.y}
-              onSelect={handleAnnotationTypeSelect}
-            />
-          )}
-        </div>
-      </Card>
-    </div>
-  );
-};
+import { toast } from '@/hooks/use-toast';
+import WireframeOptimizedDemo from '../canvas/WireframeOptimizedDemo';
 
 interface CollaborativeEditorWithAnnotationsProps {
   documentId: string;
 }
 
-const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ 
-  documentId 
-}) => {
+const CollaborativeEditorWithAnnotations: React.FC<CollaborativeEditorWithAnnotationsProps> = ({ documentId }) => {
   const userId = useUser();
-
+  const [activeTab, setActiveTab] = useState('editor');
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
+  const [creatingAnnotation, setCreatingAnnotation] = useState<{
+    type: AnnotationType;
+    position: { x: number; y: number; elementId?: string };
+  } | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  
+  // Use our collaborative hooks
+  const { activeUsers } = useRealTimeCollaboration(documentId);
+  const { state } = useCollaboration();
+  
+  // Mock data for annotations
+  useEffect(() => {
+    // In a real app, these would come from the database
+    const mockAnnotations: Annotation[] = [
+      {
+        id: '1',
+        documentId,
+        userId: 'user-456',
+        type: 'text',
+        content: 'I think we should make this section more prominent',
+        position: { x: 150, y: 200 },
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        status: 'open',
+        metadata: {
+          assignedTo: 'user-789',
+          priority: 'high',
+          replies: 2
+        }
+      },
+      {
+        id: '2',
+        documentId,
+        userId: 'user-123',
+        type: 'sketch',
+        content: 'This is a rough sketch of the layout',
+        position: { x: 400, y: 300 },
+        createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
+        status: 'in-review',
+        metadata: {
+          dimensions: { width: 300, height: 200 },
+          fileType: 'image/png',
+          thumbnailUrl: '/placeholder-sketch.png',
+        }
+      }
+    ];
+    
+    setAnnotations(mockAnnotations);
+  }, [documentId]);
+  
+  // Handle clicking on the document to place an annotation
+  const handleDocumentClick = (e: React.MouseEvent) => {
+    if (!creatingAnnotation) return;
+    
+    // Get the position relative to the editor
+    const editorRect = editorRef.current?.getBoundingClientRect();
+    if (!editorRect) return;
+    
+    const x = e.clientX - editorRect.left;
+    const y = e.clientY - editorRect.top;
+    
+    setCreatingAnnotation({
+      ...creatingAnnotation,
+      position: {
+        ...creatingAnnotation.position,
+        x,
+        y
+      }
+    });
+  };
+  
+  // Start creating a new annotation
+  const handleCreateAnnotation = (type: AnnotationType) => {
+    setSelectedAnnotation(null);
+    setCreatingAnnotation({
+      type,
+      position: { x: 0, y: 0 }  // Will be updated when the user clicks
+    });
+  };
+  
+  // Save the annotation content
+  const handleSaveAnnotation = (content: string) => {
+    if (!creatingAnnotation) return;
+    
+    const newAnnotation: Annotation = {
+      id: nanoid(),
+      documentId,
+      userId,
+      type: creatingAnnotation.type,
+      content,
+      position: creatingAnnotation.position,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'open',
+      metadata: {
+        // For a text annotation, we don't need specific metadata
+        // For other types, we would add relevant info here
+        priority: 'medium' as 'low' | 'medium' | 'high'
+      }
+    };
+    
+    setAnnotations([...annotations, newAnnotation]);
+    setCreatingAnnotation(null);
+    toast({
+      title: "Annotation created",
+      description: "Your annotation has been added.",
+      variant: "success"
+    });
+  };
+  
+  // Handle clicking on an element (for element-specific annotations)
+  const handleElementClick = (elementId: string) => {
+    if (!creatingAnnotation) return;
+    
+    // In a real implementation, we would get the element's position
+    setCreatingAnnotation({
+      ...creatingAnnotation,
+      position: {
+        x: 200, // Default placeholder position
+        y: 200, // Default placeholder position
+        elementId
+      }
+    });
+  };
+  
+  const handleAnnotationClick = (id: string) => {
+    setSelectedAnnotation(id === selectedAnnotation ? null : id);
+    setCreatingAnnotation(null);
+  };
+  
+  // Get annotation by ID
+  const getAnnotation = (id: string) => {
+    return annotations.find(a => a.id === id);
+  };
+  
   return (
-    <CollaborationProvider documentId={documentId} userId={userId}>
-      <CollaborativeEditorContent documentId={documentId} />
-    </CollaborationProvider>
+    <div className="flex flex-col w-full h-full">
+      <div className="flex justify-between items-center mb-4 bg-muted p-2 rounded-md">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-sm font-medium">Active users:</h3>
+          <div className="flex -space-x-2">
+            {activeUsers.map((user) => (
+              <UserPresenceIndicator key={user.id} user={user} />
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <AnnotationToolbar 
+            onCreateAnnotation={handleCreateAnnotation} 
+            disabled={!!creatingAnnotation}
+          />
+          
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setActiveTab(activeTab === 'editor' ? 'comments' : 'editor')}
+          >
+            {activeTab === 'editor' ? 'View Comments' : 'View Editor'}
+          </Button>
+        </div>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <TabsList className="self-start mb-2">
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="comments">Comments ({annotations.length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="editor" className="flex-1">
+          <div
+            ref={editorRef}
+            className="relative bg-background border rounded-md flex-1 overflow-hidden"
+            onClick={handleDocumentClick}
+          >
+            {/* Editor content */}
+            <WireframeOptimizedDemo />
+            
+            {/* Annotation markers */}
+            {annotations.map((annotation) => (
+              <AnnotationMarker
+                key={annotation.id}
+                annotation={annotation}
+                isActive={selectedAnnotation === annotation.id}
+                onClick={() => handleAnnotationClick(annotation.id)}
+              />
+            ))}
+            
+            {/* Annotation creation UI */}
+            {creatingAnnotation && creatingAnnotation.position.x > 0 && (
+              <AnnotationCreator
+                type={creatingAnnotation.type}
+                position={creatingAnnotation.position}
+                onSave={handleSaveAnnotation}
+                onCancel={() => setCreatingAnnotation(null)}
+              />
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="comments" className="flex-1">
+          <Card className="p-4">
+            <h3 className="font-medium mb-4">Document Comments</h3>
+            
+            {annotations.length === 0 ? (
+              <p className="text-muted-foreground">No comments yet. Add comments by selecting an annotation tool and clicking on the document.</p>
+            ) : (
+              <div className="space-y-4">
+                {annotations.map((annotation) => (
+                  <Card key={annotation.id} className="p-3">
+                    <div className="flex justify-between">
+                      <span className="font-medium">User {annotation.userId.split('-')[1]}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(annotation.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="mt-2">{annotation.content}</div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs capitalize px-2 py-1 bg-muted rounded-full">
+                        {annotation.status}
+                      </span>
+                      {annotation.metadata?.replies && (
+                        <span className="text-xs text-muted-foreground">
+                          {annotation.metadata.replies} replies
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

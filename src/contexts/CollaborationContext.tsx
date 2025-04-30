@@ -84,7 +84,7 @@ function collaborationReducer(state: CollaborationState, action: CollaborationAc
   }
 }
 
-type CollaborationContextType = {
+interface CollaborationContextType {
   state: CollaborationState;
   dispatch: React.Dispatch<CollaborationAction>;
   addChange: (change: Omit<DocumentChange, 'id' | 'timestamp'>) => void;
@@ -92,11 +92,17 @@ type CollaborationContextType = {
   setDocumentId: (documentId: string | null) => void;
   updateUserPresence: (presence: Partial<any>) => void;
   applyChanges: (changes: DocumentChange[]) => void;
-};
+}
 
 const CollaborationContext = createContext<CollaborationContextType | undefined>(undefined);
 
-export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface CollaborationProviderProps {
+  children: React.ReactNode;
+  documentId?: string;
+  userId?: string;
+}
+
+export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ children, documentId, userId }) => {
   const [state, dispatch] = useReducer(collaborationReducer, initialState);
 
   const setDocumentId = (documentId: string | null) => {
@@ -114,17 +120,33 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updatePresence = (presence: Partial<any>) => {
     // This is a placeholder that would be implemented for user-specific presence
+    if (userId) {
+      updateUserPresence(presence);
+    }
   };
 
   const updateUserPresence = (presence: Partial<any>) => {
-    if (!state.documentId) return;
-    // This would update the user's presence in the document
-    // Implementation would depend on the specific needs
+    if (!state.documentId || !userId) return;
+    // Update user presence in the document
+    dispatch({
+      type: 'UPDATE_USER_PRESENCE',
+      payload: {
+        userId,
+        presence
+      }
+    });
   };
 
   const applyChanges = (changes: DocumentChange[]) => {
     dispatch({ type: 'MERGE_REMOTE_CHANGES', payload: changes });
   };
+
+  // Initialize document ID from props if provided
+  React.useEffect(() => {
+    if (documentId) {
+      setDocumentId(documentId);
+    }
+  }, [documentId]);
 
   return (
     <CollaborationContext.Provider value={{ 
