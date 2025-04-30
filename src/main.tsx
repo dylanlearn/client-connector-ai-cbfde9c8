@@ -2,30 +2,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import App from './App.tsx'
 import './index.css'
-import App from './App';
+import { AuthProvider } from './contexts/AuthContext.tsx'
 
-const root = ReactDOM.createRoot(document.getElementById('root')!)
-
-root.render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
-);
-
-// Initialize error handling after rendering the app
-// This ensures that error monitoring doesn't interfere with the initial render
-setTimeout(() => {
-  try {
-    // Use dynamic import instead of require for better Vite compatibility
-    import("@/utils/monitoring/error-handling").then(module => {
-      module.initializeErrorHandling();
-    }).catch(error => {
-      console.error("Failed to initialize error handling:", error);
-    });
-  } catch (error) {
-    console.error("Failed to initialize error handling:", error);
-  }
-}, 0);
+  </React.StrictMode>,
+)

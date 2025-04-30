@@ -5,10 +5,19 @@ import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
-// Import your pages - using direct import without aliasing to avoid case sensitivity issues
-import Home from '../src/pages/index'; // Import directly without using alias
+// Import pages
+import HomePage from './pages/index';  // Renamed import to avoid casing issues
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
+import ClientsPage from '@/pages/Clients';
+import DashboardPage from '@/pages/Dashboard';
+import AnalyticsPage from '@/pages/Analytics';
+import AIDesignSuggestions from '@/pages/AIDesignSuggestions';
+import IntakePage from '@/pages/intake';
+import ClientAccess from '@/pages/ClientAccess';
+import ClientHubPage from '@/pages/ClientHub';
+import LoginPage from '@/pages/Login';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -18,9 +27,24 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PerformanceMonitoringProvider enabled={true}>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
-          <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/client-access" element={<ClientAccess />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
+            <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
+            <Route path="/intake-form" element={<IntakePage />} />
+          </Route>
+          
+          {/* Client Hub Route - Special case as it may need a specific auth check */}
+          <Route path="/client-hub" element={<ClientHubPage />} />
         </Routes>
         <Toaster />
       </PerformanceMonitoringProvider>
