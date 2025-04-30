@@ -1,97 +1,91 @@
 
 import React from 'react';
+import { MessageSquarePlus, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { MessageSquare, Mic, Video, PenLine } from 'lucide-react';
-import { AnnotationType } from '@/types/annotations';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+type Priority = 'low' | 'medium' | 'high';
 
 interface AnnotationToolbarProps {
-  onCreateAnnotation: (type: AnnotationType) => void;
-  disabled?: boolean;
+  onAddAnnotation: () => void;
+  isAddingAnnotation: boolean;
+  onPriorityChange: (priority: Priority) => void;
+  selectedPriority: Priority;
 }
 
-export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({ 
-  onCreateAnnotation,
-  disabled = false
-}) => {
+export const AnnotationToolbar = ({
+  onAddAnnotation,
+  isAddingAnnotation,
+  onPriorityChange,
+  selectedPriority
+}: AnnotationToolbarProps) => {
+  const getPriorityIcon = (priority: Priority) => {
+    switch (priority) {
+      case 'high':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'low':
+        return <Info className="h-4 w-4 text-blue-500" />;
+    }
+  };
+
   return (
-    <div className="flex space-x-1">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => onCreateAnnotation('text')}
-              disabled={disabled}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Text Comment</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <div className="flex items-center space-x-2">
+      <Popover open={isAddingAnnotation}>
+        <PopoverTrigger asChild>
+          <Button
+            variant={isAddingAnnotation ? "secondary" : "outline"}
+            size="sm"
+            onClick={onAddAnnotation}
+            className="flex items-center gap-1"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            <span>Annotate</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2" align="end">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Select priority</p>
+            <div className="flex space-x-1">
+              <Button 
+                variant={selectedPriority === 'low' ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => onPriorityChange('low')}
+                className="flex items-center gap-1"
+              >
+                <Info className="h-4 w-4 text-blue-500" />
+                <span>Low</span>
+              </Button>
+              <Button 
+                variant={selectedPriority === 'medium' ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => onPriorityChange('medium')}
+                className="flex items-center gap-1"
+              >
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span>Medium</span>
+              </Button>
+              <Button 
+                variant={selectedPriority === 'high' ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => onPriorityChange('high')}
+                className="flex items-center gap-1"
+              >
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <span>High</span>
+              </Button>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
       
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => onCreateAnnotation('voice')}
-              disabled={disabled}
-            >
-              <Mic className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Voice Annotation</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => onCreateAnnotation('video')}
-              disabled={disabled}
-            >
-              <Video className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Video Annotation</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => onCreateAnnotation('sketch')}
-              disabled={disabled}
-            >
-              <PenLine className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Sketch Annotation</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {isAddingAnnotation && (
+        <div className="flex items-center gap-1 text-sm text-gray-500">
+          {getPriorityIcon(selectedPriority)}
+          <span className="capitalize">{selectedPriority} priority</span>
+        </div>
+      )}
     </div>
   );
 };

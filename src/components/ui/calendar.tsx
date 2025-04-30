@@ -53,8 +53,11 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-        IconRight: () => <ChevronRight className="h-4 w-4" />
+        // Fix the component property names to match what react-day-picker expects
+        icons: {
+          ChevronLeft: () => <ChevronLeft className="h-4 w-4" />,
+          ChevronRight: () => <ChevronRight className="h-4 w-4" />
+        }
       }}
       {...props}
     />

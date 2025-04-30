@@ -1,84 +1,116 @@
 
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Mic, Video, PenLine } from 'lucide-react';
-import { Annotation } from '@/types/annotations';
+import React, { useState } from 'react';
+import { AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+type Priority = 'low' | 'medium' | 'high';
+
 interface AnnotationMarkerProps {
-  annotation: Annotation;
-  isActive: boolean;
-  onClick: () => void;
+  x: number;
+  y: number;
+  text: string;
+  userId: string;
+  timestamp: string;
+  priority: Priority;
 }
 
-export const AnnotationMarker: React.FC<AnnotationMarkerProps> = ({
-  annotation,
-  isActive,
-  onClick,
-}) => {
-  // Function to get the appropriate icon based on annotation type
-  const getAnnotationIcon = () => {
-    switch (annotation.type) {
-      case 'text':
-        return <MessageSquare className="h-3 w-3" />;
-      case 'voice':
-        return <Mic className="h-3 w-3" />;
-      case 'video':
-        return <Video className="h-3 w-3" />;
-      case 'sketch':
-        return <PenLine className="h-3 w-3" />;
+export const AnnotationMarker = ({
+  x,
+  y,
+  text,
+  userId,
+  timestamp,
+  priority
+}: AnnotationMarkerProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const getPriorityIcon = () => {
+    switch (priority) {
+      case 'high':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'low':
+        return <Info className="h-4 w-4 text-blue-500" />;
       default:
-        return <MessageSquare className="h-3 w-3" />;
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
-  // Function to get background color based on status
-  const getStatusColor = () => {
-    switch (annotation.status) {
-      case 'open':
-        return 'bg-yellow-500';
-      case 'in-review':
-        return 'bg-blue-500';
-      case 'resolved':
-        return 'bg-green-500';
-      case 'rejected':
-        return 'bg-red-500';
+  const getPriorityColor = () => {
+    switch (priority) {
+      case 'high':
+        return 'border-red-500 bg-red-50';
+      case 'medium':
+        return 'border-amber-500 bg-amber-50';
+      case 'low':
+        return 'border-blue-500 bg-blue-50';
       default:
-        return 'bg-gray-500';
+        return 'border-blue-500 bg-blue-50';
     }
   };
 
-  const getThreadCount = () => {
-    // Return replies count from metadata if it exists, otherwise return 0
-    return annotation.metadata?.replies || 0;
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
   };
 
-  const threadCount = getThreadCount();
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy h:mm a');
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
 
   return (
     <div
-      className={cn(
-        'absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all',
-        isActive ? 'scale-125 z-50' : 'z-40'
-      )}
+      className="absolute cursor-pointer"
       style={{
-        left: annotation.position.x,
-        top: annotation.position.y,
+        left: `${x}px`,
+        top: `${y}px`,
       }}
-      onClick={onClick}
     >
-      <div className={cn('rounded-full p-2', getStatusColor())}>
-        {getAnnotationIcon()}
+      <div
+        className={cn(
+          'rounded-full border-2 p-1 transition-all',
+          getPriorityColor(),
+          isExpanded ? 'scale-0 opacity-0' : 'scale-100 opacity-100'
+        )}
+        onClick={toggleExpanded}
+      >
+        {getPriorityIcon()}
       </div>
-      
-      {threadCount > 0 && (
-        <Badge
-          className="absolute -top-2 -right-2 h-4 min-w-4 flex items-center justify-center"
-          variant="secondary"
-        >
-          {threadCount}
-        </Badge>
-      )}
+
+      <div
+        className={cn(
+          'absolute top-0 left-0 bg-white rounded-md shadow-lg border p-3 w-64 z-20 transition-all',
+          isExpanded ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'
+        )}
+        style={{
+          transformOrigin: 'top left',
+        }}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex items-center gap-1">
+            {getPriorityIcon()}
+            <span className="text-sm font-medium capitalize">{priority} priority</span>
+          </div>
+          <button
+            className="text-gray-400 hover:text-gray-600"
+            onClick={toggleExpanded}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        
+        <p className="text-sm mb-2">{text}</p>
+        
+        <div className="text-xs text-gray-500">
+          <p>User: {userId}</p>
+          <p>{formatDate(timestamp)}</p>
+        </div>
+      </div>
     </div>
   );
 };
