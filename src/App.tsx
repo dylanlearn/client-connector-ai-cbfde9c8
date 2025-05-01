@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
 // Import pages
-import HomePage from './pages/index';  // Renamed import to avoid casing issues
+import HomePage from '@/pages/Index';  // Use direct import with correct casing
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -17,6 +17,7 @@ import IntakePage from '@/pages/intake';
 import ClientAccess from '@/pages/ClientAccess';
 import ClientHubPage from '@/pages/ClientHub';
 import LoginPage from '@/pages/Login';
+import SettingsPage from '@/pages/Settings';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 // Create a client
@@ -41,6 +42,7 @@ function App() {
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
             <Route path="/intake-form" element={<IntakePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
           
           {/* Client Hub Route - Special case as it may need a specific auth check */}
