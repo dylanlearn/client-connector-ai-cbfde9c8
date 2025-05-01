@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
 // Import pages
-import HomePage from '@/pages/index';  // Fix the casing issue here
+import HomePage from '@/pages/index';  // Using lowercase 'index' consistently
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -19,6 +19,7 @@ import ClientHubPage from '@/pages/ClientHub';
 import LoginPage from '@/pages/Login';
 import SettingsPage from '@/pages/Settings';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import RegisterPage from '@/pages/RegisterPage';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/client-access" element={<ClientAccess />} />
           
           {/* Protected Routes */}

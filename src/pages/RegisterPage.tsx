@@ -30,7 +30,7 @@ const RegisterPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Change this to not test the return value, just await the promise
+      // Await the promise without testing its result
       await signUp(email, password, name);
       toast({
         title: "Account created",
