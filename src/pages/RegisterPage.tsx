@@ -1,155 +1,118 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/hooks/useAuth';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { toast } from 'sonner';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { supabase } from '@/integrations/supabase/client';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 
 const RegisterPage: React.FC = () => {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { error, isLoading, user, signUp } = useAuth();
+  const { signUp, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Check if user is already logged in
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate('/dashboard', { replace: true });
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
+  // If user is already logged in, redirect to dashboard
+  React.useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password || !confirmPassword) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      toast.error("Passwords don't match");
-      return;
-    }
-    
     setIsSubmitting(true);
-    
+
     try {
-      if (!signUp) {
-        toast.error("Registration functionality is not available");
-        return;
-      }
-      
-      const success = await signUp(email, password, name);
-      if (success) {
-        toast.success("Registration successful! Please check your email for confirmation.");
-        navigate('/login');
-      }
-    } catch (err) {
-      console.error("Registration error:", err);
-      toast.error("Registration failed. Please try again.");
+      // Change this to not test the return value, just await the promise
+      await signUp(email, password, name);
+      toast({
+        title: "Account created",
+        description: "Your account has been created successfully. Please check your email for verification.",
+      });
+      // After signup is done, navigate
+      navigate('/login');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Sign up failed",
+        description: error.message || "An unknown error occurred",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-center">Register</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input 
-              id="name" 
-              placeholder="Your name" 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading || isSubmitting}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="Email address" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading || isSubmitting}
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              placeholder="Password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading || isSubmitting}
-              required 
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm Password</Label>
-            <Input 
-              id="confirm-password" 
-              type="password" 
-              placeholder="Confirm password" 
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={isLoading || isSubmitting}
-              required 
-            />
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={isLoading || isSubmitting}
-          >
-            {(isLoading || isSubmitting) ? (
-              <div className="flex items-center justify-center">
-                <LoadingSpinner size="sm" className="mr-2" />
-                <span>Registering...</span>
-              </div>
-            ) : 'Register'}
-          </Button>
-          
-          <div className="text-center text-sm mt-4">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <a href="/login" className="text-primary hover:underline">
-              Login
-            </a>
-          </div>
+    <AuthLayout>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Create Account</CardTitle>
+          <CardDescription>
+            Fill in the information below to create your account
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                type="text" 
+                placeholder="Your name" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="name@example.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex-col space-y-2">
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating account..." : "Create Account"}
+            </Button>
+            <Button 
+              type="button" 
+              variant="link" 
+              className="w-full"
+              onClick={() => navigate('/login')}
+            >
+              Already have an account? Login
+            </Button>
+          </CardFooter>
         </form>
-      </CardContent>
-    </Card>
+      </Card>
+    </AuthLayout>
   );
 };
 

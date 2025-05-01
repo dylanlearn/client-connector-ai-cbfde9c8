@@ -15,7 +15,7 @@ export class StripeWrapper {
       console.error('Missing Stripe Secret Key');
     }
     this.stripe = new Stripe(stripeSecretKey || '', {
-      apiVersion: '2025-03-31.basil', // Updated to match the expected API version
+      apiVersion: '2025-04-30.basil', // Updated to match the expected API version
     });
   }
 
