@@ -1,72 +1,66 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
-import { Separator } from '@/components/ui/separator';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { getRedirectUrl } from '@/utils/auth-utils';
 
-const LoginPage: React.FC = () => {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, signInWithGoogle, user, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, signInWithGoogle, isLoggedIn } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
 
-  // If user is already logged in, redirect to dashboard
+  // Get redirect URL from query params or default to dashboard
+  const redirectUrl = getRedirectUrl();
+
   useEffect(() => {
-    if (user && !isLoading) {
-      navigate('/dashboard');
+    // If user is already logged in, redirect
+    if (isLoggedIn) {
+      navigate(redirectUrl);
     }
-  }, [user, isLoading, navigate]);
+  }, [isLoggedIn, navigate, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
+    setIsLoading(true);
+    
     try {
-      await signIn(email, password);
-      navigate('/dashboard');
-    } catch (error: any) {
-      // Error toast is handled in AuthContext
-    } finally {
-      setIsSubmitting(false);
+      const { error } = await signIn(email, password);
+      
+      if (error) throw error;
+      
+      // Successful login will trigger the useEffect above via the auth state change
+    } catch (error) {
+      console.error("Login error:", error);
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // Redirect is handled by Supabase OAuth
-    } catch (error: any) {
-      // Error toast is handled in AuthContext
+      // Auth state change will handle the redirect
+    } catch (error) {
+      console.error("Google sign in error:", error);
     }
   };
-
-  if (isLoading) {
-    return (
-      <AuthLayout>
-        <div className="flex justify-center items-center min-h-[300px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout>
       <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
-            Enter your email and password to access your account
-          </CardDescription>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
+          <CardDescription>Enter your email and password to sign in to your account</CardDescription>
         </CardHeader>
+        
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -74,17 +68,24 @@ const LoginPage: React.FC = () => {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="name@example.com" 
+                placeholder="your@email.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+                  Forgot password?
+                </Link>
+              </div>
               <Input 
                 id="password" 
                 type="password" 
+                placeholder="••••••••" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -94,51 +95,68 @@ const LoginPage: React.FC = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
-              {isSubmitting ? "Logging in..." : "Login"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : "Sign In"}
             </Button>
             
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
+                <div className="w-full border-t border-gray-300"></div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="bg-card px-2 text-muted-foreground text-sm">
-                  Or continue with
-                </span>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">or continue with</span>
               </div>
             </div>
             
             <Button 
-              type="button" 
+              type="button"
               variant="outline" 
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full"
               onClick={handleGoogleSignIn}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+                <path d="M1 1h22v22H1z" fill="none" />
               </svg>
-              Continue with Google
+              Sign in with Google
             </Button>
           </CardContent>
-          <CardFooter className="flex-col space-y-2">
-            <Button 
-              type="button" 
-              variant="link" 
-              className="w-full"
-              onClick={() => navigate('/register')}
-            >
-              Don't have an account? Sign up
-            </Button>
-          </CardFooter>
         </form>
+        
+        <CardFooter>
+          <div className="text-center w-full">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </CardFooter>
       </Card>
     </AuthLayout>
   );
 };
 
-export default LoginPage;
+export default Login;

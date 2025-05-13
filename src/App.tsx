@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
 // Import pages with correct casing
-import HomePage from '@/pages/index';  // Using exact case-sensitive path that matches the actual file
+import HomePage from '@/pages/index';  // Fixed casing issue
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -23,6 +23,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
 import NotFoundPage from '@/pages/NotFound';
 import CollaborativeDocumentPage from '@/pages/CollaborativeDocumentPage';
+import SignupConfirmation from '@/pages/SignupConfirmation';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/client-access" element={<ClientAccess />} />
+          <Route path="/signup-confirmation" element={<SignupConfirmation />} />
           
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
