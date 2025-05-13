@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent } from '../../../test/setup';
 import WireframeErrorState from '../../wireframe/WireframeErrorState';
 
 describe('WireframeErrorState', () => {

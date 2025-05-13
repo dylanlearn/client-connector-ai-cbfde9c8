@@ -1,7 +1,10 @@
 
 import { expect, afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
+
+// Re-export testing-library elements for consistent usage
+export { screen, fireEvent };
 
 // Global test setup
 global.ResizeObserver = vi.fn().mockImplementation(() => ({

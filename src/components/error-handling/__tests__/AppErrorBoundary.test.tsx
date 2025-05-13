@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen } from '../../../test/setup';
 import { AppErrorBoundary } from '../../error-handling/AppErrorBoundary';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';

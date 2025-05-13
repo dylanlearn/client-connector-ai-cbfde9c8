@@ -5,8 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
-// Import pages
-import HomePage from '@/pages/index';  // Using exact case-sensitive path
+// Import pages with correct casing
+import HomePage from '@/pages/index';  // Using exact case-sensitive path that matches the actual file
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -22,6 +22,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import RegisterPage from '@/pages/RegisterPage';
 import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
 import NotFoundPage from '@/pages/NotFound';
+import CollaborativeDocumentPage from '@/pages/CollaborativeDocumentPage';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ function App() {
             <Route path="/intake-form" element={<IntakePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+            <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
           </Route>
           
           {/* Client Hub Route - Special case as it may need a specific auth check */}

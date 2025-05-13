@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render } from '@testing-library/react';
+import { screen, fireEvent } from '../../../../test/setup';
 import ComponentRendererFactory from '../ComponentRendererFactory';
 
 // Mock the specialized renderers
@@ -77,7 +77,8 @@ describe('ComponentRendererFactory', () => {
     
     render(<ComponentRendererFactory component={mockComponent} onClick={handleClick} />);
     
-    await userEvent.click(screen.getByTestId('mocked-button-btn-2'));
+    const button = screen.getByTestId('mocked-button-btn-2');
+    fireEvent.click(button);
     
     expect(handleClick).toHaveBeenCalledWith('btn-2');
   });
