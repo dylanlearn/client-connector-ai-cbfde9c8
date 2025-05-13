@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
 
 // Import pages
-import HomePage from '@/pages/index';  // Using lowercase to match the actual file name
+import HomePage from '@/pages/index';  // Using exact case-sensitive path
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -20,6 +20,8 @@ import LoginPage from '@/pages/Login';
 import SettingsPage from '@/pages/Settings';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import RegisterPage from '@/pages/RegisterPage';
+import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
+import NotFoundPage from '@/pages/NotFound';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -39,16 +41,21 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
+            <Route path="/wireframe-generator" element={<WireframeGeneratorPage />} />
             <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
             <Route path="/intake-form" element={<IntakePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
           </Route>
           
           {/* Client Hub Route - Special case as it may need a specific auth check */}
           <Route path="/client-hub" element={<ClientHubPage />} />
+          
+          {/* 404 Not Found Route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         <Toaster />
       </PerformanceMonitoringProvider>

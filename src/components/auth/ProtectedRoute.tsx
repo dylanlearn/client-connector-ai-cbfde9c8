@@ -1,5 +1,5 @@
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -12,28 +12,8 @@ export interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
   const { user, isLoading, profile } = useAuth();
   const location = useLocation();
-  const timeoutRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (isLoading) {
-      timeoutRef.current = window.setTimeout(() => {
-        if (!user) {
-          window.location.href = `/login?redirect=${encodeURIComponent(location.pathname)}`;
-        }
-      }, 3000);
-    }
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [isLoading, location.pathname, user]);
-
+  // Show loading spinner while checking auth status
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -43,18 +23,22 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     );
   }
   
+  // If not authenticated, redirect to login with return path
   if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
+  // For admin-only routes, check if user is admin
   if (adminOnly) {
     const isAdmin = profile?.role === 'admin';
     const isAdminEmail = user.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email);
+    
     if (!isAdmin && !isAdminEmail) {
       return <Navigate to="/dashboard" replace />;
     }
   }
 
+  // User is authenticated (and is admin if adminOnly=true)
   return children ? <>{children}</> : <Outlet />;
 };
 
