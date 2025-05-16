@@ -2,16 +2,21 @@
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 
-// This hook provides canonical authentication state/actions from Supabase.
-// Always use this everywhere in the app!
+/**
+ * Hook to access the authentication context
+ * Always use this throughout the app for consistent auth state management
+ */
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within an AuthProvider.");
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   
   return {
-    ...ctx,
-    // Adding convenient error and loading fields for compatibility
-    error: undefined,
-    isLoggedIn: !!ctx.user,
+    ...context,
+    // Adding convenient derived properties
+    isLoggedIn: !!context.user,
+    error: undefined, // For compatibility with old implementations
   };
 }

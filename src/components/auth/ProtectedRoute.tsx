@@ -10,22 +10,23 @@ export interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
-  const { user, isLoading, profile } = useAuth();
+  const { user, loading, profile } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking auth status
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />
-        <p className="ml-2 text-gray-600">Loading your account...</p>
+        <p className="ml-2 text-gray-600">Verifying your account...</p>
       </div>
     );
   }
   
   // If not authenticated, redirect to login with return path
   if (!user) {
-    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    const redirectPath = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirectPath}`} replace />;
   }
 
   // For admin-only routes, check if user is admin
