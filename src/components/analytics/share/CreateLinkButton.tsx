@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ClientInfoForm from "./ClientInfoForm";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { createClientAccessLink } from "@/utils/client-service";
 import { toast } from "sonner";
 
