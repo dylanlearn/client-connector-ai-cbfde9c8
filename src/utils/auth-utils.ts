@@ -75,3 +75,5 @@ export function enableRealtimeForTable(tableName: string): void {
   // In a real implementation, this would execute SQL to enable realtime for the table
   console.log(`Enabling realtime updates for table: ${tableName}`);
 }
+
+export type { UserProfile };

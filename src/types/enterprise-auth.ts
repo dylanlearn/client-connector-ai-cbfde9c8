@@ -44,3 +44,20 @@ export interface SSOUser {
   external_id: string;
   attributes: Record<string, any>;
 }
+
+export interface UserProfile {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  role?: 'user' | 'admin' | 'sync' | 'pro' | 'template_buyer' | null;
+  subscription_tier?: string | null;
+  subscription_status?: string | null;
+  is_subscribed?: boolean;
+  company_name?: string | null;
+  website?: string | null;
+  social_links?: Record<string, string> | null;
+  preferences?: Record<string, any> | null;
+  created_at?: string;
+  updated_at?: string;
+}

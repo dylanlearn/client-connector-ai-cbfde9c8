@@ -10,11 +10,11 @@ export interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
-  const { user, loading, profile } = useAuth();
+  const { user, isLoading, profile } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking auth status
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size="lg" />

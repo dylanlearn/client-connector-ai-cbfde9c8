@@ -4,9 +4,10 @@ import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
+import { AppProviders } from '@/providers/AppProviders';
 
 // Import pages with correct casing
-import HomePage from '@/pages/index';  // This is the problematic import that uses index.tsx
+import HomePage from '@/pages/Index';  // Fixed casing
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -30,7 +31,7 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <AppProviders>
       <PerformanceMonitoringProvider enabled={true}>
         <Routes>
           {/* Public Routes */}
@@ -63,7 +64,7 @@ function App() {
         </Routes>
         <Toaster />
       </PerformanceMonitoringProvider>
-    </QueryClientProvider>
+    </AppProviders>
   );
 }
 
