@@ -6,7 +6,7 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 import { VisualStateProvider } from '@/contexts/VisualStateContext';
 import { DesignProcessProvider } from '@/contexts/design-process/DesignProcessProvider';
 import { CollaborationProvider } from '@/contexts/CollaborationContext';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/react-query';
 
@@ -21,6 +21,7 @@ interface AppProvidersProps {
 export const AppProviders = ({ children }: AppProvidersProps) => {
   return (
     <QueryClientProvider client={queryClient}>
+      {/* ProfileProvider must come before AuthProvider since AuthProvider depends on it */}
       <ProfileProvider>
         <AuthProvider>
           <VisualStateProvider>

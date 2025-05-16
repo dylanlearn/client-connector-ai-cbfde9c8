@@ -2,12 +2,9 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PerformanceMonitoringProvider } from '@/components/performance/PerformanceMonitoringProvider';
-import { AppProviders } from '@/providers/AppProviders';
 
-// Import pages with correct casing
-import HomePage from '@/pages/Index';  // Fixed casing
+// Import pages with consistent casing
+import HomePage from '@/pages/Index';  
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
@@ -26,45 +23,40 @@ import NotFoundPage from '@/pages/NotFound';
 import CollaborativeDocumentPage from '@/pages/CollaborativeDocumentPage';
 import SignupConfirmation from '@/pages/SignupConfirmation';
 
-// Create a client
-const queryClient = new QueryClient();
-
 function App() {
   return (
-    <AppProviders>
-      <PerformanceMonitoringProvider enabled={true}>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/client-access" element={<ClientAccess />} />
-          <Route path="/signup-confirmation" element={<SignupConfirmation />} />
-          
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
-            <Route path="/wireframe-generator" element={<WireframeGeneratorPage />} />
-            <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
-            <Route path="/intake-form" element={<IntakePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
-            <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
-          </Route>
-          
-          {/* Client Hub Route - Special case as it may need a specific auth check */}
-          <Route path="/client-hub" element={<ClientHubPage />} />
-          
-          {/* 404 Not Found Route */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-        <Toaster />
-      </PerformanceMonitoringProvider>
-    </AppProviders>
+    <>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/client-access" element={<ClientAccess />} />
+        <Route path="/signup-confirmation" element={<SignupConfirmation />} />
+        
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
+          <Route path="/wireframe-generator" element={<WireframeGeneratorPage />} />
+          <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
+          <Route path="/intake-form" element={<IntakePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+          <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
+        </Route>
+        
+        {/* Client Hub Route - Special case as it may need a specific auth check */}
+        <Route path="/client-hub" element={<ClientHubPage />} />
+        
+        {/* 404 Not Found Route */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 
