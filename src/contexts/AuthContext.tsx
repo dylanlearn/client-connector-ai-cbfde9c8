@@ -9,9 +9,12 @@ import { UserProfile } from '@/types/enterprise-auth';
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: UserProfile | null; // We'll get this from the ProfileContext instead of managing it here
+  profile: UserProfile | null;
   isLoading: boolean;
+  isLoggedIn?: boolean; // Add isLoggedIn property
   signOut?: () => Promise<void>;
+  signIn?: (email: string, password: string) => Promise<void>; // Add signIn property
+  signInWithGoogle?: () => Promise<void>; // Add signInWithGoogle property
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -108,12 +111,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success('Logged in successfully');
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error signing in:', error);
+      toast.error(error.message || 'Failed to sign in');
+      throw error;
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error signing in with Google:', error);
+      toast.error(error.message || 'Failed to sign in with Google');
+      throw error;
+    }
+  };
+
   const value = {
     session,
     user,
     profile,
     isLoading,
-    signOut
+    isLoggedIn: !!user,
+    signOut,
+    signIn,
+    signInWithGoogle
   };
 
   return (
