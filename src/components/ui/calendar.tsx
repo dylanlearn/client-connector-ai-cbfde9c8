@@ -53,10 +53,9 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        // Fix: Using the correct property names for DayPicker 
-        // In newer versions of react-day-picker, use actual components instead of IconLeft/IconRight
-        nextButton: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
-        prevButton: ({ ...props }) => <ChevronLeft className="h-4 w-4" />
+        // Using the correct properties for react-day-picker v8
+        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />
       }}
       {...props}
     />
