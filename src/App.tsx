@@ -4,7 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 
 // Import pages with consistent casing
-import HomePage from '@/pages/index';  // Changed to lowercase to match the actual file
+import HomePage from '@/pages/index';  // Make sure this matches the actual filename casing
 import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
