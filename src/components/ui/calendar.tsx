@@ -55,8 +55,8 @@ function Calendar({
       components={{
         // Using the correct property names for navigation icons
         // The correct properties are likely 'PrevIcon' and 'NextIcon' based on react-day-picker v8
-        PrevIcon: () => <ChevronLeft className="h-4 w-4" />,
-        NextIcon: () => <ChevronRight className="h-4 w-4" />
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />
       }}
       {...props}
     />
