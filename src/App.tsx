@@ -5,7 +5,6 @@ import { Toaster } from '@/components/ui/toaster';
 
 // Import pages with consistent lowercase casing for index
 import HomePage from '@/pages/index';  // Changed from Index to index
-import WireframeGeneratorPage from '@/pages/wireframe-generator';
 import PerformanceMonitoringPage from '@/pages/performance-monitoring';
 import ClientsPage from '@/pages/Clients';
 import DashboardPage from '@/pages/Dashboard';
@@ -22,6 +21,7 @@ import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
 import NotFoundPage from '@/pages/NotFound';
 import CollaborativeDocumentPage from '@/pages/CollaborativeDocumentPage';
 import SignupConfirmation from '@/pages/SignupConfirmation';
+import DesignPicker from '@/pages/DesignPicker';
 
 function App() {
   return (
@@ -37,8 +37,8 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/wireframe-editor" element={<WireframeGeneratorPage />} />
-          <Route path="/wireframe-generator" element={<WireframeGeneratorPage />} />
+          <Route path="/wireframe-editor" element={<DesignPicker />} />
+          <Route path="/wireframe-generator" element={<DesignPicker />} />
           <Route path="/performance-monitoring" element={<PerformanceMonitoringPage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
@@ -47,6 +47,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
           <Route path="/collaborative-document" element={<CollaborativeDocumentPage />} />
+          <Route path="/design-picker" element={<DesignPicker />} />
         </Route>
         
         {/* Client Hub Route - Special case as it may need a specific auth check */}
